@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sarabun:wght@300;400;500;600;700&family=Noto+Sans+Lao:wght@400;500;600;700&display=swap');
+
+:root {
+  --color-primary: #ACE1AF;
+  --color-secondary: #E9FFDB;
+  --color-tertiary: #FFC6C2;
+  --color-bg: #F7FCF5;
+  --color-surface: #e9f5e3;
+  --color-card: #ffffff;
+  --color-text: #1a2e1a;
+  --color-text-sub: #5a7a5a;
+  --color-text-hint: #96b396;
+  --color-accent: #5aae5f;
+  --color-accent-dk: #3d8a42;
+  --color-accent-bg: #E9FFDB;
+  --color-income: #3da873;
+  --color-income-bg: #ddf5e8;
+  --color-expense: #c75050;
+  --color-expense-bg: #fce4e4;
+  --color-warn: #d4993a;
+  --color-warn-bg: #fdf1da;
+}
+
+body {
+  margin: 0;
+  font-family: 'Sarabun', 'Noto Sans Lao', system-ui, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6, .font-display {
+  font-family: 'Plus Jakarta Sans', 'Sarabun', 'Noto Sans Lao', sans-serif;
+}
