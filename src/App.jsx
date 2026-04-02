@@ -189,24 +189,16 @@ const randomToast=(tx)=>{const pool=TOASTS[tx.type];return pool[Math.floor(Math.
 
 // ─── UI PRIMITIVES ────────────────────────────────────────────
 const AnimalBg=()=>(
-  <svg aria-hidden="true" style={{position:"fixed",inset:0,width:"100%",height:"100%",opacity:0.05,pointerEvents:"none",zIndex:0}}>
-    <defs><pattern id="pbg" x="0" y="0" width="240" height="240" patternUnits="userSpaceOnUse">
-      <ellipse cx="50" cy="72" rx="32" ry="18" fill="#ACE1AF"/>
-      <ellipse cx="50" cy="56" rx="20" ry="15" fill="#ACE1AF"/>
-      <ellipse cx="64" cy="50" rx="11" ry="8" fill="#ACE1AF"/>
-      <ellipse cx="180" cy="170" rx="24" ry="16" fill="#C9B8FF"/>
-      <ellipse cx="180" cy="156" rx="16" ry="14" fill="#C9B8FF"/>
-      <polygon points="168,145 172,132 178,145" fill="#C9B8FF"/>
-      <polygon points="182,145 188,132 194,145" fill="#C9B8FF"/>
-      <ellipse cx="120" cy="120" rx="26" ry="17" fill="#FFB3A7"/>
-      <ellipse cx="120" cy="104" rx="16" ry="14" fill="#FFB3A7"/>
-      <circle cx="200" cy="40" r="5" fill="#ACE1AF"/>
-      <circle cx="192" cy="31" r="3" fill="#ACE1AF"/>
-      <circle cx="200" cy="29" r="3" fill="#ACE1AF"/>
-      <circle cx="208" cy="31" r="3" fill="#ACE1AF"/>
-    </pattern></defs>
-    <rect width="100%" height="100%" fill="url(#pbg)"/>
-  </svg>
+  <div aria-hidden="true" style={{
+    position:"fixed", inset:0,
+    backgroundImage:"url('/bg-pattern.png')",
+    backgroundSize:"420px 420px",
+    backgroundRepeat:"repeat",
+    opacity:0.18,
+    mixBlendMode:"multiply",
+    pointerEvents:"none",
+    zIndex:0,
+  }}/>
 );
 
 const Toast=({msg,onDone})=>{
@@ -381,28 +373,60 @@ function QuickAddBar({lang,onAdd,customCategories=[]}){
   const[input,setInput]=useState("");
   const[status,setStatus]=useState("idle");
   const[pending,setPending]=useState(null);
+  const[mode,setMode]=useState("expense"); // expense | income
   const inputRef=useRef();
+
   const submit=useCallback(async()=>{
     if(!input.trim()||status==="parsing")return;
     setStatus("parsing");
     const customCatIds=customCategories.map(c=>c.id);
     const result=await parseWithAI(input,customCatIds);
     if(!result?.amount||result.amount<=0){setStatus("error");setTimeout(()=>setStatus("idle"),2500);return;}
+    // Override type with user-selected mode
+    result.type=mode;
+    result.category=normalizeCategory(result.category,mode);
     if(result.confidence<0.72){setPending({...result,rawInput:input});setStatus("confirm");}
     else finalizeAdd({...result,rawInput:input,note:""});
-  },[input,status,customCategories]);
+  },[input,status,customCategories,mode]);
+
   const finalizeAdd=(parsed)=>{
     const catId=normalizeCategory(parsed.category,parsed.type);
     const cat=findCat(catId,customCategories);
     onAdd({id:`tx_${Date.now()}_${Math.random().toString(36).slice(2)}`,amount:parsed.amount,currency:parsed.currency,type:parsed.type,categoryId:cat.id,description:parsed.description||parsed.rawInput||"",note:parsed.note||"",date:new Date().toISOString().split("T")[0],confidence:parsed.confidence,createdAt:new Date().toISOString()});
     setInput("");setStatus("idle");setPending(null);inputRef.current?.focus();
   };
+
+  const isIncome=mode==="income";
+  const activeColor=isIncome?"#1A5A30":"#C0392B";
+  const activeBg=isIncome?"rgba(172,225,175,0.15)":"rgba(255,179,167,0.15)";
+  const sendBg=isIncome?"linear-gradient(145deg,#ACE1AF,#7BC8A4)":"linear-gradient(145deg,#FFB3A7,#ff8a75)";
+
   return(<>
     <div style={{padding:"0 16px"}}>
-      <div style={{background:T.surface,backdropFilter:"blur(20px)",borderRadius:20,padding:"10px 14px",boxShadow:T.shadow,display:"flex",alignItems:"center",gap:10}}>
-        <div style={{fontSize:18,flexShrink:0}}>✏️</div>
-        <input ref={inputRef} value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&submit()} placeholder={t(lang,"placeholder")} style={{flex:1,border:"none",outline:"none",background:"transparent",fontSize:14,color:T.dark,fontFamily:"'Noto Sans',sans-serif",minWidth:0}}/>
-        <button onClick={submit} disabled={status==="parsing"} style={{width:40,height:40,borderRadius:13,border:"none",cursor:"pointer",background:status==="error"?"#FFB3A7":status==="parsing"?"rgba(172,225,175,0.4)":T.celadon,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,transition:"all .2s ease",flexShrink:0,boxShadow:status==="parsing"?"none":"0 3px 10px rgba(172,225,175,0.4)"}}>
+      {/* Expense / Income toggle */}
+      <div style={{display:"flex",gap:6,marginBottom:8,justifyContent:"center"}}>
+        {[{v:"expense",label:"− Expense",color:"#C0392B",bg:"rgba(255,179,167,0.18)"},{v:"income",label:"+ Income",color:"#1A5A30",bg:"rgba(172,225,175,0.18)"}].map(({v,label,color,bg})=>(
+          <button key={v} onClick={()=>setMode(v)} style={{
+            padding:"6px 20px",borderRadius:999,border:"none",cursor:"pointer",
+            background:mode===v?bg:"rgba(45,45,58,0.05)",
+            color:mode===v?color:T.muted,
+            fontWeight:mode===v?800:500,fontSize:12,
+            fontFamily:"'Noto Sans',sans-serif",
+            transition:"all .2s ease",
+            boxShadow:mode===v?`0 2px 8px ${color}22`:"none",
+          }}>{label}</button>
+        ))}
+      </div>
+      {/* Input row */}
+      <div style={{background:T.surface,backdropFilter:"blur(20px)",borderRadius:20,padding:"10px 14px",boxShadow:T.shadow,display:"flex",alignItems:"center",gap:10,border:`1.5px solid ${mode==="income"?"rgba(172,225,175,0.3)":"rgba(255,179,167,0.3)"}`}}>
+        <div style={{fontSize:18,flexShrink:0}}>{isIncome?"💰":"✏️"}</div>
+        <input ref={inputRef} value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&submit()}
+          placeholder={isIncome?`e.g. "salary 15000 THB" or "ເງິນເດືອນ 5M LAK"`:t(lang,"placeholder")}
+          style={{flex:1,border:"none",outline:"none",background:"transparent",fontSize:14,color:T.dark,fontFamily:"'Noto Sans',sans-serif",minWidth:0}}/>
+        <button onClick={submit} disabled={status==="parsing"} style={{width:40,height:40,borderRadius:13,border:"none",cursor:"pointer",
+          background:status==="error"?"#FFB3A7":status==="parsing"?"rgba(172,225,175,0.4)":sendBg,
+          display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,transition:"all .2s ease",flexShrink:0,
+          boxShadow:status==="parsing"?"none":"0 3px 10px rgba(0,0,0,0.1)"}}>
           {status==="parsing"?"⏳":status==="error"?"✗":"↑"}
         </button>
       </div>
@@ -413,9 +437,10 @@ function QuickAddBar({lang,onAdd,customCategories=[]}){
 }
 
 // ═══ TRANSACTION LIST (inline post-save notes) ════════════════
-function TransactionList({transactions,lang,onUpdateNote,customCategories=[]}){
+function TransactionList({transactions,lang,onUpdateNote,onDeleteTx,customCategories=[]}){
   const[editingNote,setEditingNote]=useState(null);
   const[noteInput,setNoteInput]=useState("");
+  const[expandedTx,setExpandedTx]=useState(null);
   const noteRef=useRef();
 
   const startEdit=(tx)=>{setEditingNote(tx.id);setNoteInput(tx.note||"");setTimeout(()=>noteRef.current?.focus(),50);};
@@ -450,8 +475,11 @@ function TransactionList({transactions,lang,onUpdateNote,customCategories=[]}){
               const isEditing=editingNote===tx.id;
               return(
                 <div key={tx.id} style={{padding:"13px 16px",borderBottom:i<txs.length-1?"1px solid rgba(45,45,58,0.05)":"none"}}>
-                  {/* Main row */}
-                  <div style={{display:"flex",alignItems:"center",gap:12}}>
+                  {/* Main row — tap to expand actions */}
+                  <div style={{display:"flex",alignItems:"center",gap:12,cursor:"pointer"}}
+                    onClick={()=>setExpandedTx(expandedTx===tx.id?null:tx.id)}
+                    onPointerEnter={e=>e.currentTarget.style.opacity="0.85"}
+                    onPointerLeave={e=>e.currentTarget.style.opacity="1"}>
                     <div style={{width:44,height:44,borderRadius:15,flexShrink:0,background:tx.type==="expense"?"rgba(255,179,167,0.2)":"rgba(172,225,175,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{cat.emoji}</div>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{fontWeight:600,fontSize:14,color:T.dark,fontFamily:"'Noto Sans',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{tx.description||catLabel(cat,lang)}</div>
@@ -462,6 +490,13 @@ function TransactionList({transactions,lang,onUpdateNote,customCategories=[]}){
                       <div style={{display:"inline-block",marginTop:3,fontSize:10,fontWeight:700,padding:"2px 7px",borderRadius:6,background:CURR[tx.currency].pill,color:CURR[tx.currency].pillText}}>{tx.currency}</div>
                     </div>
                   </div>
+                  {/* Action row — delete */}
+                  {expandedTx===tx.id&&(
+                    <div style={{display:"flex",gap:8,marginTop:8,animation:"slideDown .15s ease"}}>
+                      <button onClick={()=>{onDeleteTx(tx.id);setExpandedTx(null);}} style={{flex:1,padding:"8px",borderRadius:12,border:"none",cursor:"pointer",background:"rgba(255,179,167,0.2)",color:"#C0392B",fontWeight:700,fontSize:12,fontFamily:"'Noto Sans',sans-serif"}}>🗑️ Delete</button>
+                      <button onClick={()=>setExpandedTx(null)} style={{padding:"8px 16px",borderRadius:12,border:"none",cursor:"pointer",background:"rgba(45,45,58,0.06)",color:T.muted,fontWeight:700,fontSize:12,fontFamily:"'Noto Sans',sans-serif"}}>Cancel</button>
+                    </div>
+                  )}
                   {/* Note area */}
                   {isEditing?(
                     <div style={{marginTop:8,display:"flex",gap:6,alignItems:"center"}}>
@@ -562,15 +597,33 @@ function SettingsScreen({profile,transactions,onUpdateProfile,onReset}){
   const{lang,baseCurrency,name,avatar,customCategories=[]}=profile;
   const[showLang,setShowLang]=useState(false);
   const[showCur,setShowCur]=useState(false);
+  const[showAvatar,setShowAvatar]=useState(false);
   const LANGS=[{code:"lo",flag:"🇱🇦",label:"ລາວ"},{code:"th",flag:"🇹🇭",label:"ไทย"},{code:"en",flag:"🇬🇧",label:"English"}];
   const btnStyle=(active)=>({display:"flex",alignItems:"center",gap:6,padding:"8px 14px",borderRadius:12,border:"none",cursor:"pointer",fontFamily:"'Noto Sans',sans-serif",background:active?"rgba(172,225,175,0.3)":"rgba(45,45,58,0.05)",fontWeight:active?700:500,fontSize:13,color:T.dark});
   return(
     <div style={{padding:"52px 20px 24px",position:"relative",zIndex:1}}>
       <div style={{fontWeight:800,fontSize:22,color:T.dark,fontFamily:"'Noto Sans',sans-serif",marginBottom:24}}>{t(lang,"settings")}</div>
       {/* Profile */}
-      <div style={{background:T.surface,backdropFilter:"blur(20px)",borderRadius:24,padding:"20px",boxShadow:T.shadow,marginBottom:20,display:"flex",alignItems:"center",gap:16}}>
-        <div style={{width:64,height:64,borderRadius:20,background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:32,boxShadow:"0 4px 14px rgba(172,225,175,0.4)"}}>{avatar}</div>
-        <div><div style={{fontWeight:800,fontSize:18,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{name}</div><div style={{fontSize:12,color:T.muted,marginTop:2}}>{transactions.length} transactions logged</div></div>
+      <div style={{background:T.surface,backdropFilter:"blur(20px)",borderRadius:24,padding:"20px",boxShadow:T.shadow,marginBottom:20}}>
+        <div style={{display:"flex",alignItems:"center",gap:16}}>
+          <button onClick={()=>setShowAvatar(!showAvatar)} style={{width:64,height:64,borderRadius:20,background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:32,boxShadow:"0 4px 14px rgba(172,225,175,0.4)",border:"none",cursor:"pointer",position:"relative",flexShrink:0}}>
+            {avatar}
+            <div style={{position:"absolute",bottom:-4,right:-4,width:22,height:22,borderRadius:8,background:"#fff",boxShadow:"0 2px 6px rgba(0,0,0,0.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11}}>✏️</div>
+          </button>
+          <div>
+            <div style={{fontWeight:800,fontSize:18,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{name}</div>
+            <div style={{fontSize:12,color:T.muted,marginTop:2}}>{transactions.length} transactions logged</div>
+            <div style={{fontSize:11,color:"#5aae5f",marginTop:2,cursor:"pointer"}} onClick={()=>setShowAvatar(!showAvatar)}>Tap avatar to change</div>
+          </div>
+        </div>
+        {showAvatar&&(
+          <div style={{marginTop:14,animation:"slideDown .2s ease"}}>
+            <div style={{fontSize:11,color:T.muted,marginBottom:8,fontFamily:"'Noto Sans',sans-serif"}}>Choose your companion</div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+              {AVATARS.map(a=><button key={a} onClick={()=>{onUpdateProfile({avatar:a});setShowAvatar(false);}} style={{width:48,height:48,borderRadius:14,border:"none",cursor:"pointer",fontSize:24,background:avatar===a?"rgba(172,225,175,0.3)":"rgba(45,45,58,0.05)",transform:avatar===a?"scale(1.15)":"scale(1)",boxShadow:avatar===a?"0 3px 10px rgba(172,225,175,0.4)":"none",transition:"all .2s ease"}}>{a}</button>)}
+            </div>
+          </div>
+        )}
       </div>
       {/* Language */}
       <div style={{fontSize:10,fontWeight:700,letterSpacing:1.4,color:T.muted,textTransform:"uppercase",marginBottom:10,fontFamily:"'Noto Sans',sans-serif"}}>Preferences</div>
@@ -618,7 +671,7 @@ function BottomNav({active,onTab,lang}){
   </div>);
 }
 
-function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdateNote}){
+function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdateNote,onDeleteTx}){
   const[tab,setTab]=useState("home");
   const[toast,setToast]=useState(null);
   const{lang,customCategories=[]}=profile;
@@ -659,7 +712,7 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
         {tab==="home"&&(
           <>
             <div style={{paddingTop:8}}/>
-            <TransactionList transactions={transactions} lang={lang} onUpdateNote={onUpdateNote} customCategories={customCategories}/>
+            <TransactionList transactions={transactions} lang={lang} onUpdateNote={onUpdateNote} onDeleteTx={onDeleteTx} customCategories={customCategories}/>
             <div style={{height:16}}/>
           </>
         )}
@@ -693,8 +746,9 @@ export default function App(){
   const handleAddTransaction=(tx)=>{const updated=[...transactions,tx];setTransactions(updated);store.set("phanote_transactions",updated);};
   const handleUpdateProfile=(changes)=>{const updated={...profile,...changes};setProfile(updated);store.set("phanote_profile",updated);};
   const handleUpdateNote=(txId,note)=>{const updated=transactions.map(tx=>tx.id===txId?{...tx,note}:tx);setTransactions(updated);store.set("phanote_transactions",updated);};
+  const handleDeleteTransaction=(txId)=>{if(!window.confirm("Delete this transaction?"))return;const updated=transactions.filter(tx=>tx.id!==txId);setTransactions(updated);store.set("phanote_transactions",updated);};
   const handleReset=()=>{if(!window.confirm(t(profile?.lang||"en","reset_confirm")))return;store.del("phanote_profile");store.del("phanote_transactions");setProfile(null);setTransactions([]);};
   if(booting)return(<div style={{minHeight:"100dvh",background:"#F7FCF5",display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{fontSize:40}}>📒</div></div>);
   if(!profile)return <OnboardingScreen onComplete={handleOnboarding}/>;
-  return <HomeScreen profile={profile} transactions={transactions} onAdd={handleAddTransaction} onReset={handleReset} onUpdateProfile={handleUpdateProfile} onUpdateNote={handleUpdateNote}/>;
+  return <HomeScreen profile={profile} transactions={transactions} onAdd={handleAddTransaction} onReset={handleReset} onUpdateProfile={handleUpdateProfile} onUpdateNote={handleUpdateNote} onDeleteTx={handleDeleteTransaction}/>;
 }
