@@ -415,26 +415,54 @@ function WalletCards({transactions}){
   };
   return(
     <div style={{padding:"0 16px"}}>
-      <div style={{background:T.surface,backdropFilter:"blur(20px)",borderRadius:24,boxShadow:T.shadowLg,overflow:"hidden"}}>
-        <div style={{padding:"14px 20px 10px",fontSize:10,fontWeight:700,letterSpacing:1.4,color:T.muted,textTransform:"uppercase",fontFamily:"'Noto Sans',sans-serif"}}>All Wallets</div>
-        {["LAK","THB","USD"].map((cur,i)=>{
-          const cfg=CURR[cur],stats=getStats(cur),open=expanded===cur,bal=stats.balance;
-          return(<div key={cur}>
-            {i>0&&<div style={{height:1,background:"rgba(45,45,58,0.05)",margin:"0 20px"}}/>}
-            <div onClick={()=>setExpanded(open?null:cur)} style={{display:"flex",alignItems:"center",gap:14,padding:"14px 20px",cursor:"pointer",transition:"background .15s"}}
-              onPointerEnter={e=>e.currentTarget.style.background="rgba(172,225,175,0.06)"}
-              onPointerLeave={e=>e.currentTarget.style.background="transparent"}>
-              <Flag code={cur} size={36}/>
-              <div style={{flex:1}}><div style={{fontSize:15,fontWeight:700,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{cfg.name}</div><div style={{fontSize:11,color:T.muted,marginTop:1}}>{cur} · {cfg.symbol}</div></div>
-              <div style={{fontSize:20,fontWeight:800,color:bal<0?"#C0392B":T.dark,fontFamily:"'Noto Sans',sans-serif",letterSpacing:-0.5}}>{bal<0&&"−"}{cfg.symbol}{Math.abs(bal).toLocaleString(undefined,{maximumFractionDigits:2})}</div>
-              <div style={{fontSize:12,color:T.muted,transform:open?"rotate(180deg)":"rotate(0deg)",transition:"transform .25s ease",marginLeft:4}}>▾</div>
+      <div style={{background:T.surface,backdropFilter:"blur(20px)",borderRadius:20,boxShadow:T.shadow,overflow:"hidden"}}>
+        {/* Compact single row for all 3 currencies */}
+        <div style={{display:"flex",alignItems:"stretch"}}>
+          {["LAK","THB","USD"].map((cur,i)=>{
+            const cfg=CURR[cur],stats=getStats(cur),open=expanded===cur,bal=stats.balance;
+            return(
+              <div key={cur} onClick={()=>setExpanded(open?null:cur)}
+                style={{flex:1,padding:"12px 10px",cursor:"pointer",
+                  borderLeft:i>0?"1px solid rgba(45,45,58,0.07)":"none",
+                  background:open?"rgba(172,225,175,0.08)":"transparent",
+                  transition:"background .15s",textAlign:"center"}}>
+                <Flag code={cur} size={22}/>
+                <div style={{fontSize:10,fontWeight:600,color:T.muted,marginTop:4,letterSpacing:0.3}}>{cur}</div>
+                <div style={{fontSize:13,fontWeight:800,color:bal<0?"#C0392B":T.dark,
+                  fontFamily:"'Noto Sans',sans-serif",marginTop:2,letterSpacing:-0.3}}>
+                  {bal<0?"−":""}{fmtCompact(Math.abs(bal),cur)}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        {/* Expanded detail for selected currency */}
+        {expanded&&(()=>{
+          const stats=getStats(expanded);
+          const cfg=CURR[expanded];
+          return(
+            <div style={{borderTop:"1px solid rgba(45,45,58,0.07)",padding:"12px 14px",
+              animation:"slideDown .2s ease",background:"rgba(172,225,175,0.04)"}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <Flag code={expanded} size={20}/>
+                  <span style={{fontSize:12,fontWeight:700,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{cfg.name}</span>
+                </div>
+                <button onClick={()=>setExpanded(null)} style={{fontSize:14,color:T.muted,background:"none",border:"none",cursor:"pointer"}}>✕</button>
+              </div>
+              <div style={{display:"flex",gap:8}}>
+                <div style={{flex:1,padding:"8px 12px",borderRadius:12,background:"rgba(172,225,175,0.15)"}}>
+                  <div style={{fontSize:10,fontWeight:700,color:"#2A7A40",textTransform:"uppercase",letterSpacing:0.8}}>Income</div>
+                  <div style={{fontSize:15,fontWeight:800,color:"#1A5A30",marginTop:3,fontFamily:"'Noto Sans',sans-serif"}}>+{fmt(stats.income,expanded)}</div>
+                </div>
+                <div style={{flex:1,padding:"8px 12px",borderRadius:12,background:"rgba(255,179,167,0.15)"}}>
+                  <div style={{fontSize:10,fontWeight:700,color:"#A03020",textTransform:"uppercase",letterSpacing:0.8}}>Expenses</div>
+                  <div style={{fontSize:15,fontWeight:800,color:"#C0392B",marginTop:3,fontFamily:"'Noto Sans',sans-serif"}}>−{fmt(stats.expenses,expanded)}</div>
+                </div>
+              </div>
             </div>
-            {open&&(<div style={{display:"flex",gap:10,padding:"4px 20px 16px",animation:"slideDown .2s ease"}}>
-              <div style={{flex:1,padding:"10px 14px",borderRadius:14,background:"rgba(172,225,175,0.15)"}}><div style={{fontSize:10,fontWeight:700,letterSpacing:0.8,color:"#2A7A40",textTransform:"uppercase"}}>Income</div><div style={{fontSize:17,fontWeight:800,color:"#1A5A30",marginTop:4,fontFamily:"'Noto Sans',sans-serif"}}>+{fmt(stats.income,cur)}</div></div>
-              <div style={{flex:1,padding:"10px 14px",borderRadius:14,background:"rgba(255,179,167,0.15)"}}><div style={{fontSize:10,fontWeight:700,letterSpacing:0.8,color:"#A03020",textTransform:"uppercase"}}>Expenses</div><div style={{fontSize:17,fontWeight:800,color:"#C0392B",marginTop:4,fontFamily:"'Noto Sans',sans-serif"}}>−{fmt(stats.expenses,cur)}</div></div>
-            </div>)}
-          </div>);
-        })}
+          );
+        })()}
       </div>
     </div>
   );
