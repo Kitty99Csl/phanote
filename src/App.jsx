@@ -406,15 +406,16 @@ const randomToast=(tx)=>{const pool=TOASTS[tx.type];return pool[Math.floor(Math.
 // ─── EDIT TRANSACTION MODAL ─────────────────────────────────
 function EditTransactionModal({tx,lang,onSave,onClose,customCategories=[]}){
   const[amount,setAmount]=useState(String(tx.amount));
+  const[desc,setDesc]=useState(tx.description||"");
   const[catId,setCatId]=useState(tx.categoryId);
   const cats=tx.type==="income"
     ?[...DEFAULT_INCOME_CATS,...customCategories.filter(c=>c.type==="income")]
     :[...DEFAULT_EXPENSE_CATS,...customCategories.filter(c=>c.type==="expense")];
 
   const save=()=>{
-    const a=parseFloat(amount.replace(/,/g,""));
+    const a=parseFloat(String(amount).replace(/,/g,""));
     if(!a||a<=0)return;
-    onSave({...tx,amount:a,categoryId:catId});
+    onSave({...tx,amount:a,categoryId:catId,description:desc.trim()||tx.description});
   };
 
   return(
@@ -422,8 +423,8 @@ function EditTransactionModal({tx,lang,onSave,onClose,customCategories=[]}){
       backdropFilter:"blur(4px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}}
       onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
       <div style={{background:"#fff",borderRadius:"28px 28px 0 0",padding:"24px 20px 44px",
-        width:"100%",maxWidth:430,animation:"slideUp .3s ease",maxHeight:"80vh",
-        display:"flex",flexDirection:"column",gap:16}}>
+        width:"100%",maxWidth:430,animation:"slideUp .3s ease",maxHeight:"85vh",
+        display:"flex",flexDirection:"column",gap:14,overflowY:"auto"}}>
         
         {/* Header */}
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
@@ -431,8 +432,19 @@ function EditTransactionModal({tx,lang,onSave,onClose,customCategories=[]}){
           <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,color:T.muted}}>✕</button>
         </div>
 
-        {/* Description */}
-        <div style={{fontSize:13,color:T.muted,fontFamily:"'Noto Sans',sans-serif"}}>{tx.description}</div>
+        {/* Description/Name editor */}
+        <div>
+          <div style={{fontSize:11,fontWeight:700,color:T.muted,letterSpacing:0.8,
+            textTransform:"uppercase",marginBottom:6,fontFamily:"'Noto Sans',sans-serif"}}>Name</div>
+          <input value={desc} onChange={e=>setDesc(e.target.value)}
+            placeholder={tx.description}
+            style={{width:"100%",padding:"12px 14px",borderRadius:12,
+              border:"1.5px solid rgba(45,45,58,0.12)",outline:"none",
+              fontSize:14,fontFamily:"'Noto Sans',sans-serif",color:T.dark,
+              background:"rgba(172,225,175,0.05)",boxSizing:"border-box"}}
+            onFocus={e=>e.target.style.borderColor="#ACE1AF"}
+            onBlur={e=>e.target.style.borderColor="rgba(45,45,58,0.12)"}/>
+        </div>
 
         {/* Amount editor */}
         <div>
@@ -441,7 +453,9 @@ function EditTransactionModal({tx,lang,onSave,onClose,customCategories=[]}){
           <div style={{display:"flex",alignItems:"center",gap:8,background:"rgba(172,225,175,0.08)",
             borderRadius:14,padding:"4px 4px 4px 16px",border:"1.5px solid #ACE1AF"}}>
             <span style={{fontSize:18,fontWeight:800,color:T.dark}}>{tx.currency==="LAK"?"₭":tx.currency==="THB"?"฿":"$"}</span>
-            <input value={amount} onChange={e=>setAmount(e.target.value.replace(/[^\d.]/g,""))}
+            <input value={amount}
+              onChange={e=>setAmount(e.target.value)}
+              onFocus={e=>e.target.select()}
               type="number" inputMode="decimal"
               style={{flex:1,border:"none",outline:"none",background:"transparent",
                 fontSize:22,fontWeight:800,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}/>
@@ -1135,12 +1149,12 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
     if(!editTx)return;
     setShowEdit(false);
     setEditTx(null);
-    // Update amount + category
-    onUpdateCategory(editTx.id, updated.categoryId, updated.amount);
+    // Update amount + category + description
+    onUpdateCategory(editTx.id, updated.categoryId, updated.amount, updated.description);
     // Save to ai_memory
     const cat=findCat(updated.categoryId,customCategories);
     if(profile?.userId){
-      dbSaveMemory(profile.userId,editTx.description||"",cat.id,editTx.type,0.99).catch(()=>{});
+      dbSaveMemory(profile.userId,updated.description||editTx.description||"",cat.id,editTx.type,0.99).catch(()=>{});
     }
   };
   return(
@@ -1516,22 +1530,29 @@ export default function App(){
     } catch (e) { console.error(e); }
   };
 
-  const handleUpdateCategory = async (txId, newCatId) => {
+  const handleUpdateCategory = async (txId, newCatId, newAmount=null, newDesc=null) => {
     // Update local state immediately
-    setTransactions(prev => prev.map(tx => tx.id === txId ? { ...tx, categoryId: newCatId } : tx));
-    // Skip DB update if still a local ID (not yet saved as real UUID)
-    if (txId.startsWith("tx_")) {
-      console.log("Skipping DB update for local ID:", txId);
-      return;
-    }
+    setTransactions(prev => prev.map(tx => {
+      if(tx.id !== txId) return tx;
+      return {
+        ...tx,
+        categoryId: newCatId,
+        ...(newAmount ? {amount: newAmount} : {}),
+        ...(newDesc ? {description: newDesc} : {}),
+      };
+    }));
+    if (txId.startsWith("tx_")) return;
     try {
       const cat = findCat(newCatId, profile?.customCategories || []);
-      await dbUpdateTransaction(txId, {
+      const updates = {
         category_name: cat.en,
         category_emoji: cat.emoji,
         edited_at: new Date().toISOString(),
-      });
-    } catch (e) { console.error("Category update error:", e); }
+      };
+      if (newAmount) updates.amount = newAmount;
+      if (newDesc) updates.description = newDesc;
+      await dbUpdateTransaction(txId, updates);
+    } catch (e) { console.error("Update error:", e); }
   };
 
   const handleDeleteTransaction = async (txId) => {
@@ -1558,10 +1579,43 @@ export default function App(){
 
   // Loading splash
   if (booting) return (
-    <div style={{ minHeight:"100dvh", background:"#F7FCF5", display:"flex",
-      alignItems:"center", justifyContent:"center", flexDirection:"column", gap:16 }}>
-      <div style={{ fontSize:52 }}>📒</div>
-      <div style={{ fontSize:14, color:"#9B9BAD", fontFamily:"'Noto Sans',sans-serif" }}>Loading…</div>
+    <div style={{ minHeight:"100dvh", display:"flex",
+      alignItems:"center", justifyContent:"center",
+      background:"linear-gradient(135deg, #ACE1AF 0%, #7BC8A4 50%, #A8D8B9 100%)" }}>
+      <div style={{
+        width:300, background:"#ffffff",
+        borderRadius:16, padding:"32px 24px",
+        filter:"drop-shadow(2px 4px 14px rgba(40,90,40,0.2))",
+        display:"flex", flexDirection:"column",
+        alignItems:"center", gap:20,
+      }}>
+        {/* Logo row */}
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <div style={{ fontSize:32 }}>📒</div>
+          <div>
+            <div style={{ fontSize:20, fontWeight:800, color:"#1a2e1a",
+              fontFamily:"'Noto Sans',sans-serif", letterSpacing:-0.5 }}>PHANOTE</div>
+            <div style={{ fontSize:10, color:"#9B9BAD", fontFamily:"'Noto Sans',sans-serif",
+              letterSpacing:1 }}>ພາໂນດ · พาโนด</div>
+          </div>
+        </div>
+        {/* Loading bar — matches your CSS reference */}
+        <div style={{ height:10, width:"90%", background:"#E9FFDB",
+          borderRadius:5, overflow:"hidden" }}>
+          <div style={{
+            height:"100%", width:"70%",
+            background:"linear-gradient(90deg, #5aae5f, #ACE1AF)",
+            borderRadius:5,
+            animation:"phanoteLoad 1.8s ease infinite",
+          }}/>
+        </div>
+      </div>
+      <style>{`
+        @keyframes phanoteLoad {
+          0%   { transform: translateX(-150%); }
+          100% { transform: translateX(280%); }
+        }
+      `}</style>
     </div>
   );
 
