@@ -1430,6 +1430,7 @@ export default function App(){
 
   const handleUpdateNote = async (txId, note) => {
     setTransactions(prev => prev.map(tx => tx.id === txId ? { ...tx, note } : tx));
+    if (txId.startsWith("tx_")) return; // local ID not yet in DB
     try {
       await dbUpdateTransaction(txId, { note, edited_at: new Date().toISOString() });
     } catch (e) { console.error(e); }
@@ -1438,6 +1439,11 @@ export default function App(){
   const handleUpdateCategory = async (txId, newCatId) => {
     // Update local state immediately
     setTransactions(prev => prev.map(tx => tx.id === txId ? { ...tx, categoryId: newCatId } : tx));
+    // Skip DB update if still a local ID (not yet saved as real UUID)
+    if (txId.startsWith("tx_")) {
+      console.log("Skipping DB update for local ID:", txId);
+      return;
+    }
     try {
       const cat = findCat(newCatId, profile?.customCategories || []);
       await dbUpdateTransaction(txId, {
@@ -1445,7 +1451,7 @@ export default function App(){
         category_emoji: cat.emoji,
         edited_at: new Date().toISOString(),
       });
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error("Category update error:", e); }
   };
 
   const handleDeleteTransaction = async (txId) => {
