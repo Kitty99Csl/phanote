@@ -245,16 +245,13 @@ Return ONLY valid JSON, no markdown:
 
 const parseWithAI=async(text,customCatIds=[])=>{
   try{
-    const res=await fetch("https://api.anthropic.com/v1/messages",{
+    const res=await fetch("https://throbbing-feather-08a7.kitokvk.workers.dev/parse",{
       method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:200,
-        system:makeParseSystem(customCatIds),messages:[{role:"user",content:text}]}),
+      body:JSON.stringify({text}),
     });
-    const data=await res.json();
-    const raw=data.content?.[0]?.text||"{}";
-    const parsed=JSON.parse(raw.replace(/```json|```/g,"").trim());
-    parsed.category=normalizeCategory(parsed.category,parsed.type);
-    return parsed;
+    const parsed=await res.json();
+    if(parsed.amount){parsed.category=normalizeCategory(parsed.category,parsed.type);return parsed;}
+    throw new Error("No amount");
   }catch{
     const numMatch=text.match(/[\d,]+(?:\.\d+)?/);
     const amount=numMatch?parseFloat(numMatch[0].replace(/,/g,"")):0;
