@@ -538,16 +538,45 @@ function QuickAddBar({lang,onAdd,customCategories=[]}){
 
   const submit=useCallback(async()=>{
     if(!input.trim()||status==="parsing")return;
+    const text=input.trim();
     setStatus("parsing");
+
+    // Step 1: Local parse first — instant save
+    const local=localParse(text);
+    if(local&&local.amount>0){
+      local.type=mode;
+      local.category=normalizeCategory(local.category,mode);
+      const txId="tx_"+Date.now()+"_"+Math.random().toString(36).slice(2);
+      const catId=normalizeCategory(local.category,local.type);
+      const cat=findCat(catId,customCategories);
+      const tx={id:txId,amount:local.amount,currency:local.currency,type:local.type,
+        categoryId:cat.id,description:local.description||text,note:"",
+        date:new Date().toISOString().split("T")[0],confidence:local.confidence,
+        createdAt:new Date().toISOString()};
+      onAdd(tx);
+      setInput("");setStatus("idle");inputRef.current?.focus();
+
+      // Step 2: AI runs in background to correct category silently
+      fetch("https://api.phanote.com/parse",{method:"POST",
+        headers:{"Content-Type":"application/json"},body:JSON.stringify({text}),
+      }).then(r=>r.json()).then(ai=>{
+        if(ai&&ai.amount&&ai.category){
+          const aiCat=normalizeCategory(ai.category,mode);
+          if(aiCat!==catId){onAdd({...tx,categoryId:aiCat,_update:true});}
+        }
+      }).catch(()=>{});
+      return;
+    }
+
+    // No local result — wait for AI
     const customCatIds=customCategories.map(c=>c.id);
-    const result=await parseWithAI(input,customCatIds);
-    if(!result?.amount||result.amount<=0){setStatus("error");setTimeout(()=>setStatus("idle"),2500);return;}
-    // Override type with user-selected mode
+    const result=await parseWithAI(text,customCatIds);
+    if(!result||!result.amount||result.amount<=0){setStatus("error");setTimeout(()=>setStatus("idle"),2500);return;}
     result.type=mode;
     result.category=normalizeCategory(result.category,mode);
-    if(result.confidence<0.72){setPending({...result,rawInput:input});setStatus("confirm");}
-    else finalizeAdd({...result,rawInput:input,note:""});
-  },[input,status,customCategories,mode]);
+    if(result.confidence<0.72){setPending({...result,rawInput:text});setStatus("confirm");}
+    else finalizeAdd({...result,rawInput:text,note:""});
+  },[input,status,customCategories,mode,onAdd]);
 
   const finalizeAdd=(parsed)=>{
     const catId=normalizeCategory(parsed.category,parsed.type);
