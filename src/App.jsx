@@ -243,20 +243,58 @@ EXAMPLES:
 Return ONLY valid JSON, no markdown:
 {"amount":<number>,"currency":"LAK"|"THB"|"USD","type":"expense"|"income","category":"food"|"drinks"|"coffee"|"transport"|"travel"|"rent"|"shopping"|"health"|"beauty"|"fitness"|"entertainment"|"gaming"|"education"|"salary"|"freelance"|"selling"|"gift"|"bonus"|"investment"|"transfer"|"other","description":"<clean short label>","confidence":<0.0-1.0>}`;
 
+// ─── SMART LOCAL PARSER (instant — no API needed) ────────────
+const localParse=(text)=>{
+  const t=text.trim();
+  const numMatch=t.match(/([\d,]+(?:\.\d+)?)(k|K|m|M)?/);
+  if(!numMatch)return null;
+  let amount=parseFloat(numMatch[1].replace(/,/g,""));
+  if(numMatch[2]?.toLowerCase()==="k")amount*=1000;
+  if(numMatch[2]?.toLowerCase()==="m")amount*=1000000;
+  if(!amount||amount<=0)return null;
+  const currency=/THB|baht|บาท|฿/i.test(t)?"THB":/USD|dollar|\$|usd/i.test(t)?"USD":"LAK";
+  const type=/income|salary|เงินเดือน|ເງິນເດືອນ|freelance|ລາຍຮັບ|รายรับ|ຂາຍ|sell|sold|bonus|received|gift/i.test(t)?"income":"expense";
+  const cat=
+    /beer|alcohol|wine|lao lao/i.test(t)?"drinks":
+    /coffee|cafe|กาแฟ|ກາເຟ/i.test(t)?"coffee":
+    /grab|taxi|tuk|fuel|gas|petrol|transport|bus/i.test(t)?"transport":
+    /shop|market|clothes|bag|shopping|caddi/i.test(t)?"shopping":
+    /rent|electric|water|internet|bill/i.test(t)?"rent":
+    /doctor|hospital|medicine|health/i.test(t)?"health":
+    /golf|gym|sport|fitness|exercise/i.test(t)?"fitness":
+    /karaoke|movie|concert|party|morlam|mor lam|entertainment/i.test(t)?"entertainment":
+    /salary|wage|เงินเดือน|ເງິນເດືອນ/i.test(t)?"salary":
+    /sell|sold|ຂາຍ|sale/i.test(t)?"selling":
+    /food|eat|lunch|dinner|breakfast|rice|noodle|ເຂົ້າ|ອາຫານ|ข้าว|chicken|pork/i.test(t)?"food":
+    type==="income"?"salary":"food";
+  const desc=t.replace(/([\d,]+(?:\.\d+)?)(k|K|m|M)?/g,"").replace(/LAK|THB|USD|baht|บาท|ກີບ|kip/gi,"").replace(/\s+/g," ").trim().slice(0,40)||t.slice(0,40);
+  return{amount,currency,type,category:cat,description:desc,confidence:0.85};
+};
+
 const parseWithAI=async(text,customCatIds=[])=>{
+  // Try local parser first — instant!
+  const local=localParse(text);
+  if(local&&local.confidence>=0.85){
+    return{...local,category:normalizeCategory(local.category,local.type)};
+  }
+  // Fall back to AI for complex inputs
   try{
-    const res=await fetch("https://throbbing-feather-08a7.kitokvk.workers.dev/parse",{
+    const controller=new AbortController();
+    const timeout=setTimeout(()=>controller.abort(),10000);
+    const res=await fetch("https://api.phanote.com/parse",{
       method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({text}),
+      body:JSON.stringify({text}),signal:controller.signal,
     });
+    clearTimeout(timeout);
     const parsed=await res.json();
     if(parsed.amount){parsed.category=normalizeCategory(parsed.category,parsed.type);return parsed;}
     throw new Error("No amount");
   }catch{
+    if(local)return{...local,category:normalizeCategory(local.category,local.type)};
     const numMatch=text.match(/[\d,]+(?:\.\d+)?/);
     const amount=numMatch?parseFloat(numMatch[0].replace(/,/g,"")):0;
     const currency=/THB|baht|บาท/i.test(text)?"THB":/USD|dollar|\$/i.test(text)?"USD":"LAK";
-    const type=/income|salary|sell|sale|ຂາຍ|เงินเดือน|ເງິນເດືອນ|ລາຍຮັບ|รายรับ/i.test(text)?"income":"expense";
+    const type=/income|salary|เงินเดือน|ເງິນເດືອນ/i.test(text)?"income":"expense";
     return{amount,currency,type,category:type==="income"?"salary":"food",description:text.slice(0,40),confidence:0.35};
   }
 };
