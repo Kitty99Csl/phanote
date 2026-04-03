@@ -1,13 +1,7 @@
 /**
- * PHANOTE — Main API Worker
+ * PHANOTE — Main API Worker v2
  * Domain: api.phanote.com
- * 
- * Routes:
- *   POST /parse   → AI transaction parser (Phase 1) ✅
- *   POST /ocr     → Receipt photo OCR (Phase 2)
- *   POST /voice   → Voice transcription (Phase 2)
- *   POST /line    → LINE bot webhook (Phase 3)
- *   POST /export  → Excel export (Phase 2)
+ * AI: Claude Haiku (fastest + cheapest)
  */
 
 const CORS = {
@@ -16,71 +10,76 @@ const CORS = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
-const PARSE_PROMPT = `You are a financial transaction parser for a personal finance app used in Laos.
-Input language: Lao, Thai, English, or mixed. Currency default: LAK.
+const PARSE_SYSTEM = `You are a financial transaction parser for Phanote, a personal finance app used in Laos and Thailand.
+Users write in Lao, Thai, English, or mixed. Be smart about SEA context.
 
-CURRENCY RULES:
-- บาท/baht/THB → THB. กีบ/ກີບ/kip/LAK → LAK. $/dollar/USD → USD
-- Default to LAK if unclear
+CURRENCY: บาท/baht/THB=THB, ກີບ/kip/LAK=LAK, $/dollar/USD=USD. Default=LAK.
 
-TYPE RULES:
-- Income: salary/เงินเดือน/ເງິນເດືອນ, freelance, sell/sale/ຂາຍ, received/ໄດ້ຮັບ, gift, bonus, interest, dividend, ລາຍຮັບ, รายรับ
-- Everything else = expense
+TYPE — income keywords: salary/เงินเดือน/ເງິນເດືອນ, freelance, sell/ຂາຍ, received/ໄດ້ຮັບ, gift, bonus, dividend
+TYPE — everything else = expense
 
-CATEGORY (pick most specific):
-food=meals/rice/noodles, drinks=beer/alcohol/wine, coffee=coffee/cafe,
-transport=taxi/grab/tuk/fuel, travel=flight/hotel/trip,
-rent=rent/electricity/water/internet, shopping=clothes/bags/market,
-health=doctor/medicine/hospital, beauty=salon/haircut/spa,
-fitness=gym/golf/sport/exercise, entertainment=movie/karaoke/morlam/concert/party,
-gaming=games, education=school/books,
-salary=salary/wage, freelance=freelance/commission, selling=sold/sale,
-gift=gift/present, bonus=bonus, investment=stocks/crypto/interest,
-transfer=money received/transfer in
+CATEGORIES (pick ONE most specific):
+- food: meals, rice, noodle, ເຂົ້າ, ອາຫານ, restaurant, burger, pizza, kfc, sushi
+- drinks: beer, alcohol, wine, Beer Lao, lao lao, ດື່ມ, เบียร์
+- coffee: coffee, cafe, กาแฟ, ກາເຟ, starbucks, amazon cafe
+- transport: grab, taxi, tuk tuk, fuel, gas, bus, ລົດ, รถ
+- travel: flight, hotel, trip, vacation, ທ່ອງທ່ຽວ
+- shopping: clothes, bag, market, mall, caddi, ຊື້ເຄື່ອງ
+- rent: rent, electricity, water, internet, bill, ຄ່າ, phone bill
+- health: doctor, hospital, medicine, ໂຮງໝໍ, ຢາ
+- beauty: salon, haircut, spa, nail, ຕັດຜົມ
+- fitness: golf, gym, sport, exercise, ອອກກຳລັງ
+- entertainment: netflix, spotify, youtube, disney, icon, karaoke, movie, concert, morlam, mor lam, party, subscription
+- gaming: game, steam, playstation, xbox
+- education: school, book, course, ຮຽນ
+- salary: salary, wage, เงินเดือน, ເງິນເດືອນ
+- freelance: freelance, commission, ຄ່າຈ້າງ
+- selling: sell, sold, ຂາຍ, sale
+- gift: gift, present, ຂອງຂວັນ
+- bonus: bonus, ໂບນັດ
+- investment: stocks, crypto, interest, dividend
+- transfer: transfer, received money, ໂອນ
+- other: anything unclear
 
-EXAMPLES:
-"ເຂົ້າປຽກ 50000 LAK" → {"amount":50000,"currency":"LAK","type":"expense","category":"food","description":"ເຂົ້າປຽກ","confidence":0.98}
-"Beer Lao Gold 500000" → {"amount":500000,"currency":"LAK","type":"expense","category":"drinks","description":"Beer Lao Gold","confidence":0.96}
-"Golf 25000 LAK" → {"amount":25000,"currency":"LAK","type":"expense","category":"fitness","description":"Golf","confidence":0.9}
-"karaoke 10000 kip" → {"amount":10000,"currency":"LAK","type":"expense","category":"entertainment","description":"Karaoke","confidence":0.95}
-"Mor Lam 500000 LAK" → {"amount":500000,"currency":"LAK","type":"expense","category":"entertainment","description":"Mor Lam","confidence":0.95}
-"ຂາຍເຄື່ອງ 200000 LAK" → {"amount":200000,"currency":"LAK","type":"income","category":"selling","description":"ຂາຍເຄື່ອງ","confidence":0.97}
-"salary 15000 THB" → {"amount":15000,"currency":"THB","type":"income","category":"salary","description":"Salary","confidence":0.99}
-"กาแฟ 95 บาท" → {"amount":95,"currency":"THB","type":"expense","category":"coffee","description":"กาแฟ","confidence":0.98}
+IMPORTANT CONTEXT:
+- "icon" in Laos = Icon shopping (entertainment/shopping)
+- "mor lam" / "morlam" = Lao traditional music show (entertainment)
+- "lao lao" = Lao rice whisky (drinks)
+- "BCEL" = bank (transfer)
+- "true money" = payment service (transfer)
+- Golf in Laos is very common leisure activity (fitness)
 
-Return ONLY valid JSON, no markdown:
-{"amount":<number>,"currency":"LAK"|"THB"|"USD","type":"expense"|"income","category":"food"|"drinks"|"coffee"|"transport"|"travel"|"rent"|"shopping"|"health"|"beauty"|"fitness"|"entertainment"|"gaming"|"education"|"salary"|"freelance"|"selling"|"gift"|"bonus"|"investment"|"transfer"|"other","description":"<clean short label>","confidence":<0.0-1.0>}`;
+Return ONLY valid JSON:
+{"amount":number,"currency":"LAK"|"THB"|"USD","type":"expense"|"income","category":"food"|"drinks"|"coffee"|"transport"|"travel"|"shopping"|"rent"|"health"|"beauty"|"fitness"|"entertainment"|"gaming"|"education"|"salary"|"freelance"|"selling"|"gift"|"bonus"|"investment"|"transfer"|"other","description":"clean short English/Lao label","confidence":0.0-1.0}`;
 
 export default {
   async fetch(request, env) {
-    // Handle CORS preflight
     if (request.method === "OPTIONS") {
       return new Response(null, { headers: CORS });
     }
 
     const url = new URL(request.url);
 
-    // ─── GET / — Health check ────────────────────────────────
+    // Health check
     if (url.pathname === "/" || url.pathname === "/health") {
       return Response.json({
-        status: "ok",
-        service: "Phanote API",
-        version: "1.0.0",
+        status: "ok", service: "Phanote API", version: "2.0.0",
+        ai: "claude-haiku-4-5",
         routes: ["/parse", "/ocr (Phase 2)", "/voice (Phase 2)", "/line (Phase 3)"]
       }, { headers: CORS });
     }
 
-    // All other routes require POST
     if (request.method !== "POST") {
       return new Response("Method not allowed", { status: 405, headers: CORS });
     }
 
-    // ─── POST /parse — AI Transaction Parser ─────────────────
+    // ─── POST /parse ─────────────────────────────────────────────
     if (url.pathname === "/parse") {
-      let text = "";
+      let text = "", userId = null;
       try {
         const body = await request.json();
         text = body.text || "";
+        userId = body.userId || null;
       } catch {
         return Response.json({ error: "Invalid JSON" }, { status: 400, headers: CORS });
       }
@@ -90,28 +89,33 @@ export default {
       }
 
       try {
-        const geminiRes = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${env.GEMINI_API_KEY}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: PARSE_PROMPT + "\n\nUser input: " + text }] }],
-              generationConfig: { temperature: 0.1, maxOutputTokens: 256 },
-            }),
-          }
-        );
+        // Call Claude Haiku — fastest model
+        const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": env.ANTHROPIC_API_KEY,
+            "anthropic-version": "2023-06-01",
+          },
+          body: JSON.stringify({
+            model: "claude-haiku-4-5",
+            max_tokens: 150,
+            system: PARSE_SYSTEM,
+            messages: [{ role: "user", content: text }],
+          }),
+        });
 
-        const data = await geminiRes.json();
-        const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+        const data = await claudeRes.json();
+        const raw = data?.content?.[0]?.text || "{}";
 
         try {
           const parsed = JSON.parse(raw.replace(/```json|```/g, "").trim());
-          return Response.json(parsed, { headers: CORS });
+          return Response.json({ ...parsed, model: "haiku" }, { headers: CORS });
         } catch {
           return Response.json(
             { amount: 0, currency: "LAK", type: "expense",
-              category: "other", description: text.slice(0, 40), confidence: 0.3 },
+              category: "other", description: text.slice(0, 40),
+              confidence: 0.3, model: "fallback" },
             { headers: CORS }
           );
         }
@@ -123,28 +127,19 @@ export default {
       }
     }
 
-    // ─── POST /ocr — Receipt OCR (Phase 2) ───────────────────
+    // ─── POST /ocr — Phase 2 ──────────────────────────────────────
     if (url.pathname === "/ocr") {
-      return Response.json(
-        { error: "OCR coming in Phase 2" },
-        { status: 501, headers: CORS }
-      );
+      return Response.json({ error: "Coming in Phase 2" }, { status: 501, headers: CORS });
     }
 
-    // ─── POST /voice — Voice transcription (Phase 2) ─────────
+    // ─── POST /voice — Phase 2 ────────────────────────────────────
     if (url.pathname === "/voice") {
-      return Response.json(
-        { error: "Voice transcription coming in Phase 2" },
-        { status: 501, headers: CORS }
-      );
+      return Response.json({ error: "Coming in Phase 2" }, { status: 501, headers: CORS });
     }
 
-    // ─── POST /line — LINE bot webhook (Phase 3) ─────────────
+    // ─── POST /line — Phase 3 ─────────────────────────────────────
     if (url.pathname === "/line") {
-      return Response.json(
-        { error: "LINE bot coming in Phase 3" },
-        { status: 501, headers: CORS }
-      );
+      return Response.json({ error: "Coming in Phase 3" }, { status: 501, headers: CORS });
     }
 
     return new Response("Not found", { status: 404, headers: CORS });
