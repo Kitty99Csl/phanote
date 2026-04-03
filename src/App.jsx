@@ -794,7 +794,7 @@ function QuickAddBar({lang,onAdd,customCategories=[],userId=null}){
 }
 
 // ═══ TRANSACTION LIST (inline post-save notes) ════════════════
-function TransactionList({transactions,lang,onUpdateNote,onDeleteTx,customCategories=[]}){
+function TransactionList({transactions,lang,onUpdateNote,onDeleteTx,onEditCategory,customCategories=[]}){
   const[editingNote,setEditingNote]=useState(null);
   const[noteInput,setNoteInput]=useState("");
   const[expandedTx,setExpandedTx]=useState(null);
@@ -847,11 +847,21 @@ function TransactionList({transactions,lang,onUpdateNote,onDeleteTx,customCatego
                       <div style={{display:"inline-block",marginTop:3,fontSize:10,fontWeight:700,padding:"2px 7px",borderRadius:6,background:CURR[tx.currency].pill,color:CURR[tx.currency].pillText}}>{tx.currency}</div>
                     </div>
                   </div>
-                  {/* Action row — delete */}
+                  {/* Action row — edit category + delete */}
                   {expandedTx===tx.id&&(
                     <div style={{display:"flex",gap:8,marginTop:8,animation:"slideDown .15s ease"}}>
-                      <button onClick={()=>{onDeleteTx(tx.id);setExpandedTx(null);}} style={{flex:1,padding:"8px",borderRadius:12,border:"none",cursor:"pointer",background:"rgba(255,179,167,0.2)",color:"#C0392B",fontWeight:700,fontSize:12,fontFamily:"'Noto Sans',sans-serif"}}>🗑️ Delete</button>
-                      <button onClick={()=>setExpandedTx(null)} style={{padding:"8px 16px",borderRadius:12,border:"none",cursor:"pointer",background:"rgba(45,45,58,0.06)",color:T.muted,fontWeight:700,fontSize:12,fontFamily:"'Noto Sans',sans-serif"}}>Cancel</button>
+                      <button onClick={()=>{onEditCategory&&onEditCategory(tx);setExpandedTx(null);}}
+                        style={{flex:1,padding:"8px",borderRadius:12,border:"none",cursor:"pointer",
+                          background:"rgba(172,225,175,0.2)",color:"#1A5A30",fontWeight:700,fontSize:12,
+                          fontFamily:"'Noto Sans',sans-serif"}}>✏️ Edit</button>
+                      <button onClick={()=>{onDeleteTx(tx.id);setExpandedTx(null);}}
+                        style={{flex:1,padding:"8px",borderRadius:12,border:"none",cursor:"pointer",
+                          background:"rgba(255,179,167,0.2)",color:"#C0392B",fontWeight:700,fontSize:12,
+                          fontFamily:"'Noto Sans',sans-serif"}}>🗑️ Delete</button>
+                      <button onClick={()=>setExpandedTx(null)}
+                        style={{padding:"8px 14px",borderRadius:12,border:"none",cursor:"pointer",
+                          background:"rgba(45,45,58,0.06)",color:T.muted,fontWeight:700,fontSize:12,
+                          fontFamily:"'Noto Sans',sans-serif"}}>✕</button>
                     </div>
                   )}
                   {/* Note area */}
@@ -1087,7 +1097,7 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
         {tab==="home"&&(
           <>
             <div style={{paddingTop:8}}/>
-            <TransactionList transactions={transactions} lang={lang} onUpdateNote={onUpdateNote} onDeleteTx={onDeleteTx} customCategories={customCategories}/>
+            <TransactionList transactions={transactions} lang={lang} onUpdateNote={onUpdateNote} onDeleteTx={onDeleteTx} onEditCategory={(tx)=>{setEditTx(tx);setShowPicker(true);}} customCategories={customCategories}/>
             <div style={{height:16}}/>
           </>
         )}
