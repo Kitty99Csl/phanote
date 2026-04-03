@@ -24,6 +24,55 @@ const signInWithPhone = async (phone, countryCode) => {
   throw new Error(error?.message || "Auth failed");
 };
 
+// ─── AI MEMORY HELPERS ───────────────────────────────────────
+const dbCheckMemory = async (userId, pattern) => {
+  // Extract key words (ignore numbers and currency)
+  const key = pattern.toLowerCase()
+    .replace(/[\d,]+(?:\.\d+)?(k|m)?/gi, "")
+    .replace(/lak|thb|usd|baht|บาท|กีบ|kip/gi, "")
+    .replace(/\s+/g, " ").trim().slice(0, 50);
+  if (!key) return null;
+
+  const { data } = await supabase.from("ai_memory")
+    .select("*")
+    .ilike("input_pattern", `%${key}%`)
+    .order("usage_count", { ascending: false })
+    .limit(1);
+  return data?.[0] || null;
+};
+
+const dbSaveMemory = async (userId, pattern, categoryName, type, confidence) => {
+  const key = pattern.toLowerCase()
+    .replace(/[\d,]+(?:\.\d+)?(k|m)?/gi, "")
+    .replace(/lak|thb|usd|baht|บาท|กีบ|kip/gi, "")
+    .replace(/\s+/g, " ").trim().slice(0, 50);
+  if (!key || key.length < 2) return;
+
+  // Check if pattern exists
+  const { data: existing } = await supabase.from("ai_memory")
+    .select("id, usage_count")
+    .eq("user_id", userId)
+    .eq("input_pattern", key)
+    .single();
+
+  if (existing) {
+    // Update usage count
+    await supabase.from("ai_memory")
+      .update({ usage_count: existing.usage_count + 1, updated_at: new Date().toISOString() })
+      .eq("id", existing.id);
+  } else {
+    // Save new pattern
+    await supabase.from("ai_memory").insert({
+      user_id: userId,
+      input_pattern: key,
+      category_name: categoryName,
+      type,
+      confidence,
+      usage_count: 1,
+    });
+  }
+};
+
 const dbGetProfile = async (userId) => {
   const { data } = await supabase.from("profiles").select("*").eq("id", userId).single();
   return data;
@@ -243,59 +292,101 @@ EXAMPLES:
 Return ONLY valid JSON, no markdown:
 {"amount":<number>,"currency":"LAK"|"THB"|"USD","type":"expense"|"income","category":"food"|"drinks"|"coffee"|"transport"|"travel"|"rent"|"shopping"|"health"|"beauty"|"fitness"|"entertainment"|"gaming"|"education"|"salary"|"freelance"|"selling"|"gift"|"bonus"|"investment"|"transfer"|"other","description":"<clean short label>","confidence":<0.0-1.0>}`;
 
-// ─── SMART LOCAL PARSER (instant — no API needed) ────────────
+// ─── SMART LOCAL PARSER ────────────────────────────────────────
 const localParse=(text)=>{
   const t=text.trim();
-  const numMatch=t.match(/([\d,]+(?:\.\d+)?)(k|K|m|M)?/);
+  const numMatch=t.match(/([\d,]+(?:\.?\d+)?)(k|K|m|M)?/);
   if(!numMatch)return null;
   let amount=parseFloat(numMatch[1].replace(/,/g,""));
   if(numMatch[2]?.toLowerCase()==="k")amount*=1000;
   if(numMatch[2]?.toLowerCase()==="m")amount*=1000000;
   if(!amount||amount<=0)return null;
-  const currency=/THB|baht|บาท|฿/i.test(t)?"THB":/USD|dollar|\$|usd/i.test(t)?"USD":"LAK";
+  const currency=/THB|baht|บาท|฿/i.test(t)?"THB":/USD|dollar|usd/i.test(t)||t.includes("$")?"USD":"LAK";
   const type=/income|salary|เงินเดือน|ເງິນເດືອນ|freelance|ລາຍຮັບ|รายรับ|ຂາຍ|sell|sold|bonus|received|gift/i.test(t)?"income":"expense";
-  const cat=
-    /beer|alcohol|wine|lao lao/i.test(t)?"drinks":
-    /coffee|cafe|กาแฟ|ກາເຟ/i.test(t)?"coffee":
-    /grab|taxi|tuk|fuel|gas|petrol|transport|bus/i.test(t)?"transport":
-    /shop|market|clothes|bag|shopping|caddi/i.test(t)?"shopping":
-    /rent|electric|water|internet|bill/i.test(t)?"rent":
-    /doctor|hospital|medicine|health/i.test(t)?"health":
-    /golf|gym|sport|fitness|exercise/i.test(t)?"fitness":
-    /karaoke|movie|concert|party|morlam|mor lam|entertainment/i.test(t)?"entertainment":
-    /salary|wage|เงินเดือน|ເງິນເດືອນ/i.test(t)?"salary":
-    /sell|sold|ຂາຍ|sale/i.test(t)?"selling":
-    /food|eat|lunch|dinner|breakfast|rice|noodle|ເຂົ້າ|ອາຫານ|ข้าว|chicken|pork/i.test(t)?"food":
-    type==="income"?"salary":"food";
-  const desc=t.replace(/([\d,]+(?:\.\d+)?)(k|K|m|M)?/g,"").replace(/LAK|THB|USD|baht|บาท|ກີບ|kip/gi,"").replace(/\s+/g," ").trim().slice(0,40)||t.slice(0,40);
-  return{amount,currency,type,category:cat,description:desc,confidence:0.85};
+
+  // Only match category if we have a CLEAR keyword — otherwise return low confidence
+  let cat=null;
+  let confidence=0.5; // low = send to AI for correction
+
+  if(/beer|alcohol|wine|lao\s*lao|ດື່ມ|เบียร์/i.test(t)){cat="drinks";confidence=0.95;}
+  else if(/coffee|cafe|กาแฟ|ກາເຟ|starbucks|amazon\s*cafe/i.test(t)){cat="coffee";confidence=0.95;}
+  else if(/grab|taxi|tuk|tuk|fuel|gas|petrol|bus|ລົດ|รถ/i.test(t)){cat="transport";confidence=0.92;}
+  else if(/netflix|spotify|youtube|hbo|disney|apple|subscription|icon|true\s*money/i.test(t)){cat="entertainment";confidence=0.90;}
+  else if(/burger|pizza|kfc|mcdonalds|mcdonald|sushi|steak|restaurant/i.test(t)){cat="food";confidence=0.92;}
+  else if(/golf|gym|sport|fitness|exercise|ອອກກຳລັງ/i.test(t)){cat="fitness";confidence=0.92;}
+  else if(/karaoke|movie|concert|party|morlam|mor\s*lam/i.test(t)){cat="entertainment";confidence=0.92;}
+  else if(/shop|market|clothes|bag|caddi|mall/i.test(t)){cat="shopping";confidence=0.88;}
+  else if(/rent|electric|water|internet|bill|ຄ່າ/i.test(t)){cat="rent";confidence=0.90;}
+  else if(/doctor|hospital|medicine|health|ໂຮງໝໍ/i.test(t)){cat="health";confidence=0.92;}
+  else if(/salary|wage|เงินเดือน|ເງິນເດືອນ/i.test(t)){cat="salary";confidence=0.95;}
+  else if(/sell|sold|ຂາຍ|sale/i.test(t)){cat="selling";confidence=0.90;}
+  else if(/ເຂົ້າ|ອາຫານ|noodle|ข้าว|อาหาร|chicken|pork|food|eat|lunch|dinner|breakfast/i.test(t)){cat="food";confidence=0.90;}
+  else{
+    // No clear match — use "other" but mark low confidence so AI corrects it
+    cat=type==="income"?"salary":"other";
+    confidence=0.4;
+  }
+
+  const desc=t.replace(/([\d,]+(?:\.?\d+)?)(k|K|m|M)?/g,"")
+    .replace(/LAK|THB|USD|baht|บาท|ກີບ|kip/gi,"")
+    .replace(/\s+/g," ").trim().slice(0,40)||t.slice(0,40);
+
+  return{amount,currency,type,category:cat,description:desc,confidence};
 };
 
-const parseWithAI=async(text,customCatIds=[])=>{
-  // Try local parser first — instant!
-  const local=localParse(text);
-  if(local&&local.confidence>=0.85){
-    return{...local,category:normalizeCategory(local.category,local.type)};
+const parseWithAI=async(text,customCatIds=[],userId=null)=>{
+  // Step 1: Check ai_memory first — instant if pattern known
+  if(userId){
+    try{
+      const memory=await dbCheckMemory(userId,text);
+      if(memory&&memory.usage_count>=2){
+        const local=localParse(text);
+        return{
+          amount:local?.amount||0,
+          currency:local?.currency||"LAK",
+          type:memory.type||"expense",
+          category:normalizeCategory(memory.category_name,"expense"),
+          description:local?.description||text.slice(0,40),
+          confidence:0.95,
+          source:"memory",
+        };
+      }
+    }catch{}
   }
-  // Fall back to AI for complex inputs
+
+  // Step 2: Local parser for known patterns
+  const local=localParse(text);
+  if(local&&local.confidence>=0.88){
+    return{...local,category:normalizeCategory(local.category,local.type),source:"local"};
+  }
+
+  // Step 3: Call Claude Haiku via api.phanote.com
   try{
     const controller=new AbortController();
     const timeout=setTimeout(()=>controller.abort(),10000);
     const res=await fetch("https://api.phanote.com/parse",{
       method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({text}),signal:controller.signal,
+      body:JSON.stringify({text,userId}),signal:controller.signal,
     });
     clearTimeout(timeout);
     const parsed=await res.json();
-    if(parsed.amount){parsed.category=normalizeCategory(parsed.category,parsed.type);return parsed;}
+    if(parsed&&parsed.amount){
+      parsed.category=normalizeCategory(parsed.category,parsed.type);
+      parsed.source="haiku";
+      // Save to ai_memory for next time
+      if(userId){
+        dbSaveMemory(userId,text,parsed.category,parsed.type,parsed.confidence).catch(()=>{});
+      }
+      return parsed;
+    }
     throw new Error("No amount");
   }catch{
-    if(local)return{...local,category:normalizeCategory(local.category,local.type)};
+    if(local)return{...local,category:normalizeCategory(local.category,local.type),source:"local_fallback"};
     const numMatch=text.match(/[\d,]+(?:\.\d+)?/);
     const amount=numMatch?parseFloat(numMatch[0].replace(/,/g,"")):0;
     const currency=/THB|baht|บาท/i.test(text)?"THB":/USD|dollar|\$/i.test(text)?"USD":"LAK";
     const type=/income|salary|เงินเดือน|ເງິນເດືອນ/i.test(text)?"income":"expense";
-    return{amount,currency,type,category:type==="income"?"salary":"food",description:text.slice(0,40),confidence:0.35};
+    return{amount,currency,type,category:type==="income"?"salary":"other",description:text.slice(0,40),confidence:0.35,source:"regex"};
   }
 };
 
@@ -529,7 +620,7 @@ function ConfirmModal({parsed,lang,onConfirm,onEdit}){
 }
 
 // ═══ QUICK ADD ════════════════════════════════════════════════
-function QuickAddBar({lang,onAdd,customCategories=[]}){
+function QuickAddBar({lang,onAdd,customCategories=[],userId=null}){
   const[input,setInput]=useState("");
   const[status,setStatus]=useState("idle");
   const[pending,setPending]=useState(null);
@@ -556,13 +647,15 @@ function QuickAddBar({lang,onAdd,customCategories=[]}){
       onAdd(tx);
       setInput("");setStatus("idle");inputRef.current?.focus();
 
-      // Step 2: AI runs in background to correct category silently
+      // Step 2: AI runs in background to correct category + learn
       fetch("https://api.phanote.com/parse",{method:"POST",
-        headers:{"Content-Type":"application/json"},body:JSON.stringify({text}),
+        headers:{"Content-Type":"application/json"},body:JSON.stringify({text,userId}),
       }).then(r=>r.json()).then(ai=>{
         if(ai&&ai.amount&&ai.category){
           const aiCat=normalizeCategory(ai.category,mode);
           if(aiCat!==catId){onAdd({...tx,categoryId:aiCat,_update:true});}
+          // Save to ai_memory regardless — builds the learning dataset
+          if(userId){dbSaveMemory(userId,text,ai.category,mode,ai.confidence||0.8).catch(()=>{});}
         }
       }).catch(()=>{});
       return;
@@ -570,7 +663,7 @@ function QuickAddBar({lang,onAdd,customCategories=[]}){
 
     // No local result — wait for AI
     const customCatIds=customCategories.map(c=>c.id);
-    const result=await parseWithAI(text,customCatIds);
+    const result=await parseWithAI(text,customCatIds,userId);
     if(!result||!result.amount||result.amount<=0){setStatus("error");setTimeout(()=>setStatus("idle"),2500);return;}
     result.type=mode;
     result.category=normalizeCategory(result.category,mode);
@@ -913,7 +1006,7 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
       {/* ── FIXED BOTTOM: input bar (home only) + nav ── */}
       {tab==="home"&&(
         <div style={{flexShrink:0,zIndex:150,background:"rgba(247,252,245,0.97)",backdropFilter:"blur(20px)",borderTop:"1px solid rgba(45,45,58,0.06)",padding:"8px 0 4px"}}>
-          <QuickAddBar lang={lang} onAdd={handleAdd} customCategories={customCategories}/>
+          <QuickAddBar lang={lang} onAdd={handleAdd} customCategories={customCategories} userId={profile?.userId}/>
         </div>
       )}
       <BottomNav active={tab} onTab={setTab} lang={lang}/>
@@ -1107,6 +1200,7 @@ export default function App(){
           incCats: dbProfile.inc_cats || [],
           phone: dbProfile.phone || "",
           countryCode: dbProfile.phone_country_code || "",
+          userId: uid,
         });
         supabase.from("profiles").update({ last_seen_at: new Date().toISOString() }).eq("id", uid).then(()=>{});
         dbTrackEvent(uid, "app_open").then(()=>{});
