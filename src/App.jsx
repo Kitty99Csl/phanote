@@ -1038,7 +1038,7 @@ function BottomNav({active,onTab,lang}){
   </div>);
 }
 
-function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdateNote,onDeleteTx}){
+function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdateNote,onUpdateCategory,onDeleteTx}){
   const[tab,setTab]=useState("home");
   const[toast,setToast]=useState(null);
   const[editTx,setEditTx]=useState(null); // tx being edited
@@ -1053,10 +1053,10 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
   };
   const handleCategoryChange=(newCatId)=>{
     if(!editTx)return;
-    const updated={...editTx,categoryId:newCatId};
-    onUpdateNote(editTx.id,"__cat__"+newCatId); // reuse update channel
-    setEditTx(updated);
+    setEditTx({...editTx,categoryId:newCatId});
     setShowPicker(false);
+    // Update in DB and local state
+    onUpdateCategory(editTx.id, newCatId);
     // Save to ai_memory
     const cat=findCat(newCatId,customCategories);
     if(profile?.userId){
@@ -1435,6 +1435,19 @@ export default function App(){
     } catch (e) { console.error(e); }
   };
 
+  const handleUpdateCategory = async (txId, newCatId) => {
+    // Update local state immediately
+    setTransactions(prev => prev.map(tx => tx.id === txId ? { ...tx, categoryId: newCatId } : tx));
+    try {
+      const cat = findCat(newCatId, profile?.customCategories || []);
+      await dbUpdateTransaction(txId, {
+        category_name: cat.en,
+        category_emoji: cat.emoji,
+        edited_at: new Date().toISOString(),
+      });
+    } catch (e) { console.error(e); }
+  };
+
   const handleDeleteTransaction = async (txId) => {
     if (!window.confirm("Delete this transaction?")) return;
     setTransactions(prev => prev.filter(tx => tx.id !== txId));
@@ -1500,6 +1513,7 @@ export default function App(){
       onReset={handleReset}
       onUpdateProfile={handleUpdateProfile}
       onUpdateNote={handleUpdateNote}
+      onUpdateCategory={handleUpdateCategory}
       onDeleteTx={handleDeleteTransaction}
     />
   );
