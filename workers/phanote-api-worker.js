@@ -1,17 +1,22 @@
 /**
- * PHANOTE — Cloudflare Worker: AI Transaction Parser
- * Proxies requests to Gemini API — keeps API key server-side
- * Deploy: wrangler deploy
- * Secret: wrangler secret put GEMINI_API_KEY
+ * PHANOTE — Main API Worker
+ * Domain: api.phanote.com
+ * 
+ * Routes:
+ *   POST /parse   → AI transaction parser (Phase 1) ✅
+ *   POST /ocr     → Receipt photo OCR (Phase 2)
+ *   POST /voice   → Voice transcription (Phase 2)
+ *   POST /line    → LINE bot webhook (Phase 3)
+ *   POST /export  → Excel export (Phase 2)
  */
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
-const SYSTEM_PROMPT = `You are a financial transaction parser for a personal finance app used in Laos.
+const PARSE_PROMPT = `You are a financial transaction parser for a personal finance app used in Laos.
 Input language: Lao, Thai, English, or mixed. Currency default: LAK.
 
 CURRENCY RULES:
@@ -48,16 +53,29 @@ Return ONLY valid JSON, no markdown:
 
 export default {
   async fetch(request, env) {
+    // Handle CORS preflight
     if (request.method === "OPTIONS") {
       return new Response(null, { headers: CORS });
     }
 
+    const url = new URL(request.url);
+
+    // ─── GET / — Health check ────────────────────────────────
+    if (url.pathname === "/" || url.pathname === "/health") {
+      return Response.json({
+        status: "ok",
+        service: "Phanote API",
+        version: "1.0.0",
+        routes: ["/parse", "/ocr (Phase 2)", "/voice (Phase 2)", "/line (Phase 3)"]
+      }, { headers: CORS });
+    }
+
+    // All other routes require POST
     if (request.method !== "POST") {
       return new Response("Method not allowed", { status: 405, headers: CORS });
     }
 
-    const url = new URL(request.url);
-
+    // ─── POST /parse — AI Transaction Parser ─────────────────
     if (url.pathname === "/parse") {
       let text = "";
       try {
@@ -78,7 +96,7 @@ export default {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              contents: [{ parts: [{ text: SYSTEM_PROMPT + "\n\nUser input: " + text }] }],
+              contents: [{ parts: [{ text: PARSE_PROMPT + "\n\nUser input: " + text }] }],
               generationConfig: { temperature: 0.1, maxOutputTokens: 256 },
             }),
           }
@@ -99,10 +117,34 @@ export default {
         }
       } catch (e) {
         return Response.json(
-          { error: "Gemini error", message: e.message },
+          { error: "Parse error", message: e.message },
           { status: 500, headers: CORS }
         );
       }
+    }
+
+    // ─── POST /ocr — Receipt OCR (Phase 2) ───────────────────
+    if (url.pathname === "/ocr") {
+      return Response.json(
+        { error: "OCR coming in Phase 2" },
+        { status: 501, headers: CORS }
+      );
+    }
+
+    // ─── POST /voice — Voice transcription (Phase 2) ─────────
+    if (url.pathname === "/voice") {
+      return Response.json(
+        { error: "Voice transcription coming in Phase 2" },
+        { status: 501, headers: CORS }
+      );
+    }
+
+    // ─── POST /line — LINE bot webhook (Phase 3) ─────────────
+    if (url.pathname === "/line") {
+      return Response.json(
+        { error: "LINE bot coming in Phase 3" },
+        { status: 501, headers: CORS }
+      );
     }
 
     return new Response("Not found", { status: 404, headers: CORS });
