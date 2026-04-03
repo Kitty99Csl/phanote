@@ -522,40 +522,40 @@ function QuickAddBar({lang,onAdd,customCategories=[]}){
   };
 
   const isIncome=mode==="income";
-  const activeColor=isIncome?"#1A5A30":"#C0392B";
-  const activeBg=isIncome?"rgba(172,225,175,0.15)":"rgba(255,179,167,0.15)";
-  const sendBg=isIncome?"linear-gradient(145deg,#ACE1AF,#7BC8A4)":"linear-gradient(145deg,#FFB3A7,#ff8a75)";
+  const sendBg=isIncome?"linear-gradient(145deg,#ACE1AF,#7BC8A4)":"linear-gradient(145deg,#ACE1AF,#7BC8A4)";
 
   return(<>
-    <div style={{padding:"0 16px"}}>
-      {/* Expense / Income toggle */}
-      <div style={{display:"flex",gap:6,marginBottom:8,justifyContent:"center"}}>
-        {[{v:"expense",label:"− Expense",color:"#C0392B",bg:"rgba(255,179,167,0.18)"},{v:"income",label:"+ Income",color:"#1A5A30",bg:"rgba(172,225,175,0.18)"}].map(({v,label,color,bg})=>(
-          <button key={v} onClick={()=>setMode(v)} style={{
-            padding:"6px 20px",borderRadius:999,border:"none",cursor:"pointer",
-            background:mode===v?bg:"rgba(45,45,58,0.05)",
-            color:mode===v?color:T.muted,
-            fontWeight:mode===v?800:500,fontSize:12,
-            fontFamily:"'Noto Sans',sans-serif",
-            transition:"all .2s ease",
-            boxShadow:mode===v?`0 2px 8px ${color}22`:"none",
-          }}>{label}</button>
-        ))}
-      </div>
-      {/* Input row */}
-      <div style={{background:T.surface,backdropFilter:"blur(20px)",borderRadius:20,padding:"10px 14px",boxShadow:T.shadow,display:"flex",alignItems:"center",gap:10,border:`1.5px solid ${mode==="income"?"rgba(172,225,175,0.3)":"rgba(255,179,167,0.3)"}`}}>
-        <div style={{fontSize:18,flexShrink:0}}>{isIncome?"💰":"✏️"}</div>
-        <input ref={inputRef} value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&submit()}
-          placeholder={isIncome?`e.g. "salary 15000 THB" or "ເງິນເດືອນ 5M LAK"`:t(lang,"placeholder")}
-          style={{flex:1,border:"none",outline:"none",background:"transparent",fontSize:14,color:T.dark,fontFamily:"'Noto Sans',sans-serif",minWidth:0}}/>
-        <button onClick={submit} disabled={status==="parsing"} style={{width:40,height:40,borderRadius:13,border:"none",cursor:"pointer",
-          background:status==="error"?"#FFB3A7":status==="parsing"?"rgba(172,225,175,0.4)":sendBg,
-          display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,transition:"all .2s ease",flexShrink:0,
-          boxShadow:status==="parsing"?"none":"0 3px 10px rgba(0,0,0,0.1)"}}>
+    <div style={{padding:"0 12px"}}>
+      {/* Single compact row: toggle + input + send */}
+      <div style={{background:T.surface,backdropFilter:"blur(20px)",borderRadius:18,
+        padding:"8px 10px",boxShadow:T.shadow,display:"flex",alignItems:"center",gap:8,
+        border:`1.5px solid ${isIncome?"rgba(172,225,175,0.4)":"rgba(255,179,167,0.3)"}`}}>
+        {/* Mode toggle — compact pill */}
+        <button onClick={()=>setMode(isIncome?"expense":"income")} style={{
+          flexShrink:0,padding:"5px 10px",borderRadius:10,border:"none",cursor:"pointer",
+          background:isIncome?"rgba(172,225,175,0.25)":"rgba(255,179,167,0.25)",
+          color:isIncome?"#1A5A30":"#C0392B",
+          fontWeight:800,fontSize:11,fontFamily:"'Noto Sans',sans-serif",
+          transition:"all .2s ease",whiteSpace:"nowrap",
+        }}>{isIncome?"+ In":"− Out"}</button>
+        {/* Input */}
+        <input ref={inputRef} value={input} onChange={e=>setInput(e.target.value)}
+          onKeyDown={e=>e.key==="Enter"&&submit()}
+          placeholder={isIncome?"salary, ເງິນເດືອນ, รายรับ…":t(lang,"placeholder")}
+          style={{flex:1,border:"none",outline:"none",background:"transparent",
+            fontSize:13,color:T.dark,fontFamily:"'Noto Sans',sans-serif",minWidth:0}}/>
+        {/* Send button */}
+        <button onClick={submit} disabled={status==="parsing"} style={{
+          width:36,height:36,borderRadius:11,border:"none",cursor:"pointer",flexShrink:0,
+          background:status==="error"?"#FFB3A7":status==="parsing"?"rgba(172,225,175,0.4)":T.celadon,
+          display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,
+          transition:"all .2s ease",
+          boxShadow:status==="parsing"?"none":"0 3px 8px rgba(172,225,175,0.4)"}}>
           {status==="parsing"?"⏳":status==="error"?"✗":"↑"}
         </button>
       </div>
-      {status==="parsing"&&<div style={{fontSize:12,color:T.muted,textAlign:"center",marginTop:6,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"parsing")}</div>}
+      {status==="parsing"&&<div style={{fontSize:11,color:T.muted,textAlign:"center",
+        marginTop:4,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"parsing")}</div>}
     </div>
     {status==="confirm"&&pending&&<ConfirmModal parsed={pending} lang={lang} onConfirm={finalizeAdd} onEdit={()=>{setStatus("idle");setPending(null);}}/>}
   </>);
