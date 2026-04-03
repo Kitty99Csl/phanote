@@ -967,8 +967,7 @@ export default function App(){
   useEffect(()=>{
     const init = async () => {
       try {
-        // Timeout after 5 seconds so app never freezes
-        const timeout = new Promise(resolve => setTimeout(resolve, 5000));
+        const timeout = new Promise(resolve => setTimeout(resolve, 6000));
         const sessionCheck = supabase.auth.getSession();
         const { data: { session } } = await Promise.race([
           sessionCheck,
@@ -977,7 +976,9 @@ export default function App(){
         if (session?.user) {
           await loadUserData(session.user.id);
         }
-      } catch {}
+      } catch (e) {
+        console.error("Init error:", e);
+      }
       setBooting(false);
     };
     init();
@@ -1012,9 +1013,14 @@ export default function App(){
           phone: dbProfile.phone || "",
           countryCode: dbProfile.phone_country_code || "",
         });
-        // Update last seen silently
         supabase.from("profiles").update({ last_seen_at: new Date().toISOString() }).eq("id", uid).then(()=>{});
         dbTrackEvent(uid, "app_open").then(()=>{});
+      } else if (!dbProfile) {
+        // Profile doesn't exist yet — this is a new device for existing user
+        // Sign them out so they can log in properly and create profile
+        console.log("No profile found for user, signing out");
+        await supabase.auth.signOut();
+        setUserId(null);
       }
 
       // Load transactions separately so profile still shows even if tx fails
@@ -1158,16 +1164,16 @@ export default function App(){
   // Not logged in → Login screen
   if (!userId) return <LoginScreen onLogin={handleLogin} />;
 
-  // Logged in but no profile → Onboarding
+  // Logged in but no profile → Onboarding with back button
   if (!profile) return (
     <OnboardingScreen
       onComplete={handleOnboarding}
-      onBack={userId ? () => {
+      onBack={() => {
         supabase.auth.signOut();
         setUserId(null);
         setProfile(null);
         setTransactions([]);
-      } : null}
+      }}
     />
   );
 
