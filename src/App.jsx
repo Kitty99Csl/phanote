@@ -307,7 +307,7 @@ const Flag=({code,size=32})=>{
 };
 
 // ═══ ONBOARDING ═══════════════════════════════════════════════
-function OnboardingScreen({onComplete}){
+function OnboardingScreen({onComplete, onBack}){
   const[step,setStep]=useState(0);
   const[name,setName]=useState("");
   const[avatar,setAvatar]=useState("🦫");
@@ -333,6 +333,13 @@ function OnboardingScreen({onComplete}){
       </div>
       <div style={{background:T.surface,backdropFilter:"blur(20px)",borderRadius:28,padding:"28px 24px",width:"100%",maxWidth:400,boxShadow:T.shadowLg,zIndex:1,maxHeight:"60vh",overflowY:"auto"}}>
         {step===0&&(<>
+          {onBack && (
+            <button onClick={onBack} style={{
+              background:"none", border:"none", cursor:"pointer",
+              fontSize:13, color:T.muted, marginBottom:12, padding:0,
+              fontFamily:"'Noto Sans',sans-serif", display:"flex", alignItems:"center", gap:4,
+            }}>← Back to phone login</button>
+          )}
           <h2 style={S.title}>{t(lang,"welcome")}</h2>
           <p style={S.sub}>{t(lang,"tagline")}</p>
           <label style={S.label}>{t(lang,"your_name")}</label>
@@ -987,11 +994,11 @@ export default function App(){
   const loadUserData = async (uid) => {
     setUserId(uid);
     try {
-      // Load profile from Supabase
-      const [dbProfile, dbTxs] = await Promise.all([
-        dbGetProfile(uid),
-        dbGetTransactions(uid),
-      ]);
+      // Load profile
+      const { data: dbProfile, error: profErr } = await supabase
+        .from("profiles").select("*").eq("id", uid).single();
+
+      console.log("Profile load:", dbProfile, profErr);
 
       if (dbProfile?.onboarding_complete) {
         setProfile({
@@ -1005,15 +1012,22 @@ export default function App(){
           phone: dbProfile.phone || "",
           countryCode: dbProfile.phone_country_code || "",
         });
-        // Update last seen
-        await supabase.from("profiles").update({ last_seen_at: new Date().toISOString() }).eq("id", uid);
-        await dbTrackEvent(uid, "app_open");
+        // Update last seen silently
+        supabase.from("profiles").update({ last_seen_at: new Date().toISOString() }).eq("id", uid).then(()=>{});
+        dbTrackEvent(uid, "app_open").then(()=>{});
       }
 
-      // Map DB transactions to app format
-      const mapped = dbTxs
-        .filter(tx => !tx.is_deleted)
-        .map(tx => ({
+      // Load transactions separately so profile still shows even if tx fails
+      const { data: dbTxs, error: txErr } = await supabase
+        .from("transactions").select("*")
+        .eq("user_id", uid)
+        .eq("is_deleted", false)
+        .order("created_at", { ascending: false });
+
+      console.log("Transactions load:", dbTxs?.length, txErr);
+
+      if (dbTxs) {
+        const mapped = dbTxs.map(tx => ({
           id: tx.id,
           amount: parseFloat(tx.amount),
           currency: tx.currency,
@@ -1027,7 +1041,8 @@ export default function App(){
           confidence: tx.ai_confidence,
           createdAt: tx.created_at,
         }));
-      setTransactions(mapped);
+        setTransactions(mapped);
+      }
     } catch (e) {
       console.error("Load error:", e);
     }
@@ -1144,7 +1159,17 @@ export default function App(){
   if (!userId) return <LoginScreen onLogin={handleLogin} />;
 
   // Logged in but no profile → Onboarding
-  if (!profile) return <OnboardingScreen onComplete={handleOnboarding} />;
+  if (!profile) return (
+    <OnboardingScreen
+      onComplete={handleOnboarding}
+      onBack={userId ? () => {
+        supabase.auth.signOut();
+        setUserId(null);
+        setProfile(null);
+        setTransactions([]);
+      } : null}
+    />
+  );
 
   // Logged in + profile → Main app
   return (
