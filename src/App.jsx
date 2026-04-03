@@ -3,6 +3,96 @@
  * New: inline post-save notes, custom categories, expanded defaults, better AI prompt
  */
 import { useState, useEffect, useRef, useCallback } from "react";
+import { createClient } from "@supabase/supabase-js";
+
+// ─── SUPABASE ─────────────────────────────────────────────────
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY,
+  { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false } }
+);
+
+const signInWithPhone = async (phone, countryCode) => {
+  const cleaned = phone.replace(/\D/g, "");
+  const fullPhone = countryCode + cleaned;
+  const email = `${countryCode.replace("+","")}${cleaned}@phanote.app`;
+  const password = `phanote_${cleaned}_2026`;
+  const { data: si } = await supabase.auth.signInWithPassword({ email, password });
+  if (si?.user) return { user: si.user, isNew: false, phone: fullPhone, countryCode };
+  const { data: su, error } = await supabase.auth.signUp({ email, password });
+  if (su?.user) return { user: su.user, isNew: true, phone: fullPhone, countryCode };
+  throw new Error(error?.message || "Auth failed");
+};
+
+const dbGetProfile = async (userId) => {
+  const { data } = await supabase.from("profiles").select("*").eq("id", userId).single();
+  return data;
+};
+
+const dbUpsertProfile = async (userId, p) => {
+  await supabase.from("profiles").upsert({
+    id: userId,
+    display_name: p.name,
+    language: p.lang || "en",
+    base_currency: p.baseCurrency || "LAK",
+    onboarding_complete: true,
+    phone: p.phone || null,
+    phone_country_code: p.countryCode || null,
+    avatar: p.avatar || "🦫",
+    custom_categories: p.customCategories || [],
+    exp_cats: p.expCats || [],
+    inc_cats: p.incCats || [],
+    last_seen_at: new Date().toISOString(),
+    app_version: "1.0.0",
+  }, { onConflict: "id" });
+};
+
+// Track user behavior events
+const dbTrackEvent = async (userId, eventType, eventData = {}) => {
+  try {
+    await supabase.from("app_events").insert({
+      user_id: userId,
+      event_type: eventType,
+      event_data: eventData,
+      app_version: "1.0.0",
+      platform: "web",
+    });
+  } catch {} // never block the UI for analytics
+};
+
+const dbGetTransactions = async (userId) => {
+  const { data } = await supabase.from("transactions").select("*")
+    .eq("user_id", userId).order("created_at", { ascending: false });
+  return data || [];
+};
+
+const dbInsertTransaction = async (userId, tx) => {
+  const { data, error } = await supabase.from("transactions").insert({
+    user_id: userId,
+    amount: tx.amount,
+    currency: tx.currency,
+    type: tx.type,
+    description: tx.description,
+    date: tx.date,
+    source: "web",
+    ai_confidence: tx.confidence || null,
+    note: tx.note || null,
+    category_name: tx.categoryName || null,
+    category_emoji: tx.categoryEmoji || null,
+    raw_input: tx.rawInput || null,
+    is_deleted: false,
+  }).select().single();
+  if (error) throw error;
+  return data;
+};
+
+const dbDeleteTransaction = async (txId) => {
+  await supabase.from("transactions").delete().eq("id", txId);
+};
+
+const dbUpdateTransaction = async (txId, updates) => {
+  await supabase.from("transactions").update(updates).eq("id", txId);
+};
 
 const SUPABASE_URL = "https://mmvyipjbufafqfjdcuqj.supabase.co";
 const T = {
@@ -735,20 +825,332 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
 
 const S={title:{fontFamily:"'Noto Sans',sans-serif",fontSize:20,fontWeight:800,color:"#2D2D3A",marginBottom:6},sub:{fontSize:13,color:"#9B9BAD",marginBottom:16,lineHeight:1.5},label:{fontSize:13,fontWeight:700,color:"#2D2D3A",fontFamily:"'Noto Sans',sans-serif"}};
 
+// ═══ PHONE LOGIN SCREEN ═══════════════════════════════════════
+function LoginScreen({ onLogin }) {
+  const [phone, setPhone] = useState("");
+  const [code, setCode] = useState("+856");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const CODES = [
+    { flag:"🇱🇦", code:"+856", name:"Laos" },
+    { flag:"🇹🇭", code:"+66",  name:"Thailand" },
+    { flag:"🇺🇸", code:"+1",   name:"USA" },
+    { flag:"🇬🇧", code:"+44",  name:"UK" },
+    { flag:"🇸🇬", code:"+65",  name:"Singapore" },
+    { flag:"🇨🇳", code:"+86",  name:"China" },
+    { flag:"🇯🇵", code:"+81",  name:"Japan" },
+    { flag:"🇰🇷", code:"+82",  name:"Korea" },
+    { flag:"🇻🇳", code:"+84",  name:"Vietnam" },
+    { flag:"🇰🇭", code:"+855", name:"Cambodia" },
+    { flag:"🇲🇲", code:"+95",  name:"Myanmar" },
+    { flag:"🇦🇺", code:"+61",  name:"Australia" },
+  ];
+
+  const submit = async () => {
+    if (!phone.trim() || phone.trim().length < 6) {
+      setError("Please enter a valid phone number");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    try {
+      const { user, isNew, phone: fullPhone, countryCode } = await signInWithPhone(phone.trim(), code);
+      onLogin(user, isNew, fullPhone, countryCode);
+    } catch (e) {
+      setError("Could not sign in. Please try again.");
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{ minHeight:"100dvh", background:T.bg, display:"flex", flexDirection:"column",
+      alignItems:"center", justifyContent:"center", padding:"24px 20px",
+      position:"relative", overflow:"hidden" }}>
+      <AnimalBg />
+      <div style={{ textAlign:"center", marginBottom:36, zIndex:1 }}>
+        <div style={{ fontSize:52 }}>📒</div>
+        <div style={{ fontFamily:"'Noto Sans',sans-serif", fontSize:32, fontWeight:800,
+          color:T.dark, letterSpacing:-1, marginTop:8 }}>Phanote</div>
+        <div style={{ fontSize:12, color:T.muted, marginTop:4 }}>ພາໂນດ · พาโนด</div>
+      </div>
+
+      <div style={{ background:T.surface, backdropFilter:"blur(20px)", borderRadius:28,
+        padding:"28px 24px", width:"100%", maxWidth:380, boxShadow:T.shadowLg, zIndex:1 }}>
+        <div style={{ fontWeight:800, fontSize:18, color:T.dark, marginBottom:6,
+          fontFamily:"'Noto Sans',sans-serif" }}>Welcome back 👋</div>
+        <div style={{ fontSize:13, color:T.muted, marginBottom:22, lineHeight:1.5 }}>
+          Enter your phone number to continue. First time? We'll set you up automatically.
+        </div>
+
+        {/* Country code + phone */}
+        <div style={{ display:"flex", gap:8, marginBottom:14 }}>
+          <select value={code} onChange={e=>setCode(e.target.value)} style={{
+            padding:"13px 10px", borderRadius:14, border:"1.5px solid rgba(45,45,58,0.12)",
+            background:"rgba(172,225,175,0.06)", fontSize:14, color:T.dark,
+            fontFamily:"'Noto Sans',sans-serif", outline:"none", cursor:"pointer", flexShrink:0 }}>
+            {CODES.map(c=><option key={c.code} value={c.code}>{c.flag} {c.code}</option>)}
+          </select>
+          <input
+            value={phone}
+            onChange={e=>setPhone(e.target.value.replace(/\D/g,""))}
+            onKeyDown={e=>e.key==="Enter"&&submit()}
+            placeholder="20 123 4567"
+            type="tel"
+            autoFocus
+            style={{ flex:1, padding:"13px 16px", borderRadius:14,
+              border:`1.5px solid ${phone.length>5?"#ACE1AF":"rgba(45,45,58,0.12)"}`,
+              background:"rgba(172,225,175,0.06)", fontSize:15, color:T.dark,
+              fontFamily:"'Noto Sans',sans-serif", outline:"none",
+              transition:"border-color .2s ease" }}
+          />
+        </div>
+
+        {error && (
+          <div style={{ fontSize:13, color:"#C0392B", marginBottom:12, padding:"8px 12px",
+            borderRadius:10, background:"rgba(255,179,167,0.15)" }}>{error}</div>
+        )}
+
+        <button onClick={submit} disabled={loading} style={{
+          width:"100%", padding:"15px", borderRadius:18, border:"none", cursor:"pointer",
+          background:loading?"rgba(172,225,175,0.4)":"linear-gradient(145deg,#ACE1AF,#7BC8A4)",
+          color:"#1A4020", fontWeight:800, fontSize:16,
+          fontFamily:"'Noto Sans',sans-serif",
+          boxShadow:loading?"none":"0 6px 24px rgba(172,225,175,0.5)",
+          transition:"all .2s ease" }}>
+          {loading ? "Signing in…" : "Continue →"}
+        </button>
+
+        <div style={{ textAlign:"center", marginTop:16, fontSize:11, color:T.muted, lineHeight:1.6 }}>
+          Your phone number is your identity. No password needed.
+          <br/>Your data is saved securely and syncs across all your devices.
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function App(){
-  const[profile,setProfile]=useState(null);
-  const[transactions,setTransactions]=useState([]);
-  const[booting,setBooting]=useState(true);
-  useEffect(()=>{const link=document.createElement("link");link.rel="stylesheet";link.href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700;800&family=Noto+Sans+Lao:wght@400;700&display=swap";document.head.appendChild(link);},[]);
-  useEffect(()=>{const style=document.createElement("style");style.textContent=`*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}body{background:#F7FCF5;overscroll-behavior:none;font-family:'Noto Sans','Noto Sans Lao',system-ui,sans-serif}input{-webkit-appearance:none}::-webkit-scrollbar{display:none}@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(12px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}@keyframes slideUp{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}@keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}`;document.head.appendChild(style);},[]);
-  useEffect(()=>{const p=store.get("phanote_profile");const tx=store.get("phanote_transactions")||[];if(p)setProfile(p);setTransactions(tx);setBooting(false);},[]);
-  const handleOnboarding=(data)=>{const p={...data,createdAt:new Date().toISOString()};store.set("phanote_profile",p);setProfile(p);};
-  const handleAddTransaction=(tx)=>{const updated=[...transactions,tx];setTransactions(updated);store.set("phanote_transactions",updated);};
-  const handleUpdateProfile=(changes)=>{const updated={...profile,...changes};setProfile(updated);store.set("phanote_profile",updated);};
-  const handleUpdateNote=(txId,note)=>{const updated=transactions.map(tx=>tx.id===txId?{...tx,note}:tx);setTransactions(updated);store.set("phanote_transactions",updated);};
-  const handleDeleteTransaction=(txId)=>{if(!window.confirm("Delete this transaction?"))return;const updated=transactions.filter(tx=>tx.id!==txId);setTransactions(updated);store.set("phanote_transactions",updated);};
-  const handleReset=()=>{if(!window.confirm(t(profile?.lang||"en","reset_confirm")))return;store.del("phanote_profile");store.del("phanote_transactions");setProfile(null);setTransactions([]);};
-  if(booting)return(<div style={{minHeight:"100dvh",background:"#F7FCF5",display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{fontSize:40}}>📒</div></div>);
-  if(!profile)return <OnboardingScreen onComplete={handleOnboarding}/>;
-  return <HomeScreen profile={profile} transactions={transactions} onAdd={handleAddTransaction} onReset={handleReset} onUpdateProfile={handleUpdateProfile} onUpdateNote={handleUpdateNote} onDeleteTx={handleDeleteTransaction}/>;
+  const [profile, setProfile]           = useState(null);
+  const [transactions, setTransactions] = useState([]);
+  const [booting, setBooting]           = useState(true);
+  const [userId, setUserId]             = useState(null);
+
+  // Load fonts + global CSS
+  useEffect(()=>{
+    const link=document.createElement("link");
+    link.rel="stylesheet";
+    link.href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700;800&family=Noto+Sans+Lao:wght@400;700&display=swap";
+    document.head.appendChild(link);
+  },[]);
+
+  useEffect(()=>{
+    const style=document.createElement("style");
+    style.textContent=`*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}body{background:#F7FCF5;overscroll-behavior:none;font-family:'Noto Sans','Noto Sans Lao',system-ui,sans-serif}input,select{-webkit-appearance:none}::-webkit-scrollbar{display:none}@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(12px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}@keyframes slideUp{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}@keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}`;
+    document.head.appendChild(style);
+  },[]);
+
+  // Check existing session on load
+  useEffect(()=>{
+    const init = async () => {
+      try {
+        // Timeout after 5 seconds so app never freezes
+        const timeout = new Promise(resolve => setTimeout(resolve, 5000));
+        const sessionCheck = supabase.auth.getSession();
+        const { data: { session } } = await Promise.race([
+          sessionCheck,
+          timeout.then(() => ({ data: { session: null } }))
+        ]);
+        if (session?.user) {
+          await loadUserData(session.user.id);
+        }
+      } catch {}
+      setBooting(false);
+    };
+    init();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user && event === "SIGNED_IN") {
+        await loadUserData(session.user.id);
+      }
+    });
+    return () => subscription.unsubscribe();
+  },[]);
+
+  const loadUserData = async (uid) => {
+    setUserId(uid);
+    try {
+      // Load profile from Supabase
+      const [dbProfile, dbTxs] = await Promise.all([
+        dbGetProfile(uid),
+        dbGetTransactions(uid),
+      ]);
+
+      if (dbProfile?.onboarding_complete) {
+        setProfile({
+          name: dbProfile.display_name || "User",
+          lang: dbProfile.language || "en",
+          baseCurrency: dbProfile.base_currency || "LAK",
+          avatar: dbProfile.avatar || "🦫",
+          customCategories: dbProfile.custom_categories || [],
+          expCats: dbProfile.exp_cats || [],
+          incCats: dbProfile.inc_cats || [],
+          phone: dbProfile.phone || "",
+          countryCode: dbProfile.phone_country_code || "",
+        });
+        // Update last seen
+        await supabase.from("profiles").update({ last_seen_at: new Date().toISOString() }).eq("id", uid);
+        await dbTrackEvent(uid, "app_open");
+      }
+
+      // Map DB transactions to app format
+      const mapped = dbTxs
+        .filter(tx => !tx.is_deleted)
+        .map(tx => ({
+          id: tx.id,
+          amount: parseFloat(tx.amount),
+          currency: tx.currency,
+          type: tx.type,
+          categoryId: tx.category_name
+            ? (ALL_CATS.find(c=>c.en===tx.category_name)?.id || "other")
+            : "other",
+          description: tx.description || "",
+          note: tx.note || "",
+          date: tx.date,
+          confidence: tx.ai_confidence,
+          createdAt: tx.created_at,
+        }));
+      setTransactions(mapped);
+    } catch (e) {
+      console.error("Load error:", e);
+    }
+  };
+
+  const handleLogin = async (user, isNew, phone, countryCode) => {
+    setUserId(user.id);
+    // Update last_seen + phone in profile
+    try {
+      await supabase.from("profiles").upsert({
+        id: user.id,
+        phone: phone || null,
+        phone_country_code: countryCode || null,
+        last_seen_at: new Date().toISOString(),
+      }, { onConflict: "id" });
+      await dbTrackEvent(user.id, "login", { phone, countryCode, isNew });
+    } catch {}
+    if (!isNew) {
+      await loadUserData(user.id);
+    }
+    // If new user → onboarding will show (profile is null)
+  };
+
+  const handleOnboarding = async (data) => {
+    const p = { ...data, createdAt: new Date().toISOString() };
+    setProfile(p);
+    try {
+      await dbUpsertProfile(userId, p);
+      await dbTrackEvent(userId, "onboarding_complete", {
+        lang: p.lang,
+        baseCurrency: p.baseCurrency,
+        expCatCount: p.expCats?.length || 0,
+        incCatCount: p.incCats?.length || 0,
+      });
+    } catch (e) { console.error(e); }
+  };
+
+  const handleAddTransaction = async (tx) => {
+    // Optimistic update
+    setTransactions(prev => [tx, ...prev]);
+    try {
+      const cat = findCat(tx.categoryId, profile?.customCategories || []);
+      const saved = await dbInsertTransaction(userId, {
+        ...tx,
+        categoryName: cat.en,
+        categoryEmoji: cat.emoji,
+        rawInput: tx.rawInput || tx.description,
+      });
+      // Update local id to match DB id
+      setTransactions(prev => prev.map(t => t.id === tx.id ? { ...t, id: saved.id } : t));
+      await dbTrackEvent(userId, "transaction_added", {
+        type: tx.type,
+        currency: tx.currency,
+        category: tx.categoryId,
+        amount: tx.amount,
+      });
+    } catch (e) {
+      console.error("Save tx error:", e);
+    }
+  };
+
+  const handleUpdateProfile = async (changes) => {
+    const updated = { ...profile, ...changes };
+    setProfile(updated);
+    try {
+      await dbUpsertProfile(userId, updated);
+      store.set(`phanote_extra_${userId}`, {
+        avatar: updated.avatar,
+        customCategories: updated.customCategories || [],
+        expCats: updated.expCats,
+        incCats: updated.incCats,
+      });
+    } catch (e) { console.error(e); }
+  };
+
+  const handleUpdateNote = async (txId, note) => {
+    setTransactions(prev => prev.map(tx => tx.id === txId ? { ...tx, note } : tx));
+    try {
+      await dbUpdateTransaction(txId, { note, edited_at: new Date().toISOString() });
+    } catch (e) { console.error(e); }
+  };
+
+  const handleDeleteTransaction = async (txId) => {
+    if (!window.confirm("Delete this transaction?")) return;
+    setTransactions(prev => prev.filter(tx => tx.id !== txId));
+    try {
+      // Soft delete — keeps data for analytics
+      await dbUpdateTransaction(txId, {
+        is_deleted: true,
+        deleted_at: new Date().toISOString()
+      });
+      await dbTrackEvent(userId, "transaction_deleted", { txId });
+    } catch (e) { console.error(e); }
+  };
+
+  const handleReset = async () => {
+    if (!window.confirm(t(profile?.lang||"en","reset_confirm"))) return;
+    setProfile(null);
+    setTransactions([]);
+    store.del(`phanote_extra_${userId}`);
+    await supabase.auth.signOut();
+    setUserId(null);
+  };
+
+  // Loading splash
+  if (booting) return (
+    <div style={{ minHeight:"100dvh", background:"#F7FCF5", display:"flex",
+      alignItems:"center", justifyContent:"center", flexDirection:"column", gap:16 }}>
+      <div style={{ fontSize:52 }}>📒</div>
+      <div style={{ fontSize:14, color:"#9B9BAD", fontFamily:"'Noto Sans',sans-serif" }}>Loading…</div>
+    </div>
+  );
+
+  // Not logged in → Login screen
+  if (!userId) return <LoginScreen onLogin={handleLogin} />;
+
+  // Logged in but no profile → Onboarding
+  if (!profile) return <OnboardingScreen onComplete={handleOnboarding} />;
+
+  // Logged in + profile → Main app
+  return (
+    <HomeScreen
+      profile={profile}
+      transactions={transactions}
+      onAdd={handleAddTransaction}
+      onReset={handleReset}
+      onUpdateProfile={handleUpdateProfile}
+      onUpdateNote={handleUpdateNote}
+      onDeleteTx={handleDeleteTransaction}
+    />
+  );
 }
