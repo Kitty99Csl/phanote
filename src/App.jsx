@@ -948,6 +948,7 @@ export default function App(){
   const [transactions, setTransactions] = useState([]);
   const [booting, setBooting]           = useState(true);
   const [userId, setUserId]             = useState(null);
+  const [loadingProfile, setLoadingProfile] = useState(false);
 
   // Load fonts + global CSS
   useEffect(()=>{
@@ -983,9 +984,10 @@ export default function App(){
     };
     init();
 
-    // Listen for auth changes
+    // Listen for auth changes - only handle TOKEN_REFRESHED to avoid double load
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user && event === "SIGNED_IN") {
+      if (event === "TOKEN_REFRESHED" && session?.user) {
+        console.log("Token refreshed, reloading data");
         await loadUserData(session.user.id);
       }
     });
@@ -994,6 +996,7 @@ export default function App(){
 
   const loadUserData = async (uid) => {
     setUserId(uid);
+    setLoadingProfile(true);
     try {
       // Load profile
       const { data: dbProfile, error: profErr } = await supabase
@@ -1052,6 +1055,7 @@ export default function App(){
     } catch (e) {
       console.error("Load error:", e);
     }
+    setLoadingProfile(false);
   };
 
   const handleLogin = async (user, isNew, phone, countryCode) => {
@@ -1163,6 +1167,15 @@ export default function App(){
 
   // Not logged in → Login screen
   if (!userId) return <LoginScreen onLogin={handleLogin} />;
+
+  // Still loading profile → show spinner not onboarding
+  if (loadingProfile) return (
+    <div style={{ minHeight:"100dvh", background:"#F7FCF5", display:"flex",
+      alignItems:"center", justifyContent:"center", flexDirection:"column", gap:16 }}>
+      <div style={{ fontSize:52 }}>📒</div>
+      <div style={{ fontSize:14, color:"#9B9BAD", fontFamily:"'Noto Sans',sans-serif" }}>Loading your data…</div>
+    </div>
+  );
 
   // Logged in but no profile → Onboarding with back button
   if (!profile) return (
