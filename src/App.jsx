@@ -1033,7 +1033,7 @@ export default function App(){
           currency: tx.currency,
           type: tx.type,
           categoryId: tx.category_name
-            ? (ALL_CATS.find(c=>c.en===tx.category_name)?.id || "other")
+            ? ([...DEFAULT_EXPENSE_CATS,...DEFAULT_INCOME_CATS].find(c=>c.en===tx.category_name)?.id || "other")
             : "other",
           description: tx.description || "",
           note: tx.note || "",
