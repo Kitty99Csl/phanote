@@ -16,7 +16,7 @@ const signInWithPhone = async (phone, countryCode) => {
   const cleaned = phone.replace(/\D/g, "");
   const fullPhone = countryCode + cleaned;
   const email = `${countryCode.replace("+","")}${cleaned}@phanote.app`;
-  const password = `phanote_${cleaned}_2026`;
+  const password = `Ph4n0te${cleaned}X`;
   const { data: si } = await supabase.auth.signInWithPassword({ email, password });
   if (si?.user) return { user: si.user, isNew: false, phone: fullPhone, countryCode };
   const { data: su, error } = await supabase.auth.signUp({ email, password });
@@ -858,7 +858,13 @@ function LoginScreen({ onLogin }) {
       const { user, isNew, phone: fullPhone, countryCode } = await signInWithPhone(phone.trim(), code);
       onLogin(user, isNew, fullPhone, countryCode);
     } catch (e) {
-      setError("Could not sign in. Please try again.");
+      if (e.message && e.message.includes("already")) {
+        setError("This number is registered. If you forgot your setup, contact support.");
+      } else if (e.message && e.message.includes("422")) {
+        setError("Invalid phone number format. Please check and try again.");
+      } else {
+        setError("Could not sign in. Please check your number and try again.");
+      }
       setLoading(false);
     }
   };
@@ -1029,8 +1035,8 @@ export default function App(){
 
   const handleLogin = async (user, isNew, phone, countryCode) => {
     setUserId(user.id);
-    // Update last_seen + phone in profile
     try {
+      // Always upsert phone info on every login
       await supabase.from("profiles").upsert({
         id: user.id,
         phone: phone || null,
@@ -1038,11 +1044,10 @@ export default function App(){
         last_seen_at: new Date().toISOString(),
       }, { onConflict: "id" });
       await dbTrackEvent(user.id, "login", { phone, countryCode, isNew });
-    } catch {}
+    } catch (e) { console.error("Login profile update:", e); }
     if (!isNew) {
       await loadUserData(user.id);
     }
-    // If new user → onboarding will show (profile is null)
   };
 
   const handleOnboarding = async (data) => {
