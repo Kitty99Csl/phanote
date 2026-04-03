@@ -403,6 +403,86 @@ const TOASTS={
 };
 const randomToast=(tx)=>{const pool=TOASTS[tx.type];return pool[Math.floor(Math.random()*pool.length)](tx.description,tx.amount,tx.currency);};
 
+// ─── EDIT TRANSACTION MODAL ─────────────────────────────────
+function EditTransactionModal({tx,lang,onSave,onClose,customCategories=[]}){
+  const[amount,setAmount]=useState(String(tx.amount));
+  const[catId,setCatId]=useState(tx.categoryId);
+  const cats=tx.type==="income"
+    ?[...DEFAULT_INCOME_CATS,...customCategories.filter(c=>c.type==="income")]
+    :[...DEFAULT_EXPENSE_CATS,...customCategories.filter(c=>c.type==="expense")];
+
+  const save=()=>{
+    const a=parseFloat(amount.replace(/,/g,""));
+    if(!a||a<=0)return;
+    onSave({...tx,amount:a,categoryId:catId});
+  };
+
+  return(
+    <div style={{position:"fixed",inset:0,zIndex:2000,background:"rgba(30,30,40,0.6)",
+      backdropFilter:"blur(4px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}}
+      onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div style={{background:"#fff",borderRadius:"28px 28px 0 0",padding:"24px 20px 44px",
+        width:"100%",maxWidth:430,animation:"slideUp .3s ease",maxHeight:"80vh",
+        display:"flex",flexDirection:"column",gap:16}}>
+        
+        {/* Header */}
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div style={{fontWeight:800,fontSize:16,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>Edit Transaction</div>
+          <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,color:T.muted}}>✕</button>
+        </div>
+
+        {/* Description */}
+        <div style={{fontSize:13,color:T.muted,fontFamily:"'Noto Sans',sans-serif"}}>{tx.description}</div>
+
+        {/* Amount editor */}
+        <div>
+          <div style={{fontSize:11,fontWeight:700,color:T.muted,letterSpacing:0.8,
+            textTransform:"uppercase",marginBottom:6,fontFamily:"'Noto Sans',sans-serif"}}>Amount ({tx.currency})</div>
+          <div style={{display:"flex",alignItems:"center",gap:8,background:"rgba(172,225,175,0.08)",
+            borderRadius:14,padding:"4px 4px 4px 16px",border:"1.5px solid #ACE1AF"}}>
+            <span style={{fontSize:18,fontWeight:800,color:T.dark}}>{tx.currency==="LAK"?"₭":tx.currency==="THB"?"฿":"$"}</span>
+            <input value={amount} onChange={e=>setAmount(e.target.value.replace(/[^\d.]/g,""))}
+              type="number" inputMode="decimal"
+              style={{flex:1,border:"none",outline:"none",background:"transparent",
+                fontSize:22,fontWeight:800,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}/>
+          </div>
+        </div>
+
+        {/* Category picker */}
+        <div>
+          <div style={{fontSize:11,fontWeight:700,color:T.muted,letterSpacing:0.8,
+            textTransform:"uppercase",marginBottom:8,fontFamily:"'Noto Sans',sans-serif"}}>Category</div>
+          <div style={{overflowY:"auto",maxHeight:200}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+              {cats.map(cat=>(
+                <button key={cat.id} onClick={()=>setCatId(cat.id)}
+                  style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px",
+                    borderRadius:12,border:"none",cursor:"pointer",
+                    background:catId===cat.id?"rgba(172,225,175,0.25)":"rgba(45,45,58,0.04)",
+                    boxShadow:catId===cat.id?"0 0 0 2px #ACE1AF":"none",
+                    transition:"all .15s",textAlign:"left"}}>
+                  <span style={{fontSize:18}}>{cat.emoji}</span>
+                  <span style={{fontSize:12,fontWeight:600,color:T.dark,
+                    fontFamily:"'Noto Sans',sans-serif"}}>{catLabel(cat,lang)}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Save button */}
+        <button onClick={save}
+          style={{width:"100%",padding:"14px",borderRadius:16,border:"none",cursor:"pointer",
+            background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",color:"#1A4020",
+            fontWeight:800,fontSize:15,fontFamily:"'Noto Sans',sans-serif",
+            boxShadow:"0 4px 16px rgba(172,225,175,0.4)"}}>
+          Save Changes ✓
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── CATEGORY PICKER MODAL ───────────────────────────────────
 function CategoryPicker({tx,lang,onSave,onClose,customCategories=[]}){
   const[selected,setSelected]=useState(tx.categoryId);
@@ -1041,8 +1121,8 @@ function BottomNav({active,onTab,lang}){
 function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdateNote,onUpdateCategory,onDeleteTx}){
   const[tab,setTab]=useState("home");
   const[toast,setToast]=useState(null);
-  const[editTx,setEditTx]=useState(null); // tx being edited
-  const[showPicker,setShowPicker]=useState(false);
+  const[editTx,setEditTx]=useState(null);
+  const[showEdit,setShowEdit]=useState(false);
   const{lang,customCategories=[]}=profile;
   const greet=()=>{const h=new Date().getHours();if(h<12)return t(lang,"morning");if(h<17)return t(lang,"afternoon");return t(lang,"evening");};
   const dateStr=new Date().toLocaleDateString(lang==="th"?"th-TH":lang==="lo"?"lo-LA":"en-US",{weekday:"long",month:"long",day:"numeric"});
@@ -1051,14 +1131,14 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
     setEditTx(tx); // show quick edit toast
     setToast(null);
   };
-  const handleCategoryChange=(newCatId)=>{
+  const handleEditSave=(updated)=>{
     if(!editTx)return;
-    setEditTx({...editTx,categoryId:newCatId});
-    setShowPicker(false);
-    // Update in DB and local state
-    onUpdateCategory(editTx.id, newCatId);
+    setShowEdit(false);
+    setEditTx(null);
+    // Update amount + category
+    onUpdateCategory(editTx.id, updated.categoryId, updated.amount);
     // Save to ai_memory
-    const cat=findCat(newCatId,customCategories);
+    const cat=findCat(updated.categoryId,customCategories);
     if(profile?.userId){
       dbSaveMemory(profile.userId,editTx.description||"",cat.id,editTx.type,0.99).catch(()=>{});
     }
@@ -1097,7 +1177,7 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
         {tab==="home"&&(
           <>
             <div style={{paddingTop:8}}/>
-            <TransactionList transactions={transactions} lang={lang} onUpdateNote={onUpdateNote} onDeleteTx={onDeleteTx} onEditCategory={(tx)=>{setEditTx(tx);setShowPicker(true);}} customCategories={customCategories}/>
+            <TransactionList transactions={transactions} lang={lang} onUpdateNote={onUpdateNote} onDeleteTx={onDeleteTx} onEditCategory={(tx)=>{setEditTx(tx);setShowEdit(true);}} customCategories={customCategories}/>
             <div style={{height:16}}/>
           </>
         )}
@@ -1114,16 +1194,16 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
       )}
       <BottomNav active={tab} onTab={setTab} lang={lang}/>
       {toast&&<Toast msg={toast} onDone={()=>setToast(null)}/>}
-      {editTx&&!showPicker&&(
+      {editTx&&!showEdit&&(
         <QuickEditToast tx={editTx} lang={lang}
-          onChangeCategory={()=>setShowPicker(true)}
+          onChangeCategory={()=>setShowEdit(true)}
           onDone={()=>setEditTx(null)}
           customCategories={customCategories}/>
       )}
-      {showPicker&&editTx&&(
-        <CategoryPicker tx={editTx} lang={lang}
-          onSave={handleCategoryChange}
-          onClose={()=>setShowPicker(false)}
+      {showEdit&&editTx&&(
+        <EditTransactionModal tx={editTx} lang={lang}
+          onSave={handleEditSave}
+          onClose={()=>{setShowEdit(false);setEditTx(null);}}
           customCategories={customCategories}/>
       )}
     </div>
