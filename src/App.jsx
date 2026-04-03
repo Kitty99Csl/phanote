@@ -403,6 +403,81 @@ const TOASTS={
 };
 const randomToast=(tx)=>{const pool=TOASTS[tx.type];return pool[Math.floor(Math.random()*pool.length)](tx.description,tx.amount,tx.currency);};
 
+// ─── CATEGORY PICKER MODAL ───────────────────────────────────
+function CategoryPicker({tx,lang,onSave,onClose,customCategories=[]}){
+  const[selected,setSelected]=useState(tx.categoryId);
+  const allCats=[...DEFAULT_EXPENSE_CATS,...DEFAULT_INCOME_CATS,...customCategories];
+  const cats=tx.type==="income"
+    ?[...DEFAULT_INCOME_CATS,...customCategories.filter(c=>c.type==="income")]
+    :[...DEFAULT_EXPENSE_CATS,...customCategories.filter(c=>c.type==="expense")];
+  return(
+    <div style={{position:"fixed",inset:0,zIndex:2000,background:"rgba(30,30,40,0.6)",backdropFilter:"blur(4px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}}
+      onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div style={{background:"#fff",borderRadius:"28px 28px 0 0",padding:"24px 20px 44px",width:"100%",maxWidth:430,animation:"slideUp .3s ease",maxHeight:"70vh",display:"flex",flexDirection:"column"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+          <div style={{fontWeight:800,fontSize:16,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>Change Category</div>
+          <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,color:T.muted}}>✕</button>
+        </div>
+        {/* Transaction preview */}
+        <div style={{background:T.bg,borderRadius:14,padding:"10px 14px",marginBottom:16,display:"flex",alignItems:"center",gap:10}}>
+          <div style={{fontSize:13,fontWeight:600,color:T.dark,flex:1}}>{tx.description}</div>
+          <div style={{fontSize:14,fontWeight:800,color:tx.type==="income"?"#1A5A30":"#C0392B"}}>{tx.type==="income"?"+":"-"}{fmt(tx.amount,tx.currency)}</div>
+        </div>
+        {/* Category grid */}
+        <div style={{overflowY:"auto",flex:1}}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+            {cats.map(cat=>(
+              <button key={cat.id} onClick={()=>setSelected(cat.id)}
+                style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",borderRadius:14,border:"none",cursor:"pointer",
+                  background:selected===cat.id?"rgba(172,225,175,0.25)":"rgba(45,45,58,0.04)",
+                  boxShadow:selected===cat.id?"0 0 0 2px #ACE1AF":"none",
+                  transition:"all .15s",textAlign:"left"}}>
+                <span style={{fontSize:20}}>{cat.emoji}</span>
+                <span style={{fontSize:13,fontWeight:600,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{catLabel(cat,lang)}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        <button onClick={()=>onSave(selected)}
+          style={{marginTop:16,width:"100%",padding:"14px",borderRadius:16,border:"none",cursor:"pointer",
+            background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",color:"#1A4020",fontWeight:800,fontSize:15,
+            fontFamily:"'Noto Sans',sans-serif",boxShadow:"0 4px 16px rgba(172,225,175,0.4)"}}>
+          Save Category ✓
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── QUICK EDIT TOAST (appears after save) ───────────────────
+function QuickEditToast({tx,lang,onChangeCategory,onDone,customCategories=[]}){
+  const cat=findCat(tx.categoryId,customCategories);
+  const[visible,setVisible]=useState(true);
+  useEffect(()=>{const t=setTimeout(()=>{setVisible(false);setTimeout(onDone,300);},4000);return()=>clearTimeout(t);},[]);
+  return(
+    <div style={{position:"fixed",bottom:140,left:"50%",transform:"translateX(-50%)",
+      zIndex:500,width:"calc(100% - 32px)",maxWidth:398,
+      opacity:visible?1:0,transition:"opacity .3s ease",pointerEvents:visible?"auto":"none"}}>
+      <div style={{background:"#1a2e1a",borderRadius:20,padding:"14px 16px",
+        boxShadow:"0 8px 32px rgba(0,0,0,0.2)",display:"flex",alignItems:"center",gap:12}}>
+        <div style={{width:36,height:36,borderRadius:11,background:"rgba(255,255,255,0.1)",
+          display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{cat.emoji}</div>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontSize:13,fontWeight:600,color:"#fff",fontFamily:"'Noto Sans',sans-serif",
+            whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{tx.description}</div>
+          <div style={{fontSize:11,color:"rgba(255,255,255,0.5)",marginTop:1}}>{catLabel(cat,lang)}</div>
+        </div>
+        <button onClick={()=>{setVisible(false);onChangeCategory();}}
+          style={{padding:"6px 12px",borderRadius:10,border:"1px solid rgba(255,255,255,0.2)",
+            background:"transparent",color:"#ACE1AF",fontSize:11,fontWeight:700,
+            cursor:"pointer",whiteSpace:"nowrap",fontFamily:"'Noto Sans',sans-serif"}}>
+          ✏️ Fix
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── UI PRIMITIVES ────────────────────────────────────────────
 const AnimalBg=()=>(
   <div aria-hidden="true" style={{
@@ -956,10 +1031,28 @@ function BottomNav({active,onTab,lang}){
 function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdateNote,onDeleteTx}){
   const[tab,setTab]=useState("home");
   const[toast,setToast]=useState(null);
+  const[editTx,setEditTx]=useState(null); // tx being edited
+  const[showPicker,setShowPicker]=useState(false);
   const{lang,customCategories=[]}=profile;
   const greet=()=>{const h=new Date().getHours();if(h<12)return t(lang,"morning");if(h<17)return t(lang,"afternoon");return t(lang,"evening");};
   const dateStr=new Date().toLocaleDateString(lang==="th"?"th-TH":lang==="lo"?"lo-LA":"en-US",{weekday:"long",month:"long",day:"numeric"});
-  const handleAdd=(tx)=>{onAdd(tx);setToast(randomToast({...tx,description:tx.description||findCat(tx.categoryId,customCategories).en}));};
+  const handleAdd=(tx)=>{
+    onAdd(tx);
+    setEditTx(tx); // show quick edit toast
+    setToast(null);
+  };
+  const handleCategoryChange=(newCatId)=>{
+    if(!editTx)return;
+    const updated={...editTx,categoryId:newCatId};
+    onUpdateNote(editTx.id,"__cat__"+newCatId); // reuse update channel
+    setEditTx(updated);
+    setShowPicker(false);
+    // Save to ai_memory
+    const cat=findCat(newCatId,customCategories);
+    if(profile?.userId){
+      dbSaveMemory(profile.userId,editTx.description||"",cat.id,editTx.type,0.99).catch(()=>{});
+    }
+  };
   return(
     <div style={{height:"100dvh",background:T.bg,display:"flex",flexDirection:"column",maxWidth:430,margin:"0 auto",position:"relative",overflow:"hidden"}}>
       <AnimalBg/>
@@ -1011,6 +1104,18 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
       )}
       <BottomNav active={tab} onTab={setTab} lang={lang}/>
       {toast&&<Toast msg={toast} onDone={()=>setToast(null)}/>}
+      {editTx&&!showPicker&&(
+        <QuickEditToast tx={editTx} lang={lang}
+          onChangeCategory={()=>setShowPicker(true)}
+          onDone={()=>setEditTx(null)}
+          customCategories={customCategories}/>
+      )}
+      {showPicker&&editTx&&(
+        <CategoryPicker tx={editTx} lang={lang}
+          onSave={handleCategoryChange}
+          onClose={()=>setShowPicker(false)}
+          customCategories={customCategories}/>
+      )}
     </div>
   );
 }
