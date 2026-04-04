@@ -2088,7 +2088,11 @@ function AiAdvisorModal({ profile, transactions, onClose }) {
                 color:msg.role==="user"?"#1A4020":T.dark,
                 fontSize:14,lineHeight:1.55,fontFamily:"'Noto Sans',sans-serif",fontWeight:msg.role==="user"?600:400,
               }}>
-                {msg.text}
+                {msg.text.split(/\*\*(.*?)\*\*/g).map((part, i) =>
+                  i % 2 === 1
+                    ? <strong key={i} style={{fontWeight:700}}>{part}</strong>
+                    : part
+                )}
               </div>
             </div>
           ))}
