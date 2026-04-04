@@ -924,8 +924,7 @@ function GoalModal({ goal, profile, onSave, onClose }) {
     const t = parseFloat(String(target).replace(/,/g,""));
     const s = parseFloat(String(saved).replace(/,/g,"")) || 0;
     if (!name.trim() || !t || t <= 0) return;
-    onSave({ name: name.trim(), emoji, target_amount: t, saved_amount: s, currency, 
-  deadline: deadline ? deadline + "-01" : null });
+    onSave({ name: name.trim(), emoji, target_amount: t, saved_amount: s, currency, deadline: deadline || null });
   };
 
   const QUICK = { LAK:[1000000,5000000,10000000,50000000], THB:[1000,5000,10000,50000], USD:[100,500,1000,5000] };
@@ -1062,11 +1061,17 @@ function GoalsScreen({ profile, transactions }) {
     if (!userId) return;
     supabase.from("goals").select("*").eq("user_id", userId).eq("is_completed", false)
       .order("created_at", { ascending: true })
-      .then(({ data }) => { if (data) setGoals(data); setLoading(false); });
+      .then(({ data, error }) => {
+        if (error) console.error("Goals load error:", error);
+        if (data) setGoals(data);
+        setLoading(false);
+      });
   }, [userId]);
 
   const createGoal = async (data) => {
-    const { data: saved } = await supabase.from("goals").insert({ user_id: userId, ...data }).select().single();
+    const { data: saved, error } = await supabase.from("goals")
+      .insert({ user_id: userId, ...data }).select().single();
+    if (error) { console.error("Goal create error:", error); alert("Could not save goal: " + error.message); return; }
     if (saved) setGoals(prev => [...prev, saved]);
     setShowCreate(false);
   };
@@ -1192,32 +1197,80 @@ function GoalsScreen({ profile, transactions }) {
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:8}}>
                 <div>
                   <div style={{fontSize:11,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:0.8}}>Saved</div>
-                  <div style={{fontSize:20,fontWeight:800,color:"#1A5A30",fontFamily:"'Noto Sans',sans-serif"}}>{fmt(goal.saved_amount,goal.currency)}</div>
+                  <div style={{fontSize:22,fontWeight:800,color:"#1A5A30",fontFamily:"'Noto Sans',sans-serif"}}>{fmt(goal.saved_amount,goal.currency)}</div>
                 </div>
                 <div style={{textAlign:"right"}}>
                   <div style={{fontSize:11,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:0.8}}>Target</div>
-                  <div style={{fontSize:15,fontWeight:700,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{fmt(goal.target_amount,goal.currency)}</div>
+                  <div style={{fontSize:16,fontWeight:700,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{fmt(goal.target_amount,goal.currency)}</div>
                 </div>
               </div>
-              <div style={{height:10,background:"rgba(45,45,58,0.07)",borderRadius:99,overflow:"hidden",marginBottom:6}}>
+              <div style={{height:10,background:"rgba(45,45,58,0.07)",borderRadius:99,overflow:"hidden",marginBottom:5}}>
                 <div style={{height:"100%",width:`${pct}%`,background:barColor,borderRadius:99,transition:"width .6s cubic-bezier(.34,1.2,.64,1)"}}/>
               </div>
               <div style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:14}}>
                 <span style={{color:barColor,fontWeight:700}}>{pct}% complete</span>
-                <span style={{color:T.muted}}>{fmt(remaining,goal.currency)} to go</span>
+                <span style={{color:T.muted}}>{fmt(remaining,goal.currency)} remaining</span>
               </div>
 
-              {/* Monthly plan */}
-              {monthly > 0 && (
-                <div style={{background:"rgba(172,225,175,0.1)",borderRadius:12,padding:"9px 12px",marginBottom:10}}>
-                  <div style={{fontSize:12,color:"#2A7A40",fontWeight:700}}>💚 Save {fmt(monthly,goal.currency)}/month to reach your goal on time</div>
-                </div>
-              )}
+              {/* Savings plan — always visible */}
+              <div style={{background:"rgba(172,225,175,0.10)",borderRadius:14,padding:"13px 14px",marginBottom:10}}>
+                {monthly > 0 && goal.deadline ? (<>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                    <div>
+                      <div style={{fontSize:10,fontWeight:700,color:"#2A7A40",textTransform:"uppercase",letterSpacing:0.8}}>Save / month</div>
+                      <div style={{fontSize:20,fontWeight:800,color:"#1A4020",fontFamily:"'Noto Sans',sans-serif",marginTop:2}}>{fmt(monthly,goal.currency)}</div>
+                    </div>
+                    <div style={{textAlign:"right"}}>
+                      <div style={{fontSize:10,fontWeight:700,color:"#2A7A40",textTransform:"uppercase",letterSpacing:0.8}}>Months left</div>
+                      <div style={{fontSize:20,fontWeight:800,color:"#1A4020",fontFamily:"'Noto Sans',sans-serif",marginTop:2}}>{monthsLeft(goal)}</div>
+                    </div>
+                    <div style={{textAlign:"right"}}>
+                      <div style={{fontSize:10,fontWeight:700,color:"#2A7A40",textTransform:"uppercase",letterSpacing:0.8}}>Goal date</div>
+                      <div style={{fontSize:13,fontWeight:700,color:"#1A4020",fontFamily:"'Noto Sans',sans-serif",marginTop:2}}>{new Date(goal.deadline).toLocaleDateString("en-US",{month:"short",year:"numeric"})}</div>
+                    </div>
+                  </div>
+                  {/* Mini month timeline */}
+                  {(()=>{
+                    const m = Math.min(monthsLeft(goal), 6);
+                    const months = Array.from({length:m},(_,i)=>{
+                      const d = new Date(); d.setMonth(d.getMonth()+i+1);
+                      return d.toLocaleDateString("en-US",{month:"short"});
+                    });
+                    return(
+                      <div style={{display:"flex",gap:4,alignItems:"flex-end",height:40}}>
+                        {months.map((mo,i)=>{
+                          const projected = Math.min(goal.saved_amount+(monthly*(i+1)), goal.target_amount);
+                          const p = Math.min(100, Math.round((projected/goal.target_amount)*100));
+                          const isGoal = projected >= goal.target_amount;
+                          return(
+                            <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
+                              <div style={{width:"100%",height:28,borderRadius:"4px 4px 0 0",background:"rgba(26,64,32,0.08)",display:"flex",alignItems:"flex-end",overflow:"hidden"}}>
+                                <div style={{width:"100%",height:`${p}%`,background:isGoal?"#3da873":"#7BC8A4",borderRadius:"3px 3px 0 0",minHeight:3,transition:"height .4s ease"}}/>
+                              </div>
+                              <div style={{fontSize:8,fontWeight:700,color:isGoal?"#1A5A30":"#5aae5f"}}>{mo}</div>
+                            </div>
+                          );
+                        })}
+                        {monthsLeft(goal)>6&&<div style={{display:"flex",alignItems:"flex-end",paddingBottom:12,fontSize:12,color:"#2A7A40",fontWeight:700}}>···</div>}
+                      </div>
+                    );
+                  })()}
+                  <div style={{fontSize:11,color:"#2A7A40",fontWeight:700,marginTop:8}}>🎯 On track for {new Date(goal.deadline).toLocaleDateString("en-US",{month:"long",year:"numeric"})}</div>
+                </>) : remaining > 0 ? (
+                  <div style={{fontSize:12,color:"#2A7A40",lineHeight:1.6}}>
+                    <div style={{fontWeight:700,marginBottom:2}}>No deadline set</div>
+                    <div style={{color:"#5aae5f",fontSize:11}}>Tap ✏️ to add a target month — we'll show your monthly savings plan</div>
+                  </div>
+                ) : (
+                  <div style={{fontSize:13,fontWeight:700,color:"#1A5A30"}}>🎉 Almost there! Keep going.</div>
+                )}
+              </div>
 
-              {/* AI suggestion */}
-              {suggestion && (
-                <div style={{background:"rgba(255,179,167,0.08)",borderRadius:12,padding:"9px 12px",marginBottom:12}}>
-                  <div style={{fontSize:12,color:"#A03020",fontWeight:700}}>💡 {suggestion}</div>
+              {/* Smart suggestion */}
+              {suggestion && remaining > 0 && (
+                <div style={{background:"rgba(255,179,167,0.08)",borderRadius:12,padding:"10px 12px",marginBottom:12,display:"flex",gap:8,alignItems:"flex-start"}}>
+                  <span style={{fontSize:14,flexShrink:0}}>💡</span>
+                  <div style={{fontSize:12,color:"#A03020",fontWeight:700,lineHeight:1.5}}>{suggestion}</div>
                 </div>
               )}
 
