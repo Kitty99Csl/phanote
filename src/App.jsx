@@ -924,7 +924,8 @@ function GoalModal({ goal, profile, onSave, onClose }) {
     const t = parseFloat(String(target).replace(/,/g,""));
     const s = parseFloat(String(saved).replace(/,/g,"")) || 0;
     if (!name.trim() || !t || t <= 0) return;
-    onSave({ name: name.trim(), emoji, target_amount: t, saved_amount: s, currency, deadline: deadline || null });
+    onSave({ name: name.trim(), emoji, target_amount: t, saved_amount: s, currency, 
+  deadline: deadline ? deadline + "-01" : null });
   };
 
   const QUICK = { LAK:[1000000,5000000,10000000,50000000], THB:[1000,5000,10000,50000], USD:[100,500,1000,5000] };
