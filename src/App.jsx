@@ -1971,32 +1971,64 @@ function AiAdvisorModal({ profile, transactions, onClose }) {
     "How much can I safely spend this month?",
   ];
 
+  const buildSummary = () => {
+    const now = new Date();
+    const mo = now.getMonth(), yr = now.getFullYear();
+    const sym = c => c==="LAK"?"₭":c==="THB"?"฿":"$";
+    const byCur = {};
+    transactions.forEach(tx => {
+      const d = new Date(tx.date);
+      if (d.getMonth()!==mo||d.getFullYear()!==yr) return;
+      if (!byCur[tx.currency]) byCur[tx.currency]={inc:0,exp:0,cats:{}};
+      if (tx.type==="income") byCur[tx.currency].inc+=tx.amount;
+      if (tx.type==="expense"){
+        byCur[tx.currency].exp+=tx.amount;
+        byCur[tx.currency].cats[tx.categoryId]=(byCur[tx.currency].cats[tx.categoryId]||0)+tx.amount;
+      }
+    });
+    const lines=[];
+    lines.push(`=== ${now.toLocaleDateString("en-US",{month:"long",year:"numeric"})} ===`);
+    Object.entries(byCur).forEach(([cur,d])=>{
+      const s=sym(cur);
+      const top=Object.entries(d.cats).sort((a,b)=>b[1]-a[1]).slice(0,5)
+        .map(([cat,amt])=>`${cat}:${s}${Math.round(amt).toLocaleString()}`).join(", ");
+      lines.push(`${cur}: income ${s}${Math.round(d.inc).toLocaleString()}, expenses ${s}${Math.round(d.exp).toLocaleString()}, net ${s}${Math.round(d.inc-d.exp).toLocaleString()}`);
+      if(top) lines.push(`  Top: ${top}`);
+    });
+    if(!Object.keys(byCur).length) lines.push("No transactions this month yet.");
+    lines.push(`\n=== Goals ===`);
+    goals.length ? goals.forEach(g=>{
+      const s=sym(g.currency);
+      const pct=Math.round((g.saved_amount/g.target_amount)*100);
+      const mLeft=g.deadline?Math.max(1,Math.round((new Date(g.deadline)-now)/2628000000)):null;
+      lines.push(`"${g.name}": target ${s}${Math.round(g.target_amount).toLocaleString()}, saved ${s}${Math.round(g.saved_amount).toLocaleString()} (${pct}%)${mLeft?`, ${mLeft} months left`:""}`);
+    }) : lines.push("No goals.");
+    lines.push(`\n=== Budgets ===`);
+    budgets.length ? budgets.forEach(b=>{
+      const s=sym(b.currency);
+      const spent=byCur[b.currency]?.cats?.[b.category_id]||0;
+      lines.push(`${b.category_id} (${b.currency}): ${s}${Math.round(spent).toLocaleString()} of ${s}${Math.round(b.monthly_limit).toLocaleString()} (${Math.round((spent/b.monthly_limit)*100)}%)`);
+    }) : lines.push("No budgets.");
+    return lines.join("\n");
+  };
+
   const ask = async (question) => {
     if (!question.trim() || loading) return;
     const q = question.trim();
     setInput("");
     setMessages(prev => [...prev, { role:"user", text: q }]);
     setLoading(true);
-
     try {
       const res = await fetch("https://api.phanote.com/advise", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          question: q,
-          lang,
-          context: {
-            transactions: transactions.slice(0, 60), // last 60 tx for context
-            budgets,
-            goals,
-            baseCurrency,
-          },
-        }),
+        body: JSON.stringify({ question: q, lang, summary: buildSummary() }),
       });
       const data = await res.json();
-      setMessages(prev => [...prev, { role:"assistant", text: data.reply || "Sorry, couldn't get a response. Try again!" }]);
+      const reply = data.reply || data.error || "Sorry, couldn't get a response. Try again!";
+      setMessages(prev => [...prev, { role:"assistant", text: reply }]);
     } catch {
-      setMessages(prev => [...prev, { role:"assistant", text: "Connection issue. Please check your internet and try again." }]);
+      setMessages(prev => [...prev, { role:"assistant", text: "Connection issue — check your internet and try again." }]);
     }
     setLoading(false);
     setTimeout(() => inputRef.current?.focus(), 100);
