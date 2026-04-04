@@ -184,6 +184,7 @@ const fmt=(n,c)=>{const{symbol}=CURR[c];if(c==="LAK")return`${symbol}${Math.roun
 const fmtCompact=(n,c)=>{if(c==="LAK"){if(n>=1e6)return`₭${(n/1e6).toFixed(1)}M`;if(n>=1e3)return`₭${(n/1e3).toFixed(0)}K`;return`₭${Math.round(n)}`}const s=CURR[c].symbol;return n>=1000?`${s}${(n/1000).toFixed(1)}K`:`${s}${Number(n).toFixed(2)}`};
 const AVATARS=["🦫","🐱","🦝","🦦","🦊","🔮","🐨","🦔","🐸","🐼"];
 const EMOJI_PICKS=["🍜","🍺","☕","🛵","🚗","✈️","🏠","💡","🛍️","👗","💊","🏋️","🎉","🎤","🎮","📚","💇","🎁","💼","💰","📈","💵","🏧","📦","🌟","🎯","🏌️","🎵","🏖️","🐾"];
+const GOAL_EMOJIS=["🎯","✈️","🏖️","🏠","🚗","💍","📱","💻","🎓","💊","🌏","🏋️","🎵","🎮","👶","🐾","🌟","💎","🏌️","🛵"];
 
 // ─── DEFAULT CATEGORIES ───────────────────────────────────────
 const DEFAULT_EXPENSE_CATS = [
@@ -893,7 +894,345 @@ function SettingsScreen({profile,transactions,onUpdateProfile,onReset}){
   );
 }
 
-// ═══ SET BUDGET MODAL ════════════════════════════════════════
+// ═══ GOAL MODAL (create / edit) ══════════════════════════════
+function GoalModal({ goal, profile, onSave, onClose }) {
+  const { lang } = profile;
+  const [name,     setName]     = useState(goal?.name || "");
+  const [emoji,    setEmoji]    = useState(goal?.emoji || "🎯");
+  const [target,   setTarget]   = useState(goal ? String(goal.target_amount) : "");
+  const [saved,    setSaved]    = useState(goal ? String(goal.saved_amount || 0) : "0");
+  const [currency, setCurrency] = useState(goal?.currency || profile.baseCurrency || "LAK");
+  const [deadline, setDeadline] = useState(goal?.deadline || "");
+  const [showEmoji, setShowEmoji] = useState(false);
+  const isEdit = !!goal;
+
+  const monthsLeft = () => {
+    if (!deadline) return null;
+    const now = new Date();
+    const dl  = new Date(deadline + "-01");
+    return Math.max(1, (dl.getFullYear() - now.getFullYear()) * 12 + (dl.getMonth() - now.getMonth()));
+  };
+  const monthlyNeeded = () => {
+    const t = parseFloat(target) || 0;
+    const s = parseFloat(saved) || 0;
+    const m = monthsLeft();
+    if (!m || t <= s) return 0;
+    return Math.ceil((t - s) / m);
+  };
+
+  const save = () => {
+    const t = parseFloat(String(target).replace(/,/g,""));
+    const s = parseFloat(String(saved).replace(/,/g,"")) || 0;
+    if (!name.trim() || !t || t <= 0) return;
+    onSave({ name: name.trim(), emoji, target_amount: t, saved_amount: s, currency, deadline: deadline || null });
+  };
+
+  const QUICK = { LAK:[1000000,5000000,10000000,50000000], THB:[1000,5000,10000,50000], USD:[100,500,1000,5000] };
+  const sym = CURR[currency].symbol;
+
+  return (
+    <div style={{position:"fixed",inset:0,zIndex:2000,background:"rgba(30,30,40,0.6)",backdropFilter:"blur(4px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}}
+      onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div style={{background:"#fff",borderRadius:"28px 28px 0 0",padding:"28px 24px 52px",width:"100%",maxWidth:430,animation:"slideUp .3s ease",maxHeight:"90vh",overflowY:"auto"}}>
+
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+          <div style={{fontWeight:800,fontSize:17,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{isEdit?"Edit Goal":"New Goal 🎯"}</div>
+          <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:22,color:T.muted}}>✕</button>
+        </div>
+
+        {/* Name + emoji */}
+        <div style={{fontSize:11,fontWeight:700,color:T.muted,letterSpacing:0.8,textTransform:"uppercase",marginBottom:6}}>Goal name</div>
+        <div style={{display:"flex",gap:8,marginBottom:16}}>
+          <button onClick={()=>setShowEmoji(!showEmoji)} style={{width:50,height:50,borderRadius:14,border:"1.5px solid rgba(45,45,58,0.12)",background:"rgba(172,225,175,0.08)",fontSize:24,cursor:"pointer",flexShrink:0}}>{emoji}</button>
+          <input value={name} onChange={e=>setName(e.target.value)} placeholder='e.g. "Bali Trip", "New Phone"'
+            style={{flex:1,padding:"12px 14px",borderRadius:14,border:"1.5px solid rgba(45,45,58,0.12)",outline:"none",fontSize:14,fontFamily:"'Noto Sans',sans-serif",color:T.dark,background:"rgba(172,225,175,0.05)"}}
+            onFocus={e=>e.target.style.borderColor="#ACE1AF"} onBlur={e=>e.target.style.borderColor="rgba(45,45,58,0.12)"}/>
+        </div>
+        {showEmoji&&(
+          <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:14,padding:10,borderRadius:14,background:"rgba(45,45,58,0.04)"}}>
+            {GOAL_EMOJIS.map(e=><button key={e} onClick={()=>{setEmoji(e);setShowEmoji(false);}} style={{fontSize:22,border:"none",background:emoji===e?"rgba(172,225,175,0.3)":"transparent",cursor:"pointer",borderRadius:8,padding:4,width:36,height:36}}>{e}</button>)}
+          </div>
+        )}
+
+        {/* Currency */}
+        <div style={{fontSize:11,fontWeight:700,color:T.muted,letterSpacing:0.8,textTransform:"uppercase",marginBottom:6}}>Currency</div>
+        <div style={{display:"flex",gap:8,marginBottom:16}}>
+          {["LAK","THB","USD"].map(c=>(
+            <button key={c} onClick={()=>setCurrency(c)} style={{flex:1,padding:"8px 0",borderRadius:12,border:"none",cursor:"pointer",background:currency===c?T.celadon:"rgba(45,45,58,0.06)",fontWeight:700,fontSize:13,color:currency===c?"#1A4020":T.muted,display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>
+              <Flag code={c} size={14}/>{c}
+            </button>
+          ))}
+        </div>
+
+        {/* Target amount */}
+        <div style={{fontSize:11,fontWeight:700,color:T.muted,letterSpacing:0.8,textTransform:"uppercase",marginBottom:6}}>Target amount</div>
+        <div style={{display:"flex",alignItems:"center",gap:8,background:"rgba(172,225,175,0.08)",borderRadius:14,padding:"4px 4px 4px 16px",border:"1.5px solid #ACE1AF",marginBottom:10}}>
+          <span style={{fontSize:18,fontWeight:800,color:T.dark}}>{sym}</span>
+          <input value={target} onChange={e=>setTarget(e.target.value)} onFocus={e=>e.target.select()} type="number" inputMode="decimal" placeholder="0"
+            style={{flex:1,border:"none",outline:"none",background:"transparent",fontSize:22,fontWeight:800,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}/>
+        </div>
+        <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}}>
+          {QUICK[currency].map(v=>(
+            <button key={v} onClick={()=>setTarget(String(v))} style={{padding:"7px 12px",borderRadius:10,border:"none",cursor:"pointer",background:Number(target)===v?"rgba(172,225,175,0.35)":"rgba(45,45,58,0.06)",fontWeight:700,fontSize:12,color:T.dark,boxShadow:Number(target)===v?"0 0 0 2px #ACE1AF":"none"}}>{fmtCompact(v,currency)}</button>
+          ))}
+        </div>
+
+        {/* Already saved */}
+        <div style={{fontSize:11,fontWeight:700,color:T.muted,letterSpacing:0.8,textTransform:"uppercase",marginBottom:6}}>Already saved</div>
+        <div style={{display:"flex",alignItems:"center",gap:8,background:"rgba(45,45,58,0.04)",borderRadius:14,padding:"4px 4px 4px 16px",border:"1.5px solid rgba(45,45,58,0.1)",marginBottom:16}}>
+          <span style={{fontSize:16,fontWeight:800,color:T.muted}}>{sym}</span>
+          <input value={saved} onChange={e=>setSaved(e.target.value)} onFocus={e=>e.target.select()} type="number" inputMode="decimal" placeholder="0"
+            style={{flex:1,border:"none",outline:"none",background:"transparent",fontSize:18,fontWeight:700,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}/>
+        </div>
+
+        {/* Deadline */}
+        <div style={{fontSize:11,fontWeight:700,color:T.muted,letterSpacing:0.8,textTransform:"uppercase",marginBottom:6}}>Target month</div>
+        <input type="month" value={deadline} onChange={e=>setDeadline(e.target.value)}
+          min={new Date().toISOString().slice(0,7)}
+          style={{width:"100%",padding:"12px 14px",borderRadius:14,border:"1.5px solid rgba(45,45,58,0.12)",outline:"none",fontSize:14,fontFamily:"'Noto Sans',sans-serif",color:T.dark,background:"rgba(172,225,175,0.05)",marginBottom:16,boxSizing:"border-box"}}
+          onFocus={e=>e.target.style.borderColor="#ACE1AF"} onBlur={e=>e.target.style.borderColor="rgba(45,45,58,0.12)"}/>
+
+        {/* Monthly preview */}
+        {parseFloat(target) > 0 && deadline && (
+          <div style={{background:"rgba(172,225,175,0.12)",borderRadius:16,padding:"12px 16px",marginBottom:20}}>
+            <div style={{fontSize:12,color:"#2A7A40",fontWeight:700}}>
+              💚 Save {fmt(monthlyNeeded(), currency)}/month for {monthsLeft()} months to hit your goal
+            </div>
+          </div>
+        )}
+
+        <button onClick={save} style={{width:"100%",padding:"14px",borderRadius:16,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",color:"#1A4020",fontWeight:800,fontSize:15,fontFamily:"'Noto Sans',sans-serif",boxShadow:"0 4px 16px rgba(172,225,175,0.4)"}}>
+          {isEdit ? "Save Changes ✓" : "Create Goal 🎯"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ═══ ADD SAVINGS MODAL ════════════════════════════════════════
+function AddSavingsModal({ goal, onSave, onClose }) {
+  const [amount, setAmount] = useState("");
+  const remaining = Math.max(0, goal.target_amount - goal.saved_amount);
+  const QUICK = { LAK:[500000,1000000,2000000], THB:[500,1000,2000], USD:[50,100,200] };
+  const save = () => {
+    const a = parseFloat(String(amount).replace(/,/g,""));
+    if (!a || a <= 0) return;
+    onSave(Math.min(a, remaining));
+  };
+  return (
+    <div style={{position:"fixed",inset:0,zIndex:2000,background:"rgba(30,30,40,0.6)",backdropFilter:"blur(4px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}}
+      onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div style={{background:"#fff",borderRadius:"28px 28px 0 0",padding:"28px 24px 52px",width:"100%",maxWidth:430,animation:"slideUp .3s ease"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+          <div>
+            <div style={{fontWeight:800,fontSize:17,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{goal.emoji} Add to {goal.name}</div>
+            <div style={{fontSize:12,color:T.muted,marginTop:2}}>{fmt(goal.saved_amount,goal.currency)} saved · {fmt(remaining,goal.currency)} to go</div>
+          </div>
+          <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:22,color:T.muted}}>✕</button>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:8,background:"rgba(172,225,175,0.08)",borderRadius:14,padding:"4px 4px 4px 16px",border:"1.5px solid #ACE1AF",marginBottom:12}}>
+          <span style={{fontSize:18,fontWeight:800,color:T.dark}}>{CURR[goal.currency].symbol}</span>
+          <input value={amount} onChange={e=>setAmount(e.target.value)} onFocus={e=>e.target.select()} type="number" inputMode="decimal" placeholder="0" autoFocus
+            style={{flex:1,border:"none",outline:"none",background:"transparent",fontSize:26,fontWeight:800,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}/>
+        </div>
+        <div style={{display:"flex",gap:8,marginBottom:20,flexWrap:"wrap"}}>
+          {(QUICK[goal.currency]||[]).map(v=>(
+            <button key={v} onClick={()=>setAmount(String(Math.min(v,remaining)))} style={{padding:"7px 12px",borderRadius:10,border:"none",cursor:"pointer",background:"rgba(45,45,58,0.06)",fontWeight:700,fontSize:12,color:T.dark}}>{fmtCompact(v,goal.currency)}</button>
+          ))}
+          <button onClick={()=>setAmount(String(remaining))} style={{padding:"7px 12px",borderRadius:10,border:"none",cursor:"pointer",background:"rgba(172,225,175,0.2)",fontWeight:700,fontSize:12,color:"#1A5A30"}}>All ✓</button>
+        </div>
+        <button onClick={save} style={{width:"100%",padding:"14px",borderRadius:16,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",color:"#1A4020",fontWeight:800,fontSize:15,fontFamily:"'Noto Sans',sans-serif",boxShadow:"0 4px 16px rgba(172,225,175,0.4)"}}>Add Savings 💚</button>
+      </div>
+    </div>
+  );
+}
+
+// ═══ GOALS SCREEN ════════════════════════════════════════════
+function GoalsScreen({ profile, transactions }) {
+  const { lang, baseCurrency, userId } = profile;
+  const [goals,      setGoals]      = useState([]);
+  const [loading,    setLoading]    = useState(true);
+  const [showCreate, setShowCreate] = useState(false);
+  const [editGoal,   setEditGoal]   = useState(null);
+  const [addToGoal,  setAddToGoal]  = useState(null);
+
+  // Load goals from Supabase
+  useEffect(() => {
+    if (!userId) return;
+    supabase.from("goals").select("*").eq("user_id", userId).eq("is_completed", false)
+      .order("created_at", { ascending: true })
+      .then(({ data }) => { if (data) setGoals(data); setLoading(false); });
+  }, [userId]);
+
+  const createGoal = async (data) => {
+    const { data: saved } = await supabase.from("goals").insert({ user_id: userId, ...data }).select().single();
+    if (saved) setGoals(prev => [...prev, saved]);
+    setShowCreate(false);
+  };
+
+  const updateGoal = async (id, data) => {
+    await supabase.from("goals").update(data).eq("id", id);
+    setGoals(prev => prev.map(g => g.id === id ? { ...g, ...data } : g));
+    setEditGoal(null);
+  };
+
+  const addSavings = async (goalId, amount) => {
+    const goal = goals.find(g => g.id === goalId);
+    if (!goal) return;
+    const newSaved = goal.saved_amount + amount;
+    const isComplete = newSaved >= goal.target_amount;
+    await supabase.from("goals").update({ saved_amount: newSaved, is_completed: isComplete }).eq("id", goalId);
+    if (isComplete) {
+      setGoals(prev => prev.filter(g => g.id !== goalId));
+    } else {
+      setGoals(prev => prev.map(g => g.id === goalId ? { ...g, saved_amount: newSaved } : g));
+    }
+    setAddToGoal(null);
+  };
+
+  const deleteGoal = async (id) => {
+    if (!window.confirm("Delete this goal?")) return;
+    await supabase.from("goals").delete().eq("id", id);
+    setGoals(prev => prev.filter(g => g.id !== id));
+  };
+
+  // Smart suggestion: which expense category to cut
+  const getSuggestion = (goal) => {
+    const now = new Date();
+    const monthTxs = transactions.filter(tx => {
+      const d = new Date(tx.date);
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+        && tx.currency === goal.currency && tx.type === "expense";
+    });
+    const spentByCat = {};
+    monthTxs.forEach(tx => { spentByCat[tx.categoryId] = (spentByCat[tx.categoryId]||0) + tx.amount; });
+    const top = Object.entries(spentByCat).sort((a,b) => b[1]-a[1])[0];
+    if (!top) return null;
+    const cat = [...DEFAULT_EXPENSE_CATS,...(profile.customCategories||[])].find(c=>c.id===top[0]);
+    const cutBy = Math.round(top[1] * 0.2); // suggest 20% cut
+    if (!cat || cutBy <= 0) return null;
+    return `Cut ${cat.emoji} ${catLabel(cat,lang)} by ${fmtCompact(cutBy,goal.currency)}/mo to save faster`;
+  };
+
+  const monthsLeft = (goal) => {
+    if (!goal.deadline) return null;
+    const now = new Date();
+    const dl  = new Date(goal.deadline);
+    const m   = (dl.getFullYear()-now.getFullYear())*12+(dl.getMonth()-now.getMonth());
+    return Math.max(1, m);
+  };
+
+  const monthlyNeeded = (goal) => {
+    const remaining = goal.target_amount - goal.saved_amount;
+    const m = monthsLeft(goal);
+    if (!m || remaining <= 0) return 0;
+    return Math.ceil(remaining / m);
+  };
+
+  const deadlineLabel = (goal) => {
+    if (!goal.deadline) return null;
+    const m = monthsLeft(goal);
+    if (m <= 1) return "Due this month ⚡";
+    if (m <= 3) return `${m} months left`;
+    return new Date(goal.deadline).toLocaleDateString("en-US", { month:"short", year:"numeric" });
+  };
+
+  return (
+    <div style={{padding:"52px 16px 32px",position:"relative",zIndex:1}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20}}>
+        <div>
+          <div style={{fontWeight:800,fontSize:22,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>Goals 🎯</div>
+          <div style={{fontSize:12,color:T.muted,marginTop:2}}>Plan · Save · Achieve</div>
+        </div>
+        <button onClick={()=>setShowCreate(true)} style={{padding:"9px 16px",borderRadius:14,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",color:"#1A4020",fontWeight:800,fontSize:13,fontFamily:"'Noto Sans',sans-serif",boxShadow:"0 3px 10px rgba(172,225,175,0.4)"}}>+ New</button>
+      </div>
+
+      {loading && <div style={{textAlign:"center",padding:40,color:T.muted,fontSize:14}}>Loading…</div>}
+
+      {!loading && goals.length === 0 && (
+        <div style={{textAlign:"center",padding:"48px 24px",display:"flex",flexDirection:"column",alignItems:"center",gap:14}}>
+          <div style={{fontSize:56}}>🎯</div>
+          <div style={{fontWeight:700,fontSize:17,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>No goals yet</div>
+          <div style={{fontSize:13,color:T.muted,lineHeight:1.6,maxWidth:220}}>Set a savings goal — Bali trip, new phone, emergency fund — and we'll help you get there.</div>
+          <button onClick={()=>setShowCreate(true)} style={{marginTop:8,padding:"12px 28px",borderRadius:16,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",color:"#1A4020",fontWeight:800,fontSize:14,fontFamily:"'Noto Sans',sans-serif",boxShadow:"0 4px 16px rgba(172,225,175,0.4)"}}>Create my first goal</button>
+        </div>
+      )}
+
+      <div style={{display:"flex",flexDirection:"column",gap:14}}>
+        {goals.map(goal => {
+          const pct      = Math.min(100, Math.round((goal.saved_amount / goal.target_amount) * 100));
+          const remaining = goal.target_amount - goal.saved_amount;
+          const monthly  = monthlyNeeded(goal);
+          const dlLabel  = deadlineLabel(goal);
+          const suggestion = getSuggestion(goal);
+          const barColor = pct >= 100 ? "#3da873" : pct >= 60 ? "#5aae5f" : "#ACE1AF";
+
+          return (
+            <div key={goal.id} style={{background:T.surface,backdropFilter:"blur(20px)",borderRadius:22,padding:"18px 18px 16px",boxShadow:T.shadow}}>
+              {/* Header row */}
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
+                <div style={{display:"flex",alignItems:"center",gap:10}}>
+                  <div style={{width:46,height:46,borderRadius:15,background:"rgba(172,225,175,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>{goal.emoji}</div>
+                  <div>
+                    <div style={{fontWeight:800,fontSize:15,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{goal.name}</div>
+                    <div style={{fontSize:11,color:T.muted,marginTop:1,display:"flex",alignItems:"center",gap:6}}>
+                      <Flag code={goal.currency} size={12}/>
+                      {dlLabel && <span>{dlLabel}</span>}
+                    </div>
+                  </div>
+                </div>
+                <div style={{display:"flex",gap:6}}>
+                  <button onClick={()=>setEditGoal(goal)} style={{width:30,height:30,borderRadius:9,border:"none",cursor:"pointer",background:"rgba(45,45,58,0.06)",fontSize:13,color:T.muted}}>✏️</button>
+                  <button onClick={()=>deleteGoal(goal.id)} style={{width:30,height:30,borderRadius:9,border:"none",cursor:"pointer",background:"rgba(255,179,167,0.15)",fontSize:13,color:"#C0392B"}}>✕</button>
+                </div>
+              </div>
+
+              {/* Progress */}
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:8}}>
+                <div>
+                  <div style={{fontSize:11,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:0.8}}>Saved</div>
+                  <div style={{fontSize:20,fontWeight:800,color:"#1A5A30",fontFamily:"'Noto Sans',sans-serif"}}>{fmt(goal.saved_amount,goal.currency)}</div>
+                </div>
+                <div style={{textAlign:"right"}}>
+                  <div style={{fontSize:11,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:0.8}}>Target</div>
+                  <div style={{fontSize:15,fontWeight:700,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{fmt(goal.target_amount,goal.currency)}</div>
+                </div>
+              </div>
+              <div style={{height:10,background:"rgba(45,45,58,0.07)",borderRadius:99,overflow:"hidden",marginBottom:6}}>
+                <div style={{height:"100%",width:`${pct}%`,background:barColor,borderRadius:99,transition:"width .6s cubic-bezier(.34,1.2,.64,1)"}}/>
+              </div>
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:14}}>
+                <span style={{color:barColor,fontWeight:700}}>{pct}% complete</span>
+                <span style={{color:T.muted}}>{fmt(remaining,goal.currency)} to go</span>
+              </div>
+
+              {/* Monthly plan */}
+              {monthly > 0 && (
+                <div style={{background:"rgba(172,225,175,0.1)",borderRadius:12,padding:"9px 12px",marginBottom:10}}>
+                  <div style={{fontSize:12,color:"#2A7A40",fontWeight:700}}>💚 Save {fmt(monthly,goal.currency)}/month to reach your goal on time</div>
+                </div>
+              )}
+
+              {/* AI suggestion */}
+              {suggestion && (
+                <div style={{background:"rgba(255,179,167,0.08)",borderRadius:12,padding:"9px 12px",marginBottom:12}}>
+                  <div style={{fontSize:12,color:"#A03020",fontWeight:700}}>💡 {suggestion}</div>
+                </div>
+              )}
+
+              {/* Add savings button */}
+              <button onClick={()=>setAddToGoal(goal)} style={{width:"100%",padding:"11px",borderRadius:14,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",color:"#1A4020",fontWeight:800,fontSize:13,fontFamily:"'Noto Sans',sans-serif",boxShadow:"0 3px 10px rgba(172,225,175,0.3)"}}>+ Add savings</button>
+            </div>
+          );
+        })}
+      </div>
+
+      {showCreate && <GoalModal profile={profile} onSave={createGoal} onClose={()=>setShowCreate(false)}/>}
+      {editGoal   && <GoalModal goal={editGoal} profile={profile} onSave={d=>updateGoal(editGoal.id,d)} onClose={()=>setEditGoal(null)}/>}
+      {addToGoal  && <AddSavingsModal goal={addToGoal} onSave={amt=>addSavings(addToGoal.id,amt)} onClose={()=>setAddToGoal(null)}/>}
+    </div>
+  );
+}
 function SetBudgetModal({ cat, currency, currentLimit, spent, lang, onSave, onClose }) {
   const [amount, setAmount] = useState(currentLimit > 0 ? String(currentLimit) : "");
   const sym = CURR[currency].symbol;
@@ -1514,7 +1853,7 @@ function StreakModal({ profile, onClose }) {
 
 // ═══ BOTTOM NAV ═══════════════════════════════════════════════
 function BottomNav({active,onTab,lang}){
-  const tabs=[{id:"home",icon:"🏠",label:t(lang,"home")},{id:"analytics",icon:"📊",label:t(lang,"analytics")},{id:"budget",icon:"💰",label:t(lang,"budget")},{id:"settings",icon:"⚙️",label:t(lang,"settings")}];
+  const tabs=[{id:"home",icon:"🏠",label:t(lang,"home")},{id:"analytics",icon:"📊",label:t(lang,"analytics")},{id:"budget",icon:"💰",label:t(lang,"budget")},{id:"goals",icon:"🎯",label:"Goals"},{id:"settings",icon:"⚙️",label:t(lang,"settings")}];
   return(<div style={{position:"sticky",bottom:0,background:"rgba(247,252,245,0.96)",backdropFilter:"blur(24px)",borderTop:"1px solid rgba(45,45,58,0.07)",display:"flex",zIndex:200,paddingBottom:"env(safe-area-inset-bottom,0px)"}}>
     {tabs.map(tab=>(<button key={tab.id} onClick={()=>onTab(tab.id)} style={{flex:1,padding:"10px 0 8px",border:"none",background:"transparent",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3,position:"relative"}}>
       {active===tab.id&&<div style={{position:"absolute",top:-1,left:"50%",transform:"translateX(-50%)",width:32,height:2,borderRadius:2,background:T.celadon}}/>}
@@ -1570,6 +1909,7 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
         {tab==="home"&&(<><div style={{paddingTop:8}}/><TransactionList transactions={transactions} lang={lang} onUpdateNote={onUpdateNote} onDeleteTx={onDeleteTx} onEditCategory={(tx)=>{setEditTx(tx);setShowEdit(true);}} customCategories={customCategories}/><div style={{height:16}}/></>)}
         {tab==="analytics"&&<AnalyticsScreen profile={profile} transactions={transactions}/>}
         {tab==="budget"&&<BudgetScreen profile={profile} transactions={transactions}/>}
+        {tab==="goals"&&<GoalsScreen profile={profile} transactions={transactions}/>}
         {tab==="settings"&&<SettingsScreen profile={profile} transactions={transactions} onUpdateProfile={onUpdateProfile} onReset={onReset}/>}
       </div>
       {tab==="home"&&(
