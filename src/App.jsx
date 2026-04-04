@@ -1923,6 +1923,166 @@ function StreakModal({ profile, onClose }) {
   );
 }
 
+// ═══ AI ADVISOR MODAL ════════════════════════════════════════
+function AiAdvisorModal({ profile, transactions, onClose }) {
+  const { lang, baseCurrency, userId } = profile;
+  const [messages, setMessages] = useState([
+    { role:"assistant", text: lang==="lo"
+        ? "ສະບາຍດີ! 👋 ຂ້ອຍແມ່ນທີ່ປຶກສາການເງິນ AI ຂອງ Phanote. ຖາມຂ້ອຍໄດ້ເລີຍ!"
+        : lang==="th"
+        ? "สวัสดี! 👋 ฉันคือที่ปรึกษาการเงิน AI ของ Phanote ถามได้เลยนะ!"
+        : "Hi! 👋 I'm Phanote's AI advisor. Ask me anything about your finances!" }
+  ]);
+  const [input,    setInput]    = useState("");
+  const [loading,  setLoading]  = useState(false);
+  const [goals,    setGoals]    = useState([]);
+  const [budgets,  setBudgets]  = useState([]);
+  const bottomRef = useRef();
+  const inputRef  = useRef();
+
+  // Load goals + budgets for context
+  useEffect(() => {
+    if (!userId) return;
+    supabase.from("goals").select("*").eq("user_id", userId).eq("is_completed", false)
+      .then(({ data }) => { if (data) setGoals(data); });
+    supabase.from("budgets").select("*").eq("user_id", userId)
+      .then(({ data }) => { if (data) setBudgets(data); });
+  }, [userId]);
+
+  // Auto-scroll to bottom
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior:"smooth" });
+  }, [messages, loading]);
+
+  const QUICK_QUESTIONS = lang === "lo" ? [
+    "ຂ້ອຍໃຊ້ຈ່າຍຫຼາຍທີ່ສຸດໃນໝວດໃດ?",
+    "ຂ້ອຍຄວນຕັດຄ່າໃຊ້ຈ່າຍໃດ?",
+    "ຈະຮອດເປົ້າໝາຍໄວຂຶ້ນໄດ້ແນວໃດ?",
+    "ເດືອນນີ້ຂ້ອຍເໝາະສົມໃຊ້ຈ່າຍໄດ້ຈັກ?",
+  ] : lang === "th" ? [
+    "ฉันใช้จ่ายมากสุดหมวดไหน?",
+    "ควรลดค่าใช้จ่ายด้านไหน?",
+    "จะถึงเป้าหมายเร็วขึ้นได้ยังไง?",
+    "เดือนนี้ใช้ได้อีกเท่าไหร่?",
+  ] : [
+    "Where am I spending the most?",
+    "Which expense should I cut first?",
+    "How can I reach my goal faster?",
+    "How much can I safely spend this month?",
+  ];
+
+  const ask = async (question) => {
+    if (!question.trim() || loading) return;
+    const q = question.trim();
+    setInput("");
+    setMessages(prev => [...prev, { role:"user", text: q }]);
+    setLoading(true);
+
+    try {
+      const res = await fetch("https://api.phanote.com/advise", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          question: q,
+          lang,
+          context: {
+            transactions: transactions.slice(0, 60), // last 60 tx for context
+            budgets,
+            goals,
+            baseCurrency,
+          },
+        }),
+      });
+      const data = await res.json();
+      setMessages(prev => [...prev, { role:"assistant", text: data.reply || "Sorry, couldn't get a response. Try again!" }]);
+    } catch {
+      setMessages(prev => [...prev, { role:"assistant", text: "Connection issue. Please check your internet and try again." }]);
+    }
+    setLoading(false);
+    setTimeout(() => inputRef.current?.focus(), 100);
+  };
+
+  return (
+    <div style={{position:"fixed",inset:0,zIndex:3000,background:"rgba(30,30,40,0.6)",backdropFilter:"blur(4px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}}
+      onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div style={{background:"#fff",borderRadius:"28px 28px 0 0",width:"100%",maxWidth:430,animation:"slideUp .3s ease",height:"80vh",display:"flex",flexDirection:"column"}}>
+
+        {/* Header */}
+        <div style={{padding:"20px 20px 14px",borderBottom:"1px solid rgba(45,45,58,0.07)",flexShrink:0}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <div style={{width:38,height:38,borderRadius:12,background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>🤖</div>
+              <div>
+                <div style={{fontWeight:800,fontSize:16,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>Ask Phanote AI</div>
+                <div style={{fontSize:11,color:"#5aae5f",marginTop:1}}>Your personal finance advisor</div>
+              </div>
+            </div>
+            <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:22,color:T.muted}}>✕</button>
+          </div>
+        </div>
+
+        {/* Messages */}
+        <div style={{flex:1,overflowY:"auto",padding:"16px 16px 8px",display:"flex",flexDirection:"column",gap:12,WebkitOverflowScrolling:"touch"}}>
+          {messages.map((msg, i) => (
+            <div key={i} style={{display:"flex",justifyContent:msg.role==="user"?"flex-end":"flex-start"}}>
+              {msg.role==="assistant" && (
+                <div style={{width:28,height:28,borderRadius:9,background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0,marginRight:8,marginTop:2}}>🤖</div>
+              )}
+              <div style={{
+                maxWidth:"78%",padding:"11px 14px",borderRadius:msg.role==="user"?"18px 18px 4px 18px":"18px 18px 18px 4px",
+                background:msg.role==="user"?"linear-gradient(145deg,#ACE1AF,#7BC8A4)":"rgba(45,45,58,0.06)",
+                color:msg.role==="user"?"#1A4020":T.dark,
+                fontSize:14,lineHeight:1.55,fontFamily:"'Noto Sans',sans-serif",fontWeight:msg.role==="user"?600:400,
+              }}>
+                {msg.text}
+              </div>
+            </div>
+          ))}
+          {loading && (
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <div style={{width:28,height:28,borderRadius:9,background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14}}>🤖</div>
+              <div style={{padding:"11px 16px",borderRadius:"18px 18px 18px 4px",background:"rgba(45,45,58,0.06)",display:"flex",gap:5,alignItems:"center"}}>
+                {[0,1,2].map(i=><div key={i} style={{width:7,height:7,borderRadius:"50%",background:T.muted,animation:`bounce .9s ease ${i*0.2}s infinite`}}/>)}
+              </div>
+            </div>
+          )}
+          <div ref={bottomRef}/>
+        </div>
+
+        {/* Quick questions — show only at start */}
+        {messages.length <= 1 && (
+          <div style={{padding:"0 16px 10px",display:"flex",gap:6,flexWrap:"wrap",flexShrink:0}}>
+            {QUICK_QUESTIONS.map((q,i) => (
+              <button key={i} onClick={()=>ask(q)} style={{
+                padding:"7px 12px",borderRadius:20,border:"1px solid rgba(172,225,175,0.5)",
+                background:"rgba(172,225,175,0.1)",color:"#2A7A40",fontSize:12,fontWeight:600,
+                cursor:"pointer",fontFamily:"'Noto Sans',sans-serif",textAlign:"left",lineHeight:1.3,
+              }}>{q}</button>
+            ))}
+          </div>
+        )}
+
+        {/* Input */}
+        <div style={{padding:"8px 12px",paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 10px)",borderTop:"1px solid rgba(45,45,58,0.07)",flexShrink:0}}>
+          <div style={{display:"flex",gap:8,alignItems:"center",background:"rgba(45,45,58,0.05)",borderRadius:16,padding:"6px 6px 6px 14px"}}>
+            <input ref={inputRef} value={input} onChange={e=>setInput(e.target.value)}
+              onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&ask(input)}
+              placeholder={lang==="lo"?"ຖາມກ່ຽວກັບການເງິນຂອງທ່ານ…":lang==="th"?"ถามเรื่องการเงินของคุณ…":"Ask about your finances…"}
+              style={{flex:1,border:"none",outline:"none",background:"transparent",fontSize:14,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}/>
+            <button onClick={()=>ask(input)} disabled={loading||!input.trim()} style={{
+              width:36,height:36,borderRadius:11,border:"none",cursor:"pointer",flexShrink:0,
+              background:input.trim()?"linear-gradient(145deg,#ACE1AF,#7BC8A4)":"rgba(45,45,58,0.1)",
+              display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,
+              color:input.trim()?"#1A4020":T.muted,transition:"all .2s",
+            }}>↑</button>
+          </div>
+        </div>
+      </div>
+      <style>{`@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}`}</style>
+    </div>
+  );
+}
+
 // ═══ BOTTOM NAV ═══════════════════════════════════════════════
 function BottomNav({active,onTab,lang}){
   const tabs=[{id:"home",icon:"🏠",label:t(lang,"home")},{id:"analytics",icon:"📊",label:t(lang,"analytics")},{id:"budget",icon:"💰",label:t(lang,"budget")},{id:"goals",icon:"🎯",label:"Goals"},{id:"settings",icon:"⚙️",label:t(lang,"settings")}];
@@ -1942,6 +2102,7 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
   const[editTx,setEditTx]=useState(null);
   const[showEdit,setShowEdit]=useState(false);
   const[showStreak,setShowStreak]=useState(false);
+  const[showAdvisor,setShowAdvisor]=useState(false);
   const{lang,customCategories=[]}=profile;
   const greet=()=>{const h=new Date().getHours();if(h<12)return t(lang,"morning");if(h<17)return t(lang,"afternoon");return t(lang,"evening");};
   const dateStr=new Date().toLocaleDateString(lang==="th"?"th-TH":lang==="lo"?"lo-LA":"en-US",{weekday:"long",month:"long",day:"numeric"});
@@ -1985,7 +2146,18 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
         {tab==="settings"&&<SettingsScreen profile={profile} transactions={transactions} onUpdateProfile={onUpdateProfile} onReset={onReset}/>}
       </div>
       {tab==="home"&&(
-        <div style={{flexShrink:0,zIndex:150,background:"rgba(247,252,245,0.97)",backdropFilter:"blur(20px)",borderTop:"1px solid rgba(45,45,58,0.06)",padding:"8px 0 4px"}}>
+        <div style={{flexShrink:0,zIndex:150,background:"rgba(247,252,245,0.97)",backdropFilter:"blur(20px)",borderTop:"1px solid rgba(45,45,58,0.06)",padding:"6px 0 4px"}}>
+          {/* AI Advisor button row */}
+          <div style={{padding:"0 12px 6px",display:"flex",justifyContent:"flex-end"}}>
+            <button onClick={()=>setShowAdvisor(true)} style={{
+              display:"flex",alignItems:"center",gap:6,padding:"6px 14px",borderRadius:20,
+              border:"1px solid rgba(172,225,175,0.5)",background:"rgba(172,225,175,0.12)",
+              color:"#2A7A40",fontSize:12,fontWeight:700,cursor:"pointer",
+              fontFamily:"'Noto Sans',sans-serif",
+            }}>
+              🤖 {lang==="lo"?"ຖາມ AI":lang==="th"?"ถาม AI":"Ask AI"}
+            </button>
+          </div>
           <QuickAddBar lang={lang} onAdd={handleAdd} customCategories={customCategories} userId={profile?.userId}/>
         </div>
       )}
@@ -1994,6 +2166,7 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
       {editTx&&!showEdit&&(<QuickEditToast tx={editTx} lang={lang} onChangeCategory={()=>setShowEdit(true)} onDone={()=>setEditTx(null)} customCategories={customCategories}/>)}
       {showEdit&&editTx&&(<EditTransactionModal tx={editTx} lang={lang} onSave={handleEditSave} onClose={()=>{setShowEdit(false);setEditTx(null);}} customCategories={customCategories}/>)}
       {showStreak&&<StreakModal profile={profile} onClose={()=>setShowStreak(false)}/>}
+      {showAdvisor&&<AiAdvisorModal profile={profile} transactions={transactions} onClose={()=>setShowAdvisor(false)}/>}
       {streakToast&&<Toast msg={streakToast} onDone={onStreakToastDone}/>}
     </div>
   );
