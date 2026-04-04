@@ -1,6 +1,12 @@
 /**
- * PHANOTE — App.jsx (fixed)
- * Budget feature: SetBudgetModal + BudgetScreen moved OUTSIDE App()
+ * PHANOTE — App.jsx
+ * Phase 2: Budget + Analytics + Streaks + XP
+ *
+ * SQL migration (run once in Supabase SQL editor):
+ * ALTER TABLE profiles
+ *   ADD COLUMN IF NOT EXISTS streak_count int DEFAULT 0,
+ *   ADD COLUMN IF NOT EXISTS streak_last_date date,
+ *   ADD COLUMN IF NOT EXISTS xp int DEFAULT 0;
  */
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@supabase/supabase-js";
@@ -96,6 +102,71 @@ const dbInsertTransaction = async (userId, tx) => {
 
 const dbUpdateTransaction = async (txId, updates) => {
   await supabase.from("transactions").update(updates).eq("id", txId);
+};
+
+// ─── STREAK + XP SYSTEM ──────────────────────────────────────
+const XP_PER_TX = 10;
+const STREAK_BONUS = { 7:30, 14:60, 30:150, 100:500 };
+const LEVELS = [
+  {min:0,    label:"Seedling", emoji:"🌱"},
+  {min:100,  label:"Sprout",   emoji:"🌿"},
+  {min:300,  label:"Grower",   emoji:"🌳"},
+  {min:600,  label:"Guardian", emoji:"💚"},
+  {min:1000, label:"Star",     emoji:"⭐"},
+  {min:1500, label:"Legend",   emoji:"🌟"},
+  {min:2100, label:"Master",   emoji:"👑"},
+  {min:2800, label:"Elite",    emoji:"🔥"},
+  {min:3600, label:"Diamond",  emoji:"💎"},
+  {min:4500, label:"Champion", emoji:"🏆"},
+];
+
+const getLevel = (xp=0) => {
+  for (let i = LEVELS.length-1; i >= 0; i--) {
+    if (xp >= LEVELS[i].min) return {...LEVELS[i], index: i+1};
+  }
+  return {...LEVELS[0], index:1};
+};
+const getNextLevel = (xp=0) => {
+  for (let i = 0; i < LEVELS.length; i++) {
+    if (xp < LEVELS[i].min) return LEVELS[i];
+  }
+  return null;
+};
+const getLevelProgress = (xp=0) => {
+  const cur = getLevel(xp);
+  const next = getNextLevel(xp);
+  if (!next) return 100;
+  return Math.round(((xp - cur.min) / (next.min - cur.min)) * 100);
+};
+
+const updateStreak = async (userId, currentProfile, setProfile) => {
+  try {
+    const todayStr = new Date().toISOString().split("T")[0];
+    const lastStr  = currentProfile.streakLastDate || "";
+    const yestStr  = new Date(Date.now()-86400000).toISOString().split("T")[0];
+    let streakCount = currentProfile.streakCount || 0;
+    let xp          = currentProfile.xp || 0;
+    let bonusToast  = null;
+
+    if (lastStr === todayStr) {
+      xp += XP_PER_TX; // already logged today, just XP
+    } else if (lastStr === yestStr) {
+      streakCount += 1;
+      xp += XP_PER_TX;
+      const bonus = STREAK_BONUS[streakCount];
+      if (bonus) { xp += bonus; bonusToast = `🔥 ${streakCount}-day streak! +${bonus} bonus XP 🎉`; }
+    } else {
+      streakCount = 1; // reset
+      xp += XP_PER_TX;
+    }
+
+    const updated = {...currentProfile, streakCount, streakLastDate: todayStr, xp};
+    setProfile(updated);
+    await supabase.from("profiles").update({
+      streak_count: streakCount, streak_last_date: todayStr, xp,
+    }).eq("id", userId);
+    return bonusToast;
+  } catch(e) { console.error("Streak error:", e); return null; }
 };
 
 // ─── THEME & CONSTANTS ────────────────────────────────────────
@@ -781,6 +852,9 @@ function SettingsScreen({profile,transactions,onUpdateProfile,onReset}){
           <div>
             <div style={{fontWeight:800,fontSize:18,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{name}</div>
             <div style={{fontSize:12,color:T.muted,marginTop:2}}>{transactions.length} transactions logged</div>
+            <div style={{fontSize:11,color:"#5aae5f",marginTop:3,fontWeight:700}}>
+              {(()=>{const lv=getLevel(profile.xp||0);return`${lv.emoji} Level ${lv.index} · ${profile.xp||0} XP · 🔥 ${profile.streakCount||0} day streak`;})()}
+            </div>
             <div style={{fontSize:11,color:"#5aae5f",marginTop:2,cursor:"pointer"}} onClick={()=>setShowAvatar(!showAvatar)}>Tap avatar to change</div>
           </div>
         </div>
@@ -1312,6 +1386,132 @@ function AnalyticsScreen({ profile, transactions }) {
   );
 }
 
+// ═══ STREAK BADGE (home header) ══════════════════════════════
+function StreakBadge({ profile, onPress }) {
+  const { streakCount = 0, xp = 0 } = profile;
+  const level = getLevel(xp);
+  const pct   = getLevelProgress(xp);
+  return (
+    <button onClick={onPress} style={{
+      display:"flex", alignItems:"center", gap:6, padding:"5px 10px",
+      borderRadius:14, border:"none", cursor:"pointer",
+      background:"rgba(255,255,255,0.85)", backdropFilter:"blur(8px)",
+      boxShadow:"0 2px 10px rgba(45,45,58,0.08)",
+    }}>
+      <span style={{fontSize:14}}>{streakCount >= 7 ? "🔥" : "📅"}</span>
+      <div style={{textAlign:"left"}}>
+        <div style={{fontSize:11, fontWeight:800, color:T.dark, fontFamily:"'Noto Sans',sans-serif", lineHeight:1}}>
+          {streakCount} day{streakCount!==1?"s":""}
+        </div>
+        <div style={{fontSize:9, color:T.muted, marginTop:1}}>{level.emoji} Lv.{level.index}</div>
+      </div>
+      <div style={{width:28, height:4, borderRadius:99, background:"rgba(45,45,58,0.1)", overflow:"hidden", marginLeft:2}}>
+        <div style={{height:"100%", width:`${pct}%`, background:T.celadon, borderRadius:99}}/>
+      </div>
+    </button>
+  );
+}
+
+// ═══ STREAK MODAL (tap badge → full card) ════════════════════
+function StreakModal({ profile, onClose }) {
+  const { streakCount = 0, xp = 0, name = "" } = profile;
+  const level    = getLevel(xp);
+  const nextLevel = getNextLevel(xp);
+  const pct      = getLevelProgress(xp);
+  const xpToNext = nextLevel ? nextLevel.min - xp : 0;
+
+  const milestones = [
+    { days:3,   done: streakCount>=3,   label:"3-day starter" },
+    { days:7,   done: streakCount>=7,   label:"7-day habit",   bonus:"+30 XP" },
+    { days:14,  done: streakCount>=14,  label:"2-week warrior", bonus:"+60 XP" },
+    { days:30,  done: streakCount>=30,  label:"30-day legend",  bonus:"+150 XP" },
+    { days:100, done: streakCount>=100, label:"100-day master",  bonus:"+500 XP" },
+  ];
+
+  return (
+    <div style={{position:"fixed",inset:0,zIndex:3000,background:"rgba(30,30,40,0.6)",
+      backdropFilter:"blur(4px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}}
+      onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div style={{background:"#fff",borderRadius:"28px 28px 0 0",padding:"28px 24px 52px",
+        width:"100%",maxWidth:430,animation:"slideUp .3s ease"}}>
+
+        {/* Header */}
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
+          <div style={{fontWeight:800,fontSize:18,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>
+            {level.emoji} Your Progress
+          </div>
+          <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,color:T.muted}}>✕</button>
+        </div>
+
+        {/* Level card */}
+        <div style={{background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",borderRadius:20,padding:"20px 20px 18px",marginBottom:20}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
+            <div>
+              <div style={{fontSize:11,fontWeight:700,color:"rgba(26,64,32,0.7)",textTransform:"uppercase",letterSpacing:0.8}}>Level {level.index}</div>
+              <div style={{fontSize:26,fontWeight:800,color:"#1A4020",fontFamily:"'Noto Sans',sans-serif",marginTop:2}}>{level.emoji} {level.label}</div>
+              <div style={{fontSize:12,color:"rgba(26,64,32,0.7)",marginTop:2}}>{xp} XP total</div>
+            </div>
+            <div style={{textAlign:"right"}}>
+              <div style={{fontSize:11,fontWeight:700,color:"rgba(26,64,32,0.7)",textTransform:"uppercase",letterSpacing:0.8}}>Streak</div>
+              <div style={{fontSize:36,fontWeight:800,color:"#1A4020",fontFamily:"'Noto Sans',sans-serif",lineHeight:1}}>{streakCount}</div>
+              <div style={{fontSize:11,color:"rgba(26,64,32,0.7)"}}>days 🔥</div>
+            </div>
+          </div>
+          {nextLevel ? (<>
+            <div style={{height:8,background:"rgba(26,64,32,0.15)",borderRadius:99,overflow:"hidden"}}>
+              <div style={{height:"100%",width:`${pct}%`,background:"#1A4020",borderRadius:99,transition:"width .6s ease"}}/>
+            </div>
+            <div style={{marginTop:6,display:"flex",justifyContent:"space-between",fontSize:11,color:"rgba(26,64,32,0.7)"}}>
+              <span>{pct}% to Level {level.index+1}</span>
+              <span>{xpToNext} XP needed</span>
+            </div>
+          </>) : (
+            <div style={{fontSize:12,color:"rgba(26,64,32,0.8)",fontWeight:700}}>🏆 Maximum level reached!</div>
+          )}
+        </div>
+
+        {/* How to earn XP */}
+        <div style={{background:T.bg,borderRadius:16,padding:"14px 16px",marginBottom:20}}>
+          <div style={{fontSize:11,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:0.8,marginBottom:10}}>Earn XP</div>
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:13}}>
+              <span style={{color:T.dark}}>Log any transaction</span>
+              <span style={{fontWeight:700,color:"#2A7A40"}}>+10 XP</span>
+            </div>
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:13}}>
+              <span style={{color:T.dark}}>7-day streak milestone</span>
+              <span style={{fontWeight:700,color:"#2A7A40"}}>+30 XP</span>
+            </div>
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:13}}>
+              <span style={{color:T.dark}}>30-day streak milestone</span>
+              <span style={{fontWeight:700,color:"#2A7A40"}}>+150 XP</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Milestones */}
+        <div style={{fontSize:11,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:0.8,marginBottom:10}}>Streak milestones</div>
+        <div style={{display:"flex",flexDirection:"column",gap:8}}>
+          {milestones.map(m => (
+            <div key={m.days} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",
+              borderRadius:14,background:m.done?"rgba(172,225,175,0.2)":"rgba(45,45,58,0.04)",
+              opacity:m.done?1:0.5}}>
+              <div style={{width:32,height:32,borderRadius:10,background:m.done?T.celadon:"rgba(45,45,58,0.08)",
+                display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>
+                {m.done?"✓":"🔒"}
+              </div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:13,fontWeight:600,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{m.days} days — {m.label}</div>
+                {m.bonus&&<div style={{fontSize:11,color:"#2A7A40",marginTop:1}}>{m.bonus} bonus</div>}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ═══ BOTTOM NAV ═══════════════════════════════════════════════
 function BottomNav({active,onTab,lang}){
   const tabs=[{id:"home",icon:"🏠",label:t(lang,"home")},{id:"analytics",icon:"📊",label:t(lang,"analytics")},{id:"budget",icon:"💰",label:t(lang,"budget")},{id:"settings",icon:"⚙️",label:t(lang,"settings")}];
@@ -1325,11 +1525,12 @@ function BottomNav({active,onTab,lang}){
 }
 
 // ═══ HOME SCREEN ══════════════════════════════════════════════
-function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdateNote,onUpdateCategory,onDeleteTx}){
+function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdateNote,onUpdateCategory,onDeleteTx,streakToast,onStreakToastDone}){
   const[tab,setTab]=useState("home");
   const[toast,setToast]=useState(null);
   const[editTx,setEditTx]=useState(null);
   const[showEdit,setShowEdit]=useState(false);
+  const[showStreak,setShowStreak]=useState(false);
   const{lang,customCategories=[]}=profile;
   const greet=()=>{const h=new Date().getHours();if(h<12)return t(lang,"morning");if(h<17)return t(lang,"afternoon");return t(lang,"evening");};
   const dateStr=new Date().toLocaleDateString(lang==="th"?"th-TH":lang==="lo"?"lo-LA":"en-US",{weekday:"long",month:"long",day:"numeric"});
@@ -1352,7 +1553,10 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
                 <div style={{fontSize:12,color:T.muted,fontFamily:"'Noto Sans',sans-serif"}}>{dateStr}</div>
                 <div style={{fontSize:20,fontWeight:800,color:T.dark,marginTop:2,fontFamily:"'Noto Sans',sans-serif"}}>{greet()}, {profile.name} 👋</div>
               </div>
-              <button onClick={()=>setTab("settings")} style={{width:46,height:46,borderRadius:15,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",fontSize:24,boxShadow:"0 3px 10px rgba(172,225,175,0.4)",flexShrink:0}}>{profile.avatar}</button>
+              <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6}}>
+                <button onClick={()=>setTab("settings")} style={{width:46,height:46,borderRadius:15,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",fontSize:24,boxShadow:"0 3px 10px rgba(172,225,175,0.4)"}}>{profile.avatar}</button>
+                <StreakBadge profile={profile} onPress={()=>setShowStreak(true)}/>
+              </div>
             </div>
           </div>
           <div style={{paddingBottom:16}}><WalletCards transactions={transactions}/></div>
@@ -1377,6 +1581,8 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
       {toast&&<Toast msg={toast} onDone={()=>setToast(null)}/>}
       {editTx&&!showEdit&&(<QuickEditToast tx={editTx} lang={lang} onChangeCategory={()=>setShowEdit(true)} onDone={()=>setEditTx(null)} customCategories={customCategories}/>)}
       {showEdit&&editTx&&(<EditTransactionModal tx={editTx} lang={lang} onSave={handleEditSave} onClose={()=>{setShowEdit(false);setEditTx(null);}} customCategories={customCategories}/>)}
+      {showStreak&&<StreakModal profile={profile} onClose={()=>setShowStreak(false)}/>}
+      {streakToast&&<Toast msg={streakToast} onDone={onStreakToastDone}/>}
     </div>
   );
 }
@@ -1448,6 +1654,7 @@ export default function App(){
   const [booting, setBooting]           = useState(true);
   const [userId, setUserId]             = useState(null);
   const [loadingProfile, setLoadingProfile] = useState(false);
+  const [streakToast, setStreakToast]   = useState(null);
 
   useEffect(()=>{
     const link=document.createElement("link");
@@ -1492,6 +1699,9 @@ export default function App(){
           customCategories: dbProfile.custom_categories || [],
           expCats: dbProfile.exp_cats || [], incCats: dbProfile.inc_cats || [],
           phone: dbProfile.phone || "", countryCode: dbProfile.phone_country_code || "",
+          streakCount: dbProfile.streak_count || 0,
+          streakLastDate: dbProfile.streak_last_date || "",
+          xp: dbProfile.xp || 0,
           userId: uid,
         });
         supabase.from("profiles").update({ last_seen_at: new Date().toISOString() }).eq("id", uid).then(()=>{});
@@ -1540,6 +1750,9 @@ export default function App(){
       const saved = await dbInsertTransaction(userId, { ...tx, categoryName: cat.en, categoryEmoji: cat.emoji, rawInput: tx.rawInput || tx.description });
       setTransactions(prev => prev.map(t => t.id === tx.id ? { ...t, id: saved.id } : t));
       await dbTrackEvent(userId, "transaction_added", { type: tx.type, currency: tx.currency, category: tx.categoryId, amount: tx.amount });
+      // Update streak + XP
+      const bonusToast = await updateStreak(userId, profile, setProfile);
+      if (bonusToast) setStreakToast(bonusToast);
     } catch (e) { console.error("Save tx error:", e); }
   };
 
@@ -1636,6 +1849,8 @@ export default function App(){
       onUpdateNote={handleUpdateNote}
       onUpdateCategory={handleUpdateCategory}
       onDeleteTx={handleDeleteTransaction}
+      streakToast={streakToast}
+      onStreakToastDone={()=>setStreakToast(null)}
     />
   );
 }
