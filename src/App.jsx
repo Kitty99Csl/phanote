@@ -544,7 +544,7 @@ function EditTransactionModal({tx,lang,onSave,onClose,customCategories=[]}){
       onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
       <div style={{background:"#fff",borderRadius:"28px 28px 0 0",width:"100%",maxWidth:430,animation:"slideUp .3s ease",maxHeight:"88vh",display:"flex",flexDirection:"column"}}>
         {/* Scrollable content */}
-        <div style={{overflowY:"auto",flex:1,padding:"22px 20px 8px",display:"flex",flexDirection:"column",gap:14,WebkitOverflowScrolling:"touch"}}>
+        <div style={{overflowY:"auto",flex:1,minHeight:0,padding:"22px 20px 8px",display:"flex",flexDirection:"column",gap:14,WebkitOverflowScrolling:"touch"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
             <div style={{fontWeight:800,fontSize:16,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>Edit Transaction</div>
             <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:20,color:T.muted}}>✕</button>
@@ -893,7 +893,31 @@ function SettingsScreen({profile,transactions,onUpdateProfile,onReset}){
         onAdd={(cat)=>onUpdateProfile({customCategories:[...customCategories,cat]})}
         onRemove={(id)=>onUpdateProfile({customCategories:customCategories.filter(c=>c.id!==id)})}/>
       <div style={{marginTop:24}}/>
-      <button onClick={onReset} style={{width:"100%",padding:"14px",borderRadius:16,border:"none",cursor:"pointer",background:"rgba(255,179,167,0.15)",color:"#C0392B",fontWeight:700,fontSize:14,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"reset")}</button>
+
+      {/* Account actions */}
+      <div style={{fontSize:10,fontWeight:700,letterSpacing:1.4,color:T.muted,textTransform:"uppercase",marginBottom:10,fontFamily:"'Noto Sans',sans-serif"}}>Account</div>
+      <div style={{background:T.surface,backdropFilter:"blur(20px)",borderRadius:20,boxShadow:T.shadow,marginBottom:12,overflow:"hidden"}}>
+        {/* Switch account / logout */}
+        <button onClick={onReset} style={{width:"100%",padding:"16px 18px",border:"none",cursor:"pointer",background:"transparent",display:"flex",alignItems:"center",gap:12,textAlign:"left"}}>
+          <div style={{width:40,height:40,borderRadius:12,background:"rgba(172,225,175,0.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>🔄</div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:14,fontWeight:600,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>
+              {lang==="lo"?"ອອກຈາກລະບົບ / ປ່ຽນບັນຊີ":lang==="th"?"ออกจากระบบ / เปลี่ยนบัญชี":"Log out / Switch account"}
+            </div>
+            <div style={{fontSize:12,color:T.muted,marginTop:1}}>
+              {lang==="lo"?"ເຂົ້າສູ່ລະບົບດ້ວຍເບີໂທລະສັບອື່ນ":lang==="th"?"เข้าสู่ระบบด้วยเบอร์อื่น":"Login with a different phone number"}
+            </div>
+          </div>
+          <div style={{fontSize:12,color:"#C0392B"}}>→</div>
+        </button>
+      </div>
+
+      {/* Danger zone */}
+      <div style={{fontSize:10,fontWeight:700,letterSpacing:1.4,color:"#C0392B",textTransform:"uppercase",marginBottom:10,fontFamily:"'Noto Sans',sans-serif"}}>Danger zone</div>
+      <button onClick={onReset} style={{width:"100%",padding:"14px",borderRadius:16,border:"1px solid rgba(192,57,43,0.2)",cursor:"pointer",background:"rgba(255,179,167,0.1)",color:"#C0392B",fontWeight:700,fontSize:14,fontFamily:"'Noto Sans',sans-serif"}}>
+        {lang==="lo"?"ລ້າງຂໍ້ມູນທັງໝົດ":lang==="th"?"ล้างข้อมูลทั้งหมด":"Reset & clear all data"}
+      </button>
+      <div style={{height:32}}/>
     </div>
   );
 }
@@ -937,79 +961,86 @@ function GoalModal({ goal, profile, onSave, onClose }) {
   return (
     <div style={{position:"fixed",inset:0,zIndex:2000,background:"rgba(30,30,40,0.6)",backdropFilter:"blur(4px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}}
       onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
-      <div style={{background:"#fff",borderRadius:"28px 28px 0 0",width:"100%",maxWidth:430,animation:"slideUp .3s ease",maxHeight:"92vh",display:"flex",flexDirection:"column"}}>
+      <div style={{background:"#fff",borderRadius:"28px 28px 0 0",width:"100%",maxWidth:430,animation:"slideUp .3s ease",maxHeight:"88vh",display:"flex",flexDirection:"column"}}>
 
-        {/* Scrollable content */}
-        <div style={{overflowY:"auto",flex:1,padding:"24px 24px 8px",WebkitOverflowScrolling:"touch"}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-            <div style={{fontWeight:800,fontSize:17,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{isEdit?"Edit Goal":"New Goal 🎯"}</div>
-            <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:22,color:T.muted}}>✕</button>
+        {/* Fixed header — outside scroll */}
+        <div style={{padding:"20px 20px 12px",borderBottom:"1px solid rgba(45,45,58,0.07)",flexShrink:0}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div style={{fontWeight:800,fontSize:17,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{isEdit?"Edit Goal ✏️":"New Goal 🎯"}</div>
+            <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:22,color:T.muted,padding:"4px 8px"}}>✕</button>
+          </div>
+        </div>
+
+        {/* Scrollable content — minHeight:0 is critical for iOS flex scroll */}
+        <div style={{overflowY:"auto",flex:1,minHeight:0,padding:"16px 20px 8px",WebkitOverflowScrolling:"touch"}}>
+
+          {/* Name + emoji row */}
+          <div style={{fontSize:11,fontWeight:700,color:T.muted,letterSpacing:0.8,textTransform:"uppercase",marginBottom:6}}>Goal name</div>
+          <div style={{display:"flex",gap:8,marginBottom:14}}>
+            <button onClick={()=>setShowEmoji(!showEmoji)} style={{width:48,height:48,borderRadius:13,border:"1.5px solid rgba(45,45,58,0.12)",background:"rgba(172,225,175,0.08)",fontSize:22,cursor:"pointer",flexShrink:0}}>{emoji}</button>
+            <input value={name} onChange={e=>setName(e.target.value)} placeholder='e.g. "Bali Trip", "New Phone"' autoFocus
+              style={{flex:1,padding:"11px 14px",borderRadius:13,border:"1.5px solid rgba(45,45,58,0.12)",outline:"none",fontSize:14,fontFamily:"'Noto Sans',sans-serif",color:T.dark,background:"rgba(172,225,175,0.05)"}}
+              onFocus={e=>e.target.style.borderColor="#ACE1AF"} onBlur={e=>e.target.style.borderColor="rgba(45,45,58,0.12)"}/>
+          </div>
+          {showEmoji&&(
+            <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:12,padding:10,borderRadius:14,background:"rgba(45,45,58,0.04)"}}>
+              {GOAL_EMOJIS.map(e=><button key={e} onClick={()=>{setEmoji(e);setShowEmoji(false);}} style={{fontSize:20,border:"none",background:emoji===e?"rgba(172,225,175,0.3)":"transparent",cursor:"pointer",borderRadius:8,padding:3,width:34,height:34}}>{e}</button>)}
+            </div>
+          )}
+
+          {/* Currency */}
+          <div style={{fontSize:11,fontWeight:700,color:T.muted,letterSpacing:0.8,textTransform:"uppercase",marginBottom:6}}>Currency</div>
+          <div style={{display:"flex",gap:8,marginBottom:14}}>
+            {["LAK","THB","USD"].map(c=>(
+              <button key={c} onClick={()=>setCurrency(c)} style={{flex:1,padding:"8px 0",borderRadius:12,border:"none",cursor:"pointer",background:currency===c?T.celadon:"rgba(45,45,58,0.06)",fontWeight:700,fontSize:13,color:currency===c?"#1A4020":T.muted,display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>
+                <Flag code={c} size={14}/>{c}
+              </button>
+            ))}
           </div>
 
-        {/* Name + emoji */}
-        <div style={{fontSize:11,fontWeight:700,color:T.muted,letterSpacing:0.8,textTransform:"uppercase",marginBottom:6}}>Goal name</div>
-        <div style={{display:"flex",gap:8,marginBottom:16}}>
-          <button onClick={()=>setShowEmoji(!showEmoji)} style={{width:50,height:50,borderRadius:14,border:"1.5px solid rgba(45,45,58,0.12)",background:"rgba(172,225,175,0.08)",fontSize:24,cursor:"pointer",flexShrink:0}}>{emoji}</button>
-          <input value={name} onChange={e=>setName(e.target.value)} placeholder='e.g. "Bali Trip", "New Phone"'
-            style={{flex:1,padding:"12px 14px",borderRadius:14,border:"1.5px solid rgba(45,45,58,0.12)",outline:"none",fontSize:14,fontFamily:"'Noto Sans',sans-serif",color:T.dark,background:"rgba(172,225,175,0.05)"}}
+          {/* Target amount */}
+          <div style={{fontSize:11,fontWeight:700,color:T.muted,letterSpacing:0.8,textTransform:"uppercase",marginBottom:6}}>Target amount</div>
+          <div style={{display:"flex",alignItems:"center",gap:8,background:"rgba(172,225,175,0.08)",borderRadius:13,padding:"4px 4px 4px 14px",border:"1.5px solid #ACE1AF",marginBottom:8}}>
+            <span style={{fontSize:18,fontWeight:800,color:T.dark}}>{sym}</span>
+            <input value={target} onChange={e=>setTarget(e.target.value)} onFocus={e=>e.target.select()} type="number" inputMode="decimal" placeholder="0"
+              style={{flex:1,border:"none",outline:"none",background:"transparent",fontSize:22,fontWeight:800,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}/>
+          </div>
+          <div style={{display:"flex",gap:6,marginBottom:14,flexWrap:"wrap"}}>
+            {QUICK[currency].map(v=>(
+              <button key={v} onClick={()=>setTarget(String(v))} style={{padding:"6px 10px",borderRadius:10,border:"none",cursor:"pointer",background:Number(target)===v?"rgba(172,225,175,0.35)":"rgba(45,45,58,0.06)",fontWeight:700,fontSize:12,color:T.dark,boxShadow:Number(target)===v?"0 0 0 2px #ACE1AF":"none"}}>{fmtCompact(v,currency)}</button>
+            ))}
+          </div>
+
+          {/* Already saved — only show on edit or if user wants to set initial */}
+          {isEdit && (<>
+            <div style={{fontSize:11,fontWeight:700,color:T.muted,letterSpacing:0.8,textTransform:"uppercase",marginBottom:6}}>Already saved</div>
+            <div style={{display:"flex",alignItems:"center",gap:8,background:"rgba(45,45,58,0.04)",borderRadius:13,padding:"4px 4px 4px 14px",border:"1.5px solid rgba(45,45,58,0.1)",marginBottom:14}}>
+              <span style={{fontSize:16,fontWeight:800,color:T.muted}}>{sym}</span>
+              <input value={saved} onChange={e=>setSaved(e.target.value)} onFocus={e=>e.target.select()} type="number" inputMode="decimal" placeholder="0"
+                style={{flex:1,border:"none",outline:"none",background:"transparent",fontSize:18,fontWeight:700,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}/>
+            </div>
+          </>)}
+
+          {/* Deadline */}
+          <div style={{fontSize:11,fontWeight:700,color:T.muted,letterSpacing:0.8,textTransform:"uppercase",marginBottom:6}}>Target month</div>
+          <input type="month" value={deadline} onChange={e=>setDeadline(e.target.value)}
+            min={new Date().toISOString().slice(0,7)}
+            style={{width:"100%",padding:"11px 14px",borderRadius:13,border:"1.5px solid rgba(45,45,58,0.12)",outline:"none",fontSize:14,fontFamily:"'Noto Sans',sans-serif",color:T.dark,background:"rgba(172,225,175,0.05)",marginBottom:12,boxSizing:"border-box"}}
             onFocus={e=>e.target.style.borderColor="#ACE1AF"} onBlur={e=>e.target.style.borderColor="rgba(45,45,58,0.12)"}/>
-        </div>
-        {showEmoji&&(
-          <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:14,padding:10,borderRadius:14,background:"rgba(45,45,58,0.04)"}}>
-            {GOAL_EMOJIS.map(e=><button key={e} onClick={()=>{setEmoji(e);setShowEmoji(false);}} style={{fontSize:22,border:"none",background:emoji===e?"rgba(172,225,175,0.3)":"transparent",cursor:"pointer",borderRadius:8,padding:4,width:36,height:36}}>{e}</button>)}
-          </div>
-        )}
-
-        {/* Currency */}
-        <div style={{fontSize:11,fontWeight:700,color:T.muted,letterSpacing:0.8,textTransform:"uppercase",marginBottom:6}}>Currency</div>
-        <div style={{display:"flex",gap:8,marginBottom:16}}>
-          {["LAK","THB","USD"].map(c=>(
-            <button key={c} onClick={()=>setCurrency(c)} style={{flex:1,padding:"8px 0",borderRadius:12,border:"none",cursor:"pointer",background:currency===c?T.celadon:"rgba(45,45,58,0.06)",fontWeight:700,fontSize:13,color:currency===c?"#1A4020":T.muted,display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>
-              <Flag code={c} size={14}/>{c}
-            </button>
-          ))}
-        </div>
-
-        {/* Target amount */}
-        <div style={{fontSize:11,fontWeight:700,color:T.muted,letterSpacing:0.8,textTransform:"uppercase",marginBottom:6}}>Target amount</div>
-        <div style={{display:"flex",alignItems:"center",gap:8,background:"rgba(172,225,175,0.08)",borderRadius:14,padding:"4px 4px 4px 16px",border:"1.5px solid #ACE1AF",marginBottom:10}}>
-          <span style={{fontSize:18,fontWeight:800,color:T.dark}}>{sym}</span>
-          <input value={target} onChange={e=>setTarget(e.target.value)} onFocus={e=>e.target.select()} type="number" inputMode="decimal" placeholder="0"
-            style={{flex:1,border:"none",outline:"none",background:"transparent",fontSize:22,fontWeight:800,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}/>
-        </div>
-        <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}}>
-          {QUICK[currency].map(v=>(
-            <button key={v} onClick={()=>setTarget(String(v))} style={{padding:"7px 12px",borderRadius:10,border:"none",cursor:"pointer",background:Number(target)===v?"rgba(172,225,175,0.35)":"rgba(45,45,58,0.06)",fontWeight:700,fontSize:12,color:T.dark,boxShadow:Number(target)===v?"0 0 0 2px #ACE1AF":"none"}}>{fmtCompact(v,currency)}</button>
-          ))}
-        </div>
-
-        {/* Already saved */}
-        <div style={{fontSize:11,fontWeight:700,color:T.muted,letterSpacing:0.8,textTransform:"uppercase",marginBottom:6}}>Already saved</div>
-        <div style={{display:"flex",alignItems:"center",gap:8,background:"rgba(45,45,58,0.04)",borderRadius:14,padding:"4px 4px 4px 16px",border:"1.5px solid rgba(45,45,58,0.1)",marginBottom:16}}>
-          <span style={{fontSize:16,fontWeight:800,color:T.muted}}>{sym}</span>
-          <input value={saved} onChange={e=>setSaved(e.target.value)} onFocus={e=>e.target.select()} type="number" inputMode="decimal" placeholder="0"
-            style={{flex:1,border:"none",outline:"none",background:"transparent",fontSize:18,fontWeight:700,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}/>
-        </div>
-
-        {/* Deadline */}
-        <div style={{fontSize:11,fontWeight:700,color:T.muted,letterSpacing:0.8,textTransform:"uppercase",marginBottom:6}}>Target month</div>
-        <input type="month" value={deadline} onChange={e=>setDeadline(e.target.value)}
-          min={new Date().toISOString().slice(0,7)}
-          style={{width:"100%",padding:"12px 14px",borderRadius:14,border:"1.5px solid rgba(45,45,58,0.12)",outline:"none",fontSize:14,fontFamily:"'Noto Sans',sans-serif",color:T.dark,background:"rgba(172,225,175,0.05)",marginBottom:16,boxSizing:"border-box"}}
-          onFocus={e=>e.target.style.borderColor="#ACE1AF"} onBlur={e=>e.target.style.borderColor="rgba(45,45,58,0.12)"}/>
 
           {parseFloat(target) > 0 && deadline && (
-            <div style={{background:"rgba(172,225,175,0.12)",borderRadius:16,padding:"12px 16px",marginBottom:8}}>
+            <div style={{background:"rgba(172,225,175,0.12)",borderRadius:14,padding:"10px 14px",marginBottom:8}}>
               <div style={{fontSize:12,color:"#2A7A40",fontWeight:700}}>
                 💚 Save {fmt(monthlyNeeded(), currency)}/month for {monthsLeft()} months to hit your goal
               </div>
             </div>
           )}
+          <div style={{height:8}}/>{/* breathing room before footer */}
         </div>{/* end scroll */}
 
-        {/* Sticky footer button — always visible */}
-        <div style={{padding:"12px 24px",paddingBottom:"calc(env(safe-area-inset-bottom, 0px) + 20px)",borderTop:"1px solid rgba(45,45,58,0.06)",background:"#fff",borderRadius:"0 0 0 0",flexShrink:0}}>
-          <button onClick={save} style={{width:"100%",padding:"16px",borderRadius:16,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",color:"#1A4020",fontWeight:800,fontSize:15,fontFamily:"'Noto Sans',sans-serif",boxShadow:"0 4px 16px rgba(172,225,175,0.4)"}}>
+        {/* Sticky footer — always visible */}
+        <div style={{padding:"12px 20px",paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 16px)",borderTop:"1px solid rgba(45,45,58,0.06)",flexShrink:0}}>
+          <button onClick={save} style={{width:"100%",padding:"15px",borderRadius:16,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",color:"#1A4020",fontWeight:800,fontSize:15,fontFamily:"'Noto Sans',sans-serif",boxShadow:"0 4px 16px rgba(172,225,175,0.4)"}}>
             {isEdit ? "Save Changes ✓" : "Create Goal 🎯"}
           </button>
         </div>
@@ -1032,7 +1063,7 @@ function AddSavingsModal({ goal, onSave, onClose }) {
     <div style={{position:"fixed",inset:0,zIndex:2000,background:"rgba(30,30,40,0.6)",backdropFilter:"blur(4px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}}
       onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
       <div style={{background:"#fff",borderRadius:"28px 28px 0 0",width:"100%",maxWidth:430,animation:"slideUp .3s ease",maxHeight:"80vh",display:"flex",flexDirection:"column"}}>
-        <div style={{overflowY:"auto",flex:1,padding:"24px 24px 8px",WebkitOverflowScrolling:"touch"}}>
+        <div style={{overflowY:"auto",flex:1,minHeight:0,padding:"20px 20px 8px",WebkitOverflowScrolling:"touch"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
           <div>
             <div style={{fontWeight:800,fontSize:17,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{goal.emoji} Add to {goal.name}</div>
@@ -1322,7 +1353,7 @@ function SetBudgetModal({ cat, currency, currentLimit, spent, lang, onSave, onCl
       <div style={{ background:"#fff", borderRadius:"28px 28px 0 0",
         width:"100%", maxWidth:430, animation:"slideUp .3s ease", maxHeight:"88vh", display:"flex", flexDirection:"column" }}>
         {/* Scrollable content */}
-        <div style={{overflowY:"auto",flex:1,padding:"24px 24px 8px",WebkitOverflowScrolling:"touch"}}>
+        <div style={{overflowY:"auto",flex:1,minHeight:0,padding:"20px 20px 8px",WebkitOverflowScrolling:"touch"}}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
           <div style={{ display:"flex", alignItems:"center", gap:10 }}>
             <span style={{ fontSize:30 }}>{cat.emoji}</span>
@@ -1843,7 +1874,7 @@ function StreakModal({ profile, onClose }) {
       backdropFilter:"blur(4px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}}
       onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
       <div style={{background:"#fff",borderRadius:"28px 28px 0 0",width:"100%",maxWidth:430,animation:"slideUp .3s ease",maxHeight:"88vh",display:"flex",flexDirection:"column"}}>
-        <div style={{overflowY:"auto",flex:1,padding:"28px 24px 32px",WebkitOverflowScrolling:"touch"}}>
+        <div style={{overflowY:"auto",flex:1,minHeight:0,padding:"24px 24px 24px",WebkitOverflowScrolling:"touch"}}>
 
         {/* Header */}
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
