@@ -342,9 +342,150 @@ const parseWithAI=async(text,customCatIds=[],userId=null)=>{
 
 // ─── I18N ─────────────────────────────────────────────────────
 const i18n={
-  en:{welcome:"Welcome to Phanote",tagline:"ພາໂນດ · พาโนด · Your money, your story",your_name:"Your name",pick_avatar:"Pick your companion",pick_lang:"Choose your language",pick_currency:"Your main currency",pick_expense_cats:"Select expense categories",pick_income_cats:"Select income categories",next:"Next →",start:"Start tracking! 🐾",morning:"Good morning",afternoon:"Good afternoon",evening:"Good evening",placeholder:'e.g. "coffee 45000 LAK" or "ເຂົ້າ 50,000" or "กาแฟ 95 บาท"',note_placeholder:"Add a note…",parsing:"Reading your transaction…",recent:"Recent",today:"Today",yesterday:"Yesterday",empty:"No transactions yet",empty_sub:"Type anything below to log your first one",home:"Home",analytics:"Analytics",budget:"Budget",settings:"Settings",coming_soon:"Coming in Phase 2",confirm_q:"Did you mean?",confirm_yes:"Yes, save it",confirm_edit:"Let me fix it",reset:"Reset app",reset_confirm:"This will clear all data. Are you sure?",language:"Language",base_currency:"Base Currency",add_note:"+ note",edit_note:"edit note",save:"Save",cancel:"Cancel",add_category:"Add category",category_name:"Category name",expense:"Expense",income:"Income",manage_cats:"Manage Categories"},
-  lo:{welcome:"ຍິນດີຕ້ອນຮັບ Phanote",tagline:"ພາໂນດ — ຕິດຕາມການເງິນຂອງທ່ານ",your_name:"ຊື່ຂອງທ່ານ",pick_avatar:"ເລືອກໂຕລະຄອນ",pick_lang:"ເລືອກພາສາ",pick_currency:"ສະກຸນເງິນຫຼັກ",pick_expense_cats:"ເລືອກໝວດລາຍຈ່າຍ",pick_income_cats:"ເລືອກໝວດລາຍຮັບ",next:"ຕໍ່ໄປ →",start:"ເລີ່ມເລີຍ! 🐾",morning:"ສະບາຍດີຕອນເຊົ້າ",afternoon:"ສະບາຍດີຕອນທ່ຽງ",evening:"ສະບາຍດີຕອນແລງ",placeholder:"ເຊັ່ນ: ເຂົ້າປຽກ 50,000 LAK",note_placeholder:"ເພີ່ມໝາຍເຫດ…",parsing:"ກຳລັງວິເຄາະ…",recent:"ລ່າສຸດ",today:"ມື້ນີ້",yesterday:"ມື້ວານ",empty:"ຍັງບໍ່ມີລາຍການ",empty_sub:"ພິມດ້ານລຸ່ມເພື່ອບັນທຶກ",home:"ຫນ້າຫລັກ",analytics:"ວິເຄາະ",budget:"ງົບ",settings:"ຕັ້ງຄ່າ",coming_soon:"ມາໃນ Phase 2",confirm_q:"ຖືກຕ້ອງບໍ?",confirm_yes:"ຖືກ, ບັນທຶກ",confirm_edit:"ແກ້ໄຂ",reset:"ລ້າງຂໍ້ມູນ",reset_confirm:"ຈະລ້າງທຸກຂໍ້ມູນ. ແນ່ໃຈບໍ?",language:"ພາສາ",base_currency:"ສະກຸນເງິນຫຼັກ",add_note:"+ ໝາຍເຫດ",edit_note:"ແກ້ໄຂ",save:"ບັນທຶກ",cancel:"ຍົກເລີກ",add_category:"ເພີ່ມໝວດ",category_name:"ຊື່ໝວດ",expense:"ລາຍຈ່າຍ",income:"ລາຍຮັບ",manage_cats:"ຈັດການໝວດ"},
-  th:{welcome:"ยินดีต้อนรับสู่ Phanote",tagline:"พาโนด — ติดตามการเงินของคุณ",your_name:"ชื่อของคุณ",pick_avatar:"เลือกตัวละคร",pick_lang:"เลือกภาษา",pick_currency:"สกุลเงินหลัก",pick_expense_cats:"เลือกหมวดรายจ่าย",pick_income_cats:"เลือกหมวดรายรับ",next:"ถัดไป →",start:"เริ่มเลย! 🐾",morning:"อรุณสวัสดิ์",afternoon:"สวัสดีตอนบ่าย",evening:"สวัสดีตอนเย็น",placeholder:"เช่น กาแฟ 95 บาท",note_placeholder:"เพิ่มหมายเหตุ…",parsing:"กำลังวิเคราะห์…",recent:"ล่าสุด",today:"วันนี้",yesterday:"เมื่อวาน",empty:"ยังไม่มีรายการ",empty_sub:"พิมพ์ด้านล่างเพื่อบันทึก",home:"หน้าหลัก",analytics:"วิเคราะห์",budget:"งบประมาณ",settings:"ตั้งค่า",coming_soon:"มาใน Phase 2",confirm_q:"ถูกต้องไหม?",confirm_yes:"ใช่ บันทึก",confirm_edit:"แก้ไข",reset:"ล้างข้อมูล",reset_confirm:"จะลบข้อมูลทั้งหมด ยืนยันไหม?",language:"ภาษา",base_currency:"สกุลเงินหลัก",add_note:"+ หมายเหตุ",edit_note:"แก้ไข",save:"บันทึก",cancel:"ยกเลิก",add_category:"เพิ่มหมวด",category_name:"ชื่อหมวด",expense:"รายจ่าย",income:"รายรับ",manage_cats:"จัดการหมวด"},
+  en:{
+    welcome:"Welcome to Phanote",tagline:"ພາໂນດ · พาโนด · Your money, your story",
+    your_name:"Your name",pick_avatar:"Pick your companion",pick_lang:"Choose your language",
+    pick_currency:"Your main currency",pick_expense_cats:"Select expense categories",
+    pick_income_cats:"Select income categories",next:"Next →",start:"Start tracking! 🐾",
+    morning:"Good morning",afternoon:"Good afternoon",evening:"Good evening",
+    placeholder:'e.g. "coffee 45000 LAK" or "ເຂົ້າ 50,000" or "กาแฟ 95 บาท"',
+    note_placeholder:"Add a note…",parsing:"Reading your transaction…",
+    recent:"Recent",today:"Today",yesterday:"Yesterday",total:"total",
+    empty:"No transactions yet",empty_sub:"Type anything below to log your first one",
+    home:"Home",analytics:"Analytics",budget:"Budget",goals:"Goals",settings:"Settings",
+    coming_soon:"Coming in Phase 2",
+    confirm_q:"Did you mean?",confirm_yes:"Yes, save it",confirm_edit:"Let me fix it",
+    reset:"Reset app",reset_confirm:"This will clear all data. Are you sure?",
+    language:"Language",base_currency:"Base Currency",
+    add_note:"+ note",edit_note:"edit note",save:"Save",cancel:"Cancel",
+    add_category:"Add category",category_name:"Category name",
+    expense:"Expense",income:"Income",manage_cats:"Manage Categories",
+    preferences:"Preferences",account:"Account",
+    logout:"Log out / Switch account",logout_sub:"Login with a different phone number",
+    danger_zone:"Danger zone",reset_all:"Reset & clear all data",
+    safe_to_spend:"Safe to spend this month",per_day:"Per day",
+    over_capacity:"Over capacity by",days_left:"days left",on_track:"on track",
+    incl_goals:"incl. for goals",almost_out:"Almost out",
+    days:"days",day:"day",level:"Lv.",
+    spending_breakdown:"Spending Breakdown",top_expenses:"Top Expenses",
+    income_sources:"Income Sources",last_7_days:"Last 7 Days",
+    savings_rate:"Savings Rate",net:"Net",
+    no_data:"No data for",log_transactions:"Log some transactions to see analytics",
+    period_today:"Today",period_week:"Week",period_month:"Month",period_all:"All Time",
+    total_spent:"Total Spent",categories:"Categories",tap_set_limit:"Tap to set limit",
+    monthly_limit:"Monthly Limit",remove:"Remove",save_budget:"Save Budget ✓",
+    spent_this_month:"Spent this month",
+    goals_tagline:"Plan · Save · Achieve",
+    goal_name:"Goal name",target_amount:"Target amount",
+    already_saved:"Already saved",target_month:"Target month",
+    no_goals:"No goals yet",no_goals_sub:"Set a savings goal and we'll help you get there.",
+    create_first:"Create my first goal",add_savings:"+ Add savings",
+    saved_label:"Saved",target_label:"Target",complete:"complete",remaining:"remaining",
+    save_per_month:"Save / month",months_left:"Months left",goal_date:"Goal date",
+    on_track_for:"On track for",no_deadline:"No deadline set",
+    no_deadline_sub:"Tap ✏️ to add a target month",
+    ask_ai:"Ask AI",ai_tagline:"Your personal finance advisor",
+    ai_greeting:"Hi! 👋 I'm Phanote's AI advisor. Ask me anything about your finances!",
+    ask_placeholder:"Ask about your finances…",
+    edit_tx:"Edit Transaction",name_label:"Name",amount_label:"Amount",category_label:"Category",
+    add_to:"Add to",transactions_count:"transactions",
+  },
+  lo:{
+    welcome:"ຍິນດີຕ້ອນຮັບ Phanote",tagline:"ພາໂນດ — ຕິດຕາມການເງິນຂອງທ່ານ",
+    your_name:"ຊື່ຂອງທ່ານ",pick_avatar:"ເລືອກໂຕລະຄອນ",pick_lang:"ເລືອກພາສາ",
+    pick_currency:"ສະກຸນເງິນຫຼັກ",pick_expense_cats:"ເລືອກໝວດລາຍຈ່າຍ",
+    pick_income_cats:"ເລືອກໝວດລາຍຮັບ",next:"ຕໍ່ໄປ →",start:"ເລີ່ມເລີຍ! 🐾",
+    morning:"ສະບາຍດີຕອນເຊົ້າ",afternoon:"ສະບາຍດີຕອນທ່ຽງ",evening:"ສະບາຍດີຕອນແລງ",
+    placeholder:"ເຊັ່ນ: ເຂົ້າປຽກ 50,000 LAK",note_placeholder:"ເພີ່ມໝາຍເຫດ…",
+    parsing:"ກຳລັງວິເຄາະ…",
+    recent:"ລ່າສຸດ",today:"ມື້ນີ້",yesterday:"ມື້ວານ",total:"ລາຍການ",
+    empty:"ຍັງບໍ່ມີລາຍການ",empty_sub:"ພິມດ້ານລຸ່ມເພື່ອບັນທຶກ",
+    home:"ຫນ້າຫລັກ",analytics:"ວິເຄາະ",budget:"ງົບ",goals:"ເປົ້າໝາຍ",settings:"ຕັ້ງຄ່າ",
+    coming_soon:"ມາໃນ Phase 2",
+    confirm_q:"ຖືກຕ້ອງບໍ?",confirm_yes:"ຖືກ, ບັນທຶກ",confirm_edit:"ແກ້ໄຂ",
+    reset:"ລ້າງຂໍ້ມູນ",reset_confirm:"ຈະລ້າງທຸກຂໍ້ມູນ. ແນ່ໃຈບໍ?",
+    language:"ພາສາ",base_currency:"ສະກຸນເງິນຫຼັກ",
+    add_note:"+ ໝາຍເຫດ",edit_note:"ແກ້ໄຂ",save:"ບັນທຶກ",cancel:"ຍົກເລີກ",
+    add_category:"ເພີ່ມໝວດ",category_name:"ຊື່ໝວດ",
+    expense:"ລາຍຈ່າຍ",income:"ລາຍຮັບ",manage_cats:"ຈັດການໝວດ",
+    preferences:"ການຕັ້ງຄ່າ",account:"ບັນຊີ",
+    logout:"ອອກຈາກລະບົບ / ປ່ຽນບັນຊີ",logout_sub:"ເຂົ້າສູ່ລະບົບດ້ວຍເບີໂທລະສັບອື່ນ",
+    danger_zone:"ໂຊນອັນຕະລາຍ",reset_all:"ລ້າງຂໍ້ມູນທັງໝົດ",
+    safe_to_spend:"ໃຊ້ຈ່າຍໄດ້ອີກເດືອນນີ້",per_day:"ຕໍ່ວັນ",
+    over_capacity:"ເກີນຂອບເຂດ",days_left:"ວັນທີ່ເຫຼືອ",on_track:"ຢູ່ໃນເສັ້ນທາງ",
+    incl_goals:"ລວມເປົ້າໝາຍ",almost_out:"ໃກ້ໝົດແລ້ວ",
+    days:"ວັນ",day:"ວັນ",level:"ລະດັບ ",
+    spending_breakdown:"ການໃຊ້ຈ່າຍຕາມໝວດ",top_expenses:"ລາຍຈ່າຍສູງສຸດ",
+    income_sources:"ແຫຼ່ງລາຍຮັບ",last_7_days:"7 ວັນຜ່ານມາ",
+    savings_rate:"ອັດຕາການປະຢັດ",net:"ຍອດສຸດທິ",
+    no_data:"ບໍ່ມີຂໍ້ມູນ",log_transactions:"ບັນທຶກລາຍການເພື່ອເບິ່ງການວິເຄາະ",
+    period_today:"ມື້ນີ້",period_week:"ອາທິດ",period_month:"ເດືອນ",period_all:"ທັງໝົດ",
+    total_spent:"ທັງໝົດທີ່ໃຊ້",categories:"ໝວດໝູ່",tap_set_limit:"ແຕະເພື່ອຕັ້ງຂອບເຂດ",
+    monthly_limit:"ຂອບເຂດລາຍເດືອນ",remove:"ລຶບ",save_budget:"ບັນທຶກງົບ ✓",
+    spent_this_month:"ໃຊ້ຈ່າຍເດືອນນີ້",
+    goals_tagline:"ວາງແຜນ · ປະຢັດ · ສຳເລັດ",
+    goal_name:"ຊື່ເປົ້າໝາຍ",target_amount:"ຈຳນວນເງິນເປົ້າໝາຍ",
+    already_saved:"ປະຢັດໄດ້ແລ້ວ",target_month:"ເດືອນເປົ້າໝາຍ",
+    no_goals:"ຍັງບໍ່ມີເປົ້າໝາຍ",no_goals_sub:"ຕັ້ງເປົ້າໝາຍການປະຢັດ ແລ້ວພວກເຮົາຈະຊ່ວຍທ່ານ",
+    create_first:"ສ້າງເປົ້າໝາຍທຳອິດ",add_savings:"+ ເພີ່ມການປະຢັດ",
+    saved_label:"ປະຢັດແລ້ວ",target_label:"ເປົ້າໝາຍ",complete:"ສຳເລັດ",remaining:"ທີ່ເຫຼືອ",
+    save_per_month:"ປະຢັດ / ເດືອນ",months_left:"ເດືອນທີ່ເຫຼືອ",goal_date:"ວັນທີ່ເປົ້າໝາຍ",
+    on_track_for:"ຢູ່ໃນເສັ້ນທາງ",no_deadline:"ຍັງບໍ່ໄດ້ຕັ້ງວັນທີ",
+    no_deadline_sub:"ແຕະ ✏️ ເພື່ອເພີ່ມເດືອນເປົ້າໝາຍ",
+    ask_ai:"ຖາມ AI",ai_tagline:"ທີ່ປຶກສາການເງິນ AI ຂອງທ່ານ",
+    ai_greeting:"ສະບາຍດີ! 👋 ຂ້ອຍແມ່ນທີ່ປຶກສາ AI ຂອງ Phanote. ຖາມຂ້ອຍໄດ້ເລີຍ!",
+    ask_placeholder:"ຖາມກ່ຽວກັບການເງິນຂອງທ່ານ…",
+    edit_tx:"ແກ້ໄຂລາຍການ",name_label:"ຊື່",amount_label:"ຈຳນວນ",category_label:"ໝວດ",
+    add_to:"ເພີ່ມໃສ່",transactions_count:"ລາຍການ",
+  },
+  th:{
+    welcome:"ยินดีต้อนรับสู่ Phanote",tagline:"พาโนด — ติดตามการเงินของคุณ",
+    your_name:"ชื่อของคุณ",pick_avatar:"เลือกตัวละคร",pick_lang:"เลือกภาษา",
+    pick_currency:"สกุลเงินหลัก",pick_expense_cats:"เลือกหมวดรายจ่าย",
+    pick_income_cats:"เลือกหมวดรายรับ",next:"ถัดไป →",start:"เริ่มเลย! 🐾",
+    morning:"อรุณสวัสดิ์",afternoon:"สวัสดีตอนบ่าย",evening:"สวัสดีตอนเย็น",
+    placeholder:"เช่น กาแฟ 95 บาท",note_placeholder:"เพิ่มหมายเหตุ…",
+    parsing:"กำลังวิเคราะห์…",
+    recent:"ล่าสุด",today:"วันนี้",yesterday:"เมื่อวาน",total:"รายการ",
+    empty:"ยังไม่มีรายการ",empty_sub:"พิมพ์ด้านล่างเพื่อบันทึก",
+    home:"หน้าหลัก",analytics:"วิเคราะห์",budget:"งบประมาณ",goals:"เป้าหมาย",settings:"ตั้งค่า",
+    coming_soon:"มาใน Phase 2",
+    confirm_q:"ถูกต้องไหม?",confirm_yes:"ใช่ บันทึก",confirm_edit:"แก้ไข",
+    reset:"ล้างข้อมูล",reset_confirm:"จะลบข้อมูลทั้งหมด ยืนยันไหม?",
+    language:"ภาษา",base_currency:"สกุลเงินหลัก",
+    add_note:"+ หมายเหตุ",edit_note:"แก้ไข",save:"บันทึก",cancel:"ยกเลิก",
+    add_category:"เพิ่มหมวด",category_name:"ชื่อหมวด",
+    expense:"รายจ่าย",income:"รายรับ",manage_cats:"จัดการหมวด",
+    preferences:"การตั้งค่า",account:"บัญชี",
+    logout:"ออกจากระบบ / เปลี่ยนบัญชี",logout_sub:"เข้าสู่ระบบด้วยเบอร์อื่น",
+    danger_zone:"โซนอันตราย",reset_all:"ล้างข้อมูลทั้งหมด",
+    safe_to_spend:"ใช้ได้อีกเดือนนี้",per_day:"ต่อวัน",
+    over_capacity:"เกินขีดจำกัด",days_left:"วันที่เหลือ",on_track:"อยู่ในเส้นทาง",
+    incl_goals:"รวมเป้าหมาย",almost_out:"ใกล้หมดแล้ว",
+    days:"วัน",day:"วัน",level:"Lv.",
+    spending_breakdown:"การใช้จ่ายตามหมวด",top_expenses:"รายจ่ายสูงสุด",
+    income_sources:"แหล่งรายได้",last_7_days:"7 วันที่ผ่านมา",
+    savings_rate:"อัตราการออม",net:"ยอดสุทธิ",
+    no_data:"ไม่มีข้อมูลสำหรับ",log_transactions:"บันทึกรายการเพื่อดูการวิเคราะห์",
+    period_today:"วันนี้",period_week:"สัปดาห์",period_month:"เดือน",period_all:"ทั้งหมด",
+    total_spent:"ยอดใช้ทั้งหมด",categories:"หมวดหมู่",tap_set_limit:"แตะเพื่อตั้งขีดจำกัด",
+    monthly_limit:"ขีดจำกัดรายเดือน",remove:"ลบ",save_budget:"บันทึกงบ ✓",
+    spent_this_month:"ใช้จ่ายเดือนนี้",
+    goals_tagline:"วางแผน · ออม · สำเร็จ",
+    goal_name:"ชื่อเป้าหมาย",target_amount:"จำนวนเงินเป้าหมาย",
+    already_saved:"ออมแล้ว",target_month:"เดือนเป้าหมาย",
+    no_goals:"ยังไม่มีเป้าหมาย",no_goals_sub:"ตั้งเป้าหมายการออม แล้วเราจะช่วยคุณ",
+    create_first:"สร้างเป้าหมายแรก",add_savings:"+ เพิ่มการออม",
+    saved_label:"ออมแล้ว",target_label:"เป้าหมาย",complete:"สำเร็จ",remaining:"คงเหลือ",
+    save_per_month:"ออม / เดือน",months_left:"เดือนที่เหลือ",goal_date:"วันที่เป้าหมาย",
+    on_track_for:"อยู่ในเส้นทางสำหรับ",no_deadline:"ยังไม่ได้ตั้งวันที่",
+    no_deadline_sub:"แตะ ✏️ เพื่อเพิ่มเดือนเป้าหมาย",
+    ask_ai:"ถาม AI",ai_tagline:"ที่ปรึกษาการเงิน AI ของคุณ",
+    ai_greeting:"สวัสดี! 👋 ฉันคือที่ปรึกษา AI ของ Phanote ถามได้เลยนะ!",
+    ask_placeholder:"ถามเรื่องการเงินของคุณ…",
+    edit_tx:"แก้ไขรายการ",name_label:"ชื่อ",amount_label:"จำนวน",category_label:"หมวด",
+    add_to:"เพิ่มใน",transactions_count:"รายการ",
+  },
 };
 const t=(lang,key)=>i18n[lang]?.[key]||i18n.en[key]||key;
 
@@ -869,7 +1010,7 @@ function SettingsScreen({profile,transactions,onUpdateProfile,onReset}){
           </div>
         </div>)}
       </div>
-      <div style={{fontSize:10,fontWeight:700,letterSpacing:1.4,color:T.muted,textTransform:"uppercase",marginBottom:10,fontFamily:"'Noto Sans',sans-serif"}}>Preferences</div>
+      <div style={{fontSize:10,fontWeight:700,letterSpacing:1.4,color:T.muted,textTransform:"uppercase",marginBottom:10,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"preferences")}</div>
       <div style={{background:T.surface,backdropFilter:"blur(20px)",borderRadius:20,boxShadow:T.shadow,marginBottom:20}}>
         <div onClick={()=>{setShowLang(!showLang);setShowCur(false);}} style={{display:"flex",alignItems:"center",gap:12,padding:"16px 18px",cursor:"pointer",borderBottom:"1px solid rgba(45,45,58,0.05)"}}>
           <div style={{width:40,height:40,borderRadius:12,background:"rgba(172,225,175,0.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>🌐</div>
@@ -893,29 +1034,19 @@ function SettingsScreen({profile,transactions,onUpdateProfile,onReset}){
         onRemove={(id)=>onUpdateProfile({customCategories:customCategories.filter(c=>c.id!==id)})}/>
       <div style={{marginTop:24}}/>
 
-      {/* Account actions */}
-      <div style={{fontSize:10,fontWeight:700,letterSpacing:1.4,color:T.muted,textTransform:"uppercase",marginBottom:10,fontFamily:"'Noto Sans',sans-serif"}}>Account</div>
+      <div style={{fontSize:10,fontWeight:700,letterSpacing:1.4,color:T.muted,textTransform:"uppercase",marginBottom:10,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"account")}</div>
       <div style={{background:T.surface,backdropFilter:"blur(20px)",borderRadius:20,boxShadow:T.shadow,marginBottom:12,overflow:"hidden"}}>
-        {/* Switch account / logout */}
         <button onClick={onReset} style={{width:"100%",padding:"16px 18px",border:"none",cursor:"pointer",background:"transparent",display:"flex",alignItems:"center",gap:12,textAlign:"left"}}>
           <div style={{width:40,height:40,borderRadius:12,background:"rgba(172,225,175,0.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>🔄</div>
           <div style={{flex:1}}>
-            <div style={{fontSize:14,fontWeight:600,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>
-              {lang==="lo"?"ອອກຈາກລະບົບ / ປ່ຽນບັນຊີ":lang==="th"?"ออกจากระบบ / เปลี่ยนบัญชี":"Log out / Switch account"}
-            </div>
-            <div style={{fontSize:12,color:T.muted,marginTop:1}}>
-              {lang==="lo"?"ເຂົ້າສູ່ລະບົບດ້ວຍເບີໂທລະສັບອື່ນ":lang==="th"?"เข้าสู่ระบบด้วยเบอร์อื่น":"Login with a different phone number"}
-            </div>
+            <div style={{fontSize:14,fontWeight:600,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"logout")}</div>
+            <div style={{fontSize:12,color:T.muted,marginTop:1}}>{t(lang,"logout_sub")}</div>
           </div>
           <div style={{fontSize:12,color:"#C0392B"}}>→</div>
         </button>
       </div>
-
-      {/* Danger zone */}
-      <div style={{fontSize:10,fontWeight:700,letterSpacing:1.4,color:"#C0392B",textTransform:"uppercase",marginBottom:10,fontFamily:"'Noto Sans',sans-serif"}}>Danger zone</div>
-      <button onClick={onReset} style={{width:"100%",padding:"14px",borderRadius:16,border:"1px solid rgba(192,57,43,0.2)",cursor:"pointer",background:"rgba(255,179,167,0.1)",color:"#C0392B",fontWeight:700,fontSize:14,fontFamily:"'Noto Sans',sans-serif"}}>
-        {lang==="lo"?"ລ້າງຂໍ້ມູນທັງໝົດ":lang==="th"?"ล้างข้อมูลทั้งหมด":"Reset & clear all data"}
-      </button>
+      <div style={{fontSize:10,fontWeight:700,letterSpacing:1.4,color:"#C0392B",textTransform:"uppercase",marginBottom:10,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"danger_zone")}</div>
+      <button onClick={onReset} style={{width:"100%",padding:"14px",borderRadius:16,border:"1px solid rgba(192,57,43,0.2)",cursor:"pointer",background:"rgba(255,179,167,0.1)",color:"#C0392B",fontWeight:700,fontSize:14,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"reset_all")}</button>
       <div style={{height:32}}/>
     </div>
   );
@@ -1181,10 +1312,10 @@ function GoalsScreen({ profile, transactions }) {
     <div style={{padding:"52px 16px 32px",position:"relative",zIndex:1}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20}}>
         <div>
-          <div style={{fontWeight:800,fontSize:22,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>Goals 🎯</div>
-          <div style={{fontSize:12,color:T.muted,marginTop:2}}>Plan · Save · Achieve</div>
+          <div style={{fontWeight:800,fontSize:22,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"goals")} 🎯</div>
+          <div style={{fontSize:12,color:T.muted,marginTop:2}}>{t(lang,"goals_tagline")}</div>
         </div>
-        <button onClick={()=>setShowCreate(true)} style={{padding:"9px 16px",borderRadius:14,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",color:"#1A4020",fontWeight:800,fontSize:13,fontFamily:"'Noto Sans',sans-serif",boxShadow:"0 3px 10px rgba(172,225,175,0.4)"}}>+ New</button>
+        <button onClick={()=>setShowCreate(true)} style={{padding:"9px 16px",borderRadius:14,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",color:"#1A4020",fontWeight:800,fontSize:13,fontFamily:"'Noto Sans',sans-serif",boxShadow:"0 3px 10px rgba(172,225,175,0.4)"}}>+</button>
       </div>
 
       {loading && <div style={{textAlign:"center",padding:40,color:T.muted,fontSize:14}}>Loading…</div>}
@@ -1192,9 +1323,9 @@ function GoalsScreen({ profile, transactions }) {
       {!loading && goals.length === 0 && (
         <div style={{textAlign:"center",padding:"48px 24px",display:"flex",flexDirection:"column",alignItems:"center",gap:14}}>
           <div style={{fontSize:56}}>🎯</div>
-          <div style={{fontWeight:700,fontSize:17,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>No goals yet</div>
-          <div style={{fontSize:13,color:T.muted,lineHeight:1.6,maxWidth:220}}>Set a savings goal — Bali trip, new phone, emergency fund — and we'll help you get there.</div>
-          <button onClick={()=>setShowCreate(true)} style={{marginTop:8,padding:"12px 28px",borderRadius:16,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",color:"#1A4020",fontWeight:800,fontSize:14,fontFamily:"'Noto Sans',sans-serif",boxShadow:"0 4px 16px rgba(172,225,175,0.4)"}}>Create my first goal</button>
+          <div style={{fontWeight:700,fontSize:17,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"no_goals")}</div>
+          <div style={{fontSize:13,color:T.muted,lineHeight:1.6,maxWidth:220}}>{t(lang,"no_goals_sub")}</div>
+          <button onClick={()=>setShowCreate(true)} style={{marginTop:8,padding:"12px 28px",borderRadius:16,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",color:"#1A4020",fontWeight:800,fontSize:14,fontFamily:"'Noto Sans',sans-serif",boxShadow:"0 4px 16px rgba(172,225,175,0.4)"}}>{t(lang,"create_first")}</button>
         </div>
       )}
 
@@ -1627,10 +1758,10 @@ function AnalyticsScreen({ profile, transactions }) {
   const isEmpty = filteredTxs.length === 0;
 
   const PERIODS = [
-    { id:"today", label:"Today" },
-    { id:"week",  label:"Week"  },
-    { id:"month", label:"Month" },
-    { id:"all",   label:"All Time" },
+    { id:"today", label:t(lang,"period_today") },
+    { id:"week",  label:t(lang,"period_week")  },
+    { id:"month", label:t(lang,"period_month") },
+    { id:"all",   label:t(lang,"period_all")   },
   ];
 
   return (
@@ -1845,7 +1976,7 @@ function AnalyticsScreen({ profile, transactions }) {
 
 // ═══ STREAK BADGE (home header) ══════════════════════════════
 function StreakBadge({ profile, onPress }) {
-  const { streakCount = 0, xp = 0 } = profile;
+  const { streakCount = 0, xp = 0, lang = "en" } = profile;
   const level = getLevel(xp);
   const pct   = getLevelProgress(xp);
   return (
@@ -1858,9 +1989,9 @@ function StreakBadge({ profile, onPress }) {
       <span style={{fontSize:14}}>{streakCount >= 7 ? "🔥" : "📅"}</span>
       <div style={{textAlign:"left"}}>
         <div style={{fontSize:11, fontWeight:800, color:T.dark, fontFamily:"'Noto Sans',sans-serif", lineHeight:1}}>
-          {streakCount} day{streakCount!==1?"s":""}
+          {streakCount} {t(lang, streakCount!==1 ? "days" : "day")}
         </div>
-        <div style={{fontSize:9, color:T.muted, marginTop:1}}>{level.emoji} Lv.{level.index}</div>
+        <div style={{fontSize:9, color:T.muted, marginTop:1}}>{level.emoji} {t(lang,"level")}{level.index}</div>
       </div>
       <div style={{width:28, height:4, borderRadius:99, background:"rgba(45,45,58,0.1)", overflow:"hidden", marginLeft:2}}>
         <div style={{height:"100%", width:`${pct}%`, background:T.celadon, borderRadius:99}}/>
@@ -2093,7 +2224,7 @@ function AiAdvisorModal({ profile, transactions, onClose }) {
               <div style={{width:38,height:38,borderRadius:12,background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>🤖</div>
               <div>
                 <div style={{fontWeight:800,fontSize:16,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>Ask Phanote AI</div>
-                <div style={{fontSize:11,color:"#5aae5f",marginTop:1}}>Your personal finance advisor</div>
+                <div style={{fontSize:11,color:"#5aae5f",marginTop:1}}>{t(lang,"ai_tagline")}</div>
               </div>
             </div>
             <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:22,color:T.muted}}>✕</button>
@@ -2150,7 +2281,7 @@ function AiAdvisorModal({ profile, transactions, onClose }) {
           <div style={{display:"flex",gap:8,alignItems:"center",background:"rgba(45,45,58,0.05)",borderRadius:16,padding:"6px 6px 6px 14px"}}>
             <input ref={inputRef} value={input} onChange={e=>setInput(e.target.value)}
               onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&ask(input)}
-              placeholder={lang==="lo"?"ຖາມກ່ຽວກັບການເງິນຂອງທ່ານ…":lang==="th"?"ถามเรื่องการเงินของคุณ…":"Ask about your finances…"}
+              placeholder={t(lang,"ask_placeholder")}
               style={{flex:1,border:"none",outline:"none",background:"transparent",fontSize:14,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}/>
             <button onClick={()=>ask(input)} disabled={loading||!input.trim()} style={{
               width:36,height:36,borderRadius:11,border:"none",cursor:"pointer",flexShrink:0,
@@ -2168,69 +2299,51 @@ function AiAdvisorModal({ profile, transactions, onClose }) {
 
 // ═══ SAFE TO SPEND ═══════════════════════════════════════════
 function SafeToSpend({ transactions, profile }) {
-  const { baseCurrency = "LAK", userId } = profile;
+  const { baseCurrency = "LAK", userId, lang = "en" } = profile;
   const [budgets, setBudgets] = useState([]);
   const [goals,   setGoals]   = useState([]);
-
   useEffect(() => {
     if (!userId) return;
     supabase.from("budgets").select("*").eq("user_id", userId).then(({ data }) => { if (data) setBudgets(data); });
     supabase.from("goals").select("*").eq("user_id", userId).eq("is_completed", false).then(({ data }) => { if (data) setGoals(data); });
   }, [userId]);
-
   const cur = baseCurrency;
-  const sym = CURR[cur].symbol;
   const now = new Date();
   const mo = now.getMonth(), yr = now.getFullYear();
-
-  const monthTxs = transactions.filter(tx => {
-    const d = new Date(tx.date);
-    return d.getMonth()===mo && d.getFullYear()===yr && tx.currency===cur;
-  });
-
+  const monthTxs = transactions.filter(tx => { const d = new Date(tx.date); return d.getMonth()===mo && d.getFullYear()===yr && tx.currency===cur; });
   const income   = monthTxs.filter(x=>x.type==="income").reduce((s,x)=>s+x.amount,0);
   const expenses = monthTxs.filter(x=>x.type==="expense").reduce((s,x)=>s+x.amount,0);
-
-  // Total monthly budget limits set
-  const totalBudget = budgets.filter(b=>b.currency===cur).reduce((s,b)=>s+Number(b.monthly_limit),0);
-
-  // Monthly goal savings needed
   const goalSavings = goals.filter(g=>g.currency===cur&&g.deadline).reduce((g2,g)=>{
     const dl = new Date(g.deadline);
     const mLeft = Math.max(1,(dl.getFullYear()-now.getFullYear())*12+(dl.getMonth()-now.getMonth()));
     return g2 + Math.ceil((g.target_amount-g.saved_amount)/mLeft);
   },0);
-
-  // Days left in month
   const daysInMonth = new Date(yr,mo+1,0).getDate();
   const daysLeft = daysInMonth - now.getDate() + 1;
-  const dailyAvg = expenses > 0 ? expenses/now.getDate() : 0;
-  const projectedExpenses = expenses + dailyAvg*daysLeft;
-
-  // Safe to spend = income - expenses - reserved for goals
   const safeTotal = income - expenses - goalSavings;
   const safePerDay = daysLeft > 0 ? Math.floor(safeTotal / daysLeft) : 0;
-
-  // Only show if we have income data
   if (income === 0) return null;
-
   const isNegative = safeTotal < 0;
   const isWarning  = !isNegative && safeTotal < income * 0.1;
   const barColor   = isNegative ? "#C0392B" : isWarning ? "#d4993a" : "#3da873";
   const barPct     = Math.min(100, Math.max(0, (safeTotal/income)*100));
-
+  const statusText = isNegative
+    ? `⚠️ ${t(lang,"over_capacity")} ${fmtCompact(Math.abs(safeTotal),cur)}`
+    : isWarning
+    ? `⚡ ${t(lang,"almost_out")} — ${daysLeft} ${t(lang,"days_left")}`
+    : `✓ ${daysLeft} ${t(lang,"days_left")} · ${goalSavings>0?`${t(lang,"incl_goals")} ${fmtCompact(goalSavings,cur)}`:t(lang,"on_track")}`;
   return (
     <div style={{padding:"0 16px 10px"}}>
       <div style={{background:T.surface,backdropFilter:"blur(20px)",borderRadius:18,padding:"12px 16px",boxShadow:T.shadow}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
           <div>
-            <div style={{fontSize:10,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:0.8}}>Safe to spend this month</div>
+            <div style={{fontSize:10,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:0.8}}>{t(lang,"safe_to_spend")}</div>
             <div style={{fontSize:20,fontWeight:800,color:isNegative?"#C0392B":T.dark,fontFamily:"'Noto Sans',sans-serif",marginTop:3}}>
               {isNegative?"−":""}{fmtCompact(Math.abs(safeTotal),cur)}
             </div>
           </div>
           <div style={{textAlign:"right"}}>
-            <div style={{fontSize:10,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:0.8}}>Per day</div>
+            <div style={{fontSize:10,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:0.8}}>{t(lang,"per_day")}</div>
             <div style={{fontSize:16,fontWeight:800,color:barColor,fontFamily:"'Noto Sans',sans-serif",marginTop:3}}>
               {isNegative||safePerDay<=0?"—":fmtCompact(safePerDay,cur)}
             </div>
@@ -2239,13 +2352,7 @@ function SafeToSpend({ transactions, profile }) {
         <div style={{height:5,background:"rgba(45,45,58,0.08)",borderRadius:99,overflow:"hidden",marginBottom:5}}>
           <div style={{height:"100%",width:`${barPct}%`,background:barColor,borderRadius:99,transition:"width .6s ease"}}/>
         </div>
-        <div style={{fontSize:11,color:barColor,fontWeight:700}}>
-          {isNegative
-            ? `⚠️ Over capacity by ${fmtCompact(Math.abs(safeTotal),cur)}`
-            : isWarning
-            ? `⚡ Almost out — ${daysLeft} days left this month`
-            : `✓ ${daysLeft} days left · ${goalSavings>0?`incl. ${fmtCompact(goalSavings,cur)} for goals`:"on track"}`}
-        </div>
+        <div style={{fontSize:11,color:barColor,fontWeight:700}}>{statusText}</div>
       </div>
     </div>
   );
@@ -2253,7 +2360,7 @@ function SafeToSpend({ transactions, profile }) {
 
 // ═══ BOTTOM NAV ═══════════════════════════════════════════════
 function BottomNav({active,onTab,lang}){
-  const tabs=[{id:"home",icon:"🏠",label:t(lang,"home")},{id:"analytics",icon:"📊",label:t(lang,"analytics")},{id:"budget",icon:"💰",label:t(lang,"budget")},{id:"goals",icon:"🎯",label:"Goals"},{id:"settings",icon:"⚙️",label:t(lang,"settings")}];
+  const tabs=[{id:"home",icon:"🏠",label:t(lang,"home")},{id:"analytics",icon:"📊",label:t(lang,"analytics")},{id:"budget",icon:"💰",label:t(lang,"budget")},{id:"goals",icon:"🎯",label:t(lang,"goals")},{id:"settings",icon:"⚙️",label:t(lang,"settings")}];
   return(<div style={{position:"sticky",bottom:0,background:"rgba(247,252,245,0.96)",backdropFilter:"blur(24px)",borderTop:"1px solid rgba(45,45,58,0.07)",display:"flex",zIndex:200,paddingBottom:"env(safe-area-inset-bottom,0px)"}}>
     {tabs.map(tab=>(<button key={tab.id} onClick={()=>onTab(tab.id)} style={{flex:1,padding:"10px 0 8px",border:"none",background:"transparent",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3,position:"relative"}}>
       {active===tab.id&&<div style={{position:"absolute",top:-1,left:"50%",transform:"translateX(-50%)",width:32,height:2,borderRadius:2,background:T.celadon}}/>}
@@ -2303,7 +2410,7 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
           <SafeToSpend transactions={transactions} profile={profile}/>
           <div style={{padding:"0 16px 8px",display:"flex",justifyContent:"space-between",alignItems:"center",borderBottom:"1px solid rgba(45,45,58,0.05)"}}>
             <div style={{fontSize:14,fontWeight:700,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"recent")}</div>
-            <div style={{fontSize:12,color:T.muted}}>{transactions.length} total</div>
+            <div style={{fontSize:12,color:T.muted}}>{transactions.length} {t(lang,"total")}</div>
           </div>
         </div>
       )}
@@ -2324,7 +2431,7 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
               color:"#2A7A40",fontSize:12,fontWeight:700,cursor:"pointer",
               fontFamily:"'Noto Sans',sans-serif",
             }}>
-              🤖 {lang==="lo"?"ຖາມ AI":lang==="th"?"ถาม AI":"Ask AI"}
+            🤖 {t(lang,"ask_ai")}
             </button>
           </div>
           <QuickAddBar lang={lang} onAdd={handleAdd} customCategories={customCategories} userId={profile?.userId}/>
