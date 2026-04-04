@@ -1562,80 +1562,118 @@ function BudgetScreen({ profile, transactions }) {
 function AnalyticsScreen({ profile, transactions }) {
   const { lang, baseCurrency, customCategories = [] } = profile;
   const [selectedCur, setSelectedCur] = useState(baseCurrency || "LAK");
+  // period: "today" | "week" | "month" | "all"
+  const [period, setPeriod] = useState("month");
   const [monthOffset, setMonthOffset] = useState(0);
 
   const now = new Date();
-  const targetDate = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
-  const targetMonth = targetDate.getMonth();
-  const targetYear = targetDate.getFullYear();
-  const monthName = targetDate.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 
-  const monthTxs = transactions.filter(tx => {
-    const d = new Date(tx.date);
-    return d.getMonth() === targetMonth && d.getFullYear() === targetYear && tx.currency === selectedCur;
-  });
+  // Compute date range based on period
+  const getRange = () => {
+    if (period === "today") {
+      const d = now.toISOString().split("T")[0];
+      return { label: "Today", filter: tx => tx.date === d };
+    }
+    if (period === "week") {
+      const start = new Date(now); start.setDate(now.getDate() - now.getDay());
+      const startStr = start.toISOString().split("T")[0];
+      return { label: "This Week", filter: tx => tx.date >= startStr };
+    }
+    if (period === "month") {
+      const targetDate = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
+      const m = targetDate.getMonth(), y = targetDate.getFullYear();
+      const label = targetDate.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+      return { label, filter: tx => { const d = new Date(tx.date); return d.getMonth()===m && d.getFullYear()===y; }, canNav: true, targetDate };
+    }
+    // all time
+    return { label: "All Time", filter: () => true };
+  };
 
-  const income   = monthTxs.filter(x => x.type === "income").reduce((s, x) => s + x.amount, 0);
-  const expenses = monthTxs.filter(x => x.type === "expense").reduce((s, x) => s + x.amount, 0);
+  const range = getRange();
+  const filteredTxs = transactions.filter(tx => tx.currency === selectedCur && range.filter(tx));
+
+  const income   = filteredTxs.filter(x => x.type==="income").reduce((s,x) => s+x.amount, 0);
+  const expenses = filteredTxs.filter(x => x.type==="expense").reduce((s,x) => s+x.amount, 0);
   const net      = income - expenses;
-  const savingsRate = income > 0 ? Math.round(((income - expenses) / income) * 100) : 0;
+  const savingsRate = income > 0 ? Math.round(((income-expenses)/income)*100) : 0;
 
-  // Expense breakdown by category
   const spentByCat = {};
-  monthTxs.filter(x => x.type === "expense").forEach(tx => {
-    spentByCat[tx.categoryId] = (spentByCat[tx.categoryId] || 0) + tx.amount;
+  filteredTxs.filter(x=>x.type==="expense").forEach(tx => {
+    spentByCat[tx.categoryId] = (spentByCat[tx.categoryId]||0) + tx.amount;
   });
   const catBreakdown = Object.entries(spentByCat)
-    .map(([id, amount]) => ({ cat: findCat(id, customCategories), amount }))
-    .sort((a, b) => b.amount - a.amount);
-  const maxCatAmount = catBreakdown[0]?.amount || 1;
+    .map(([id,amount]) => ({ cat: findCat(id, customCategories), amount }))
+    .sort((a,b) => b.amount - a.amount);
 
-  // Income breakdown by category
   const earnedByCat = {};
-  monthTxs.filter(x => x.type === "income").forEach(tx => {
-    earnedByCat[tx.categoryId] = (earnedByCat[tx.categoryId] || 0) + tx.amount;
+  filteredTxs.filter(x=>x.type==="income").forEach(tx => {
+    earnedByCat[tx.categoryId] = (earnedByCat[tx.categoryId]||0) + tx.amount;
   });
   const incBreakdown = Object.entries(earnedByCat)
-    .map(([id, amount]) => ({ cat: findCat(id, customCategories), amount }))
-    .sort((a, b) => b.amount - a.amount);
+    .map(([id,amount]) => ({ cat: findCat(id, customCategories), amount }))
+    .sort((a,b) => b.amount - a.amount);
 
-  // Donut chart
-  const DONUT_R = 54;
-  const DONUT_C = 2 * Math.PI * DONUT_R;
+  const DONUT_R = 54, DONUT_C = 2 * Math.PI * DONUT_R;
   const COLORS = ["#ACE1AF","#7BC8A4","#FFAA5E","#C9B8FF","#FFB3A7","#A8C5FF","#FFE27D","#b8e0d4","#f7c5bb","#d4e8ff"];
   let cumulative = 0;
-  const donutSlices = catBreakdown.slice(0, 8).map((item, i) => {
-    const pct = item.amount / (expenses || 1);
-    const offset = DONUT_C * (1 - cumulative);
-    const dash = DONUT_C * pct;
+  const donutSlices = catBreakdown.slice(0,8).map((item,i) => {
+    const pct = item.amount/(expenses||1);
+    const offset = DONUT_C*(1-cumulative);
+    const dash = DONUT_C*pct;
     cumulative += pct;
-    return { ...item, dash, offset, color: COLORS[i % COLORS.length] };
+    return { ...item, dash, offset, color: COLORS[i%COLORS.length] };
   });
 
-  const isEmpty = monthTxs.length === 0;
+  const isEmpty = filteredTxs.length === 0;
+
+  const PERIODS = [
+    { id:"today", label:"Today" },
+    { id:"week",  label:"Week"  },
+    { id:"month", label:"Month" },
+    { id:"all",   label:"All Time" },
+  ];
 
   return (
     <div style={{ padding:"52px 16px 32px", position:"relative", zIndex:1 }}>
 
-      {/* Title + month nav */}
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:20 }}>
-        <div>
-          <div style={{ fontWeight:800, fontSize:22, color:T.dark, fontFamily:"'Noto Sans',sans-serif" }}>Analytics 📊</div>
-          <div style={{ fontSize:12, color:T.muted, marginTop:2 }}>{monthName}</div>
-        </div>
-        <div style={{ display:"flex", gap:6 }}>
-          <button onClick={() => setMonthOffset(o => o - 1)} style={{ width:34, height:34, borderRadius:10, border:"none", cursor:"pointer", background:T.surface, boxShadow:T.shadow, fontSize:16, color:T.dark }}>←</button>
-          {monthOffset < 0 && <button onClick={() => setMonthOffset(o => Math.min(0, o + 1))} style={{ width:34, height:34, borderRadius:10, border:"none", cursor:"pointer", background:T.surface, boxShadow:T.shadow, fontSize:16, color:T.dark }}>→</button>}
-        </div>
+      {/* Title */}
+      <div style={{ fontWeight:800, fontSize:22, color:T.dark, fontFamily:"'Noto Sans',sans-serif", marginBottom:16 }}>Analytics 📊</div>
+
+      {/* Period filter pills */}
+      <div style={{ display:"flex", gap:6, marginBottom:12, background:T.surface, borderRadius:16, padding:4, boxShadow:T.shadow }}>
+        {PERIODS.map(p => (
+          <button key={p.id} onClick={()=>{ setPeriod(p.id); setMonthOffset(0); }} style={{
+            flex:1, padding:"8px 0", borderRadius:12, border:"none", cursor:"pointer",
+            background: period===p.id ? T.celadon : "transparent",
+            fontWeight:700, fontSize:12, color: period===p.id ? "#1A4020" : T.muted,
+            fontFamily:"'Noto Sans',sans-serif", transition:"all .2s",
+          }}>{p.label}</button>
+        ))}
       </div>
+
+      {/* Month nav — only shown in Monthly view */}
+      {period === "month" && (
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
+          <div style={{ fontSize:13, fontWeight:700, color:T.dark, fontFamily:"'Noto Sans',sans-serif" }}>{range.label}</div>
+          <div style={{ display:"flex", gap:6 }}>
+            <button onClick={()=>setMonthOffset(o=>o-1)} style={{ width:32,height:32,borderRadius:10,border:"none",cursor:"pointer",background:T.surface,boxShadow:T.shadow,fontSize:15,color:T.dark }}>←</button>
+            {monthOffset < 0 && <button onClick={()=>setMonthOffset(o=>Math.min(0,o+1))} style={{ width:32,height:32,borderRadius:10,border:"none",cursor:"pointer",background:T.surface,boxShadow:T.shadow,fontSize:15,color:T.dark }}>→</button>}
+          </div>
+        </div>
+      )}
+
+      {/* Period label for non-month views */}
+      {period !== "month" && (
+        <div style={{ fontSize:12, color:T.muted, marginBottom:14 }}>{range.label} · {selectedCur}</div>
+      )}
 
       {/* Currency tabs */}
       <div style={{ display:"flex", gap:8, marginBottom:20 }}>
         {["LAK","THB","USD"].map(cur => (
-          <button key={cur} onClick={() => setSelectedCur(cur)} style={{
+          <button key={cur} onClick={()=>setSelectedCur(cur)} style={{
             flex:1, padding:"9px 0", borderRadius:14, border:"none", cursor:"pointer",
-            background: selectedCur === cur ? T.celadon : "rgba(45,45,58,0.06)",
-            fontWeight:700, fontSize:13, color: selectedCur === cur ? "#1A4020" : T.muted,
+            background: selectedCur===cur ? T.celadon : "rgba(45,45,58,0.06)",
+            fontWeight:700, fontSize:13, color: selectedCur===cur ? "#1A4020" : T.muted,
             fontFamily:"'Noto Sans',sans-serif", transition:"all .2s",
             display:"flex", alignItems:"center", justifyContent:"center", gap:5,
           }}>
@@ -1647,74 +1685,72 @@ function AnalyticsScreen({ profile, transactions }) {
       {isEmpty ? (
         <div style={{ textAlign:"center", padding:"60px 24px", display:"flex", flexDirection:"column", alignItems:"center", gap:12 }}>
           <div style={{ fontSize:52 }}>📊</div>
-          <div style={{ fontWeight:700, fontSize:17, color:T.dark, fontFamily:"'Noto Sans',sans-serif" }}>No data for {monthName}</div>
+          <div style={{ fontWeight:700, fontSize:17, color:T.dark, fontFamily:"'Noto Sans',sans-serif" }}>No data for {range.label}</div>
           <div style={{ fontSize:13, color:T.muted }}>Log some {selectedCur} transactions to see analytics</div>
         </div>
       ) : (<>
 
-        {/* Income / Expense / Net summary cards */}
+        {/* Income / Expense / Net cards */}
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:10 }}>
           <div style={{ background:T.surface, borderRadius:18, padding:"14px 16px", boxShadow:T.shadow }}>
             <div style={{ fontSize:10, fontWeight:700, color:"#2A7A40", textTransform:"uppercase", letterSpacing:0.8 }}>Income</div>
             <div style={{ fontSize:18, fontWeight:800, color:"#1A5A30", fontFamily:"'Noto Sans',sans-serif", marginTop:4 }}>+{fmt(income, selectedCur)}</div>
-            <div style={{ fontSize:11, color:T.muted, marginTop:2 }}>{monthTxs.filter(x=>x.type==="income").length} transactions</div>
+            <div style={{ fontSize:11, color:T.muted, marginTop:2 }}>{filteredTxs.filter(x=>x.type==="income").length} transactions</div>
           </div>
           <div style={{ background:T.surface, borderRadius:18, padding:"14px 16px", boxShadow:T.shadow }}>
             <div style={{ fontSize:10, fontWeight:700, color:"#A03020", textTransform:"uppercase", letterSpacing:0.8 }}>Expenses</div>
             <div style={{ fontSize:18, fontWeight:800, color:"#C0392B", fontFamily:"'Noto Sans',sans-serif", marginTop:4 }}>−{fmt(expenses, selectedCur)}</div>
-            <div style={{ fontSize:11, color:T.muted, marginTop:2 }}>{monthTxs.filter(x=>x.type==="expense").length} transactions</div>
+            <div style={{ fontSize:11, color:T.muted, marginTop:2 }}>{filteredTxs.filter(x=>x.type==="expense").length} transactions</div>
           </div>
         </div>
 
-        {/* Net + savings rate card */}
+        {/* Net + savings rate */}
         <div style={{ background:T.surface, borderRadius:18, padding:"14px 18px", boxShadow:T.shadow, marginBottom:20, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
           <div>
             <div style={{ fontSize:10, fontWeight:700, color:T.muted, textTransform:"uppercase", letterSpacing:0.8 }}>Net</div>
-            <div style={{ fontSize:22, fontWeight:800, color: net >= 0 ? "#1A5A30" : "#C0392B", fontFamily:"'Noto Sans',sans-serif", marginTop:4 }}>
-              {net >= 0 ? "+" : ""}{fmt(net, selectedCur)}
+            <div style={{ fontSize:22, fontWeight:800, color: net>=0?"#1A5A30":"#C0392B", fontFamily:"'Noto Sans',sans-serif", marginTop:4 }}>
+              {net>=0?"+":""}{fmt(net, selectedCur)}
             </div>
           </div>
           {income > 0 && (
             <div style={{ textAlign:"right" }}>
               <div style={{ fontSize:10, fontWeight:700, color:T.muted, textTransform:"uppercase", letterSpacing:0.8 }}>Savings Rate</div>
               <div style={{ fontSize:28, fontWeight:800, fontFamily:"'Noto Sans',sans-serif", marginTop:4,
-                color: savingsRate >= 20 ? "#1A5A30" : savingsRate >= 0 ? "#d4993a" : "#C0392B" }}>
+                color: savingsRate>=20?"#1A5A30":savingsRate>=0?"#d4993a":"#C0392B" }}>
                 {savingsRate}%
               </div>
             </div>
           )}
         </div>
 
-        {/* Donut chart + legend */}
+        {/* Donut chart */}
         {catBreakdown.length > 0 && (
           <div style={{ background:T.surface, borderRadius:22, padding:"20px 18px", boxShadow:T.shadow, marginBottom:20 }}>
             <div style={{ fontSize:12, fontWeight:700, color:T.muted, textTransform:"uppercase", letterSpacing:1, marginBottom:16 }}>Spending Breakdown</div>
             <div style={{ display:"flex", alignItems:"center", gap:20 }}>
-              {/* Donut */}
               <div style={{ flexShrink:0, position:"relative", width:130, height:130 }}>
                 <svg width="130" height="130" viewBox="0 0 130 130">
                   <circle cx="65" cy="65" r={DONUT_R} fill="none" stroke="rgba(45,45,58,0.06)" strokeWidth="18"/>
-                  {donutSlices.map((slice, i) => (
+                  {donutSlices.map((slice,i)=>(
                     <circle key={i} cx="65" cy="65" r={DONUT_R} fill="none"
                       stroke={slice.color} strokeWidth="18"
-                      strokeDasharray={`${slice.dash} ${DONUT_C - slice.dash}`}
+                      strokeDasharray={`${slice.dash} ${DONUT_C-slice.dash}`}
                       strokeDashoffset={slice.offset}
                       strokeLinecap="round"
-                      style={{ transform:"rotate(-90deg)", transformOrigin:"65px 65px", transition:"stroke-dasharray .6s ease" }}/>
+                      style={{transform:"rotate(-90deg)",transformOrigin:"65px 65px"}}/>
                   ))}
                 </svg>
-                <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center" }}>
-                  <div style={{ fontSize:10, color:T.muted, fontWeight:600 }}>Total</div>
-                  <div style={{ fontSize:12, fontWeight:800, color:T.dark, fontFamily:"'Noto Sans',sans-serif", textAlign:"center", lineHeight:1.2 }}>{fmtCompact(expenses, selectedCur)}</div>
+                <div style={{ position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center" }}>
+                  <div style={{ fontSize:10,color:T.muted,fontWeight:600 }}>Total</div>
+                  <div style={{ fontSize:12,fontWeight:800,color:T.dark,fontFamily:"'Noto Sans',sans-serif",textAlign:"center",lineHeight:1.2 }}>{fmtCompact(expenses,selectedCur)}</div>
                 </div>
               </div>
-              {/* Legend */}
-              <div style={{ flex:1, display:"flex", flexDirection:"column", gap:8 }}>
-                {donutSlices.map((slice, i) => (
-                  <div key={i} style={{ display:"flex", alignItems:"center", gap:8 }}>
-                    <div style={{ width:10, height:10, borderRadius:3, background:slice.color, flexShrink:0 }}/>
-                    <div style={{ flex:1, fontSize:12, color:T.dark, fontWeight:600, fontFamily:"'Noto Sans',sans-serif", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{slice.cat.emoji} {catLabel(slice.cat, lang)}</div>
-                    <div style={{ fontSize:11, fontWeight:700, color:T.muted, flexShrink:0 }}>{Math.round((slice.amount / expenses) * 100)}%</div>
+              <div style={{ flex:1,display:"flex",flexDirection:"column",gap:8 }}>
+                {donutSlices.map((slice,i)=>(
+                  <div key={i} style={{ display:"flex",alignItems:"center",gap:8 }}>
+                    <div style={{ width:10,height:10,borderRadius:3,background:slice.color,flexShrink:0 }}/>
+                    <div style={{ flex:1,fontSize:12,color:T.dark,fontWeight:600,fontFamily:"'Noto Sans',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{slice.cat.emoji} {catLabel(slice.cat,lang)}</div>
+                    <div style={{ fontSize:11,fontWeight:700,color:T.muted,flexShrink:0 }}>{Math.round((slice.amount/expenses)*100)}%</div>
                   </div>
                 ))}
               </div>
@@ -1722,26 +1758,24 @@ function AnalyticsScreen({ profile, transactions }) {
           </div>
         )}
 
-        {/* Top expense categories — horizontal bars */}
+        {/* Top expenses bars */}
         {catBreakdown.length > 0 && (
           <div style={{ background:T.surface, borderRadius:22, padding:"20px 18px", boxShadow:T.shadow, marginBottom:20 }}>
             <div style={{ fontSize:12, fontWeight:700, color:T.muted, textTransform:"uppercase", letterSpacing:1, marginBottom:16 }}>Top Expenses</div>
             <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
-              {catBreakdown.slice(0, 6).map((item, i) => {
-                const pct = (item.amount / maxCatAmount) * 100;
-                return (
+              {catBreakdown.slice(0,6).map((item,i)=>{
+                const pct = (item.amount/(catBreakdown[0]?.amount||1))*100;
+                return(
                   <div key={i}>
-                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:5 }}>
-                      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                    <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5 }}>
+                      <div style={{ display:"flex",alignItems:"center",gap:8 }}>
                         <span style={{ fontSize:18 }}>{item.cat.emoji}</span>
-                        <span style={{ fontSize:13, fontWeight:600, color:T.dark, fontFamily:"'Noto Sans',sans-serif" }}>{catLabel(item.cat, lang)}</span>
+                        <span style={{ fontSize:13,fontWeight:600,color:T.dark,fontFamily:"'Noto Sans',sans-serif" }}>{catLabel(item.cat,lang)}</span>
                       </div>
-                      <span style={{ fontSize:13, fontWeight:800, color:"#C0392B", fontFamily:"'Noto Sans',sans-serif" }}>−{fmt(item.amount, selectedCur)}</span>
+                      <span style={{ fontSize:13,fontWeight:800,color:"#C0392B",fontFamily:"'Noto Sans',sans-serif" }}>−{fmt(item.amount,selectedCur)}</span>
                     </div>
-                    <div style={{ height:6, background:"rgba(45,45,58,0.07)", borderRadius:99, overflow:"hidden" }}>
-                      <div style={{ height:"100%", width:`${pct}%`, borderRadius:99,
-                        background: i === 0 ? "#C0392B" : i === 1 ? "#e8857a" : "#FFAA5E",
-                        transition:"width .6s cubic-bezier(.34,1.2,.64,1)" }}/>
+                    <div style={{ height:6,background:"rgba(45,45,58,0.07)",borderRadius:99,overflow:"hidden" }}>
+                      <div style={{ height:"100%",width:`${pct}%`,borderRadius:99,background:i===0?"#C0392B":i===1?"#e8857a":"#FFAA5E",transition:"width .6s ease" }}/>
                     </div>
                   </div>
                 );
@@ -1755,59 +1789,50 @@ function AnalyticsScreen({ profile, transactions }) {
           <div style={{ background:T.surface, borderRadius:22, padding:"20px 18px", boxShadow:T.shadow, marginBottom:20 }}>
             <div style={{ fontSize:12, fontWeight:700, color:T.muted, textTransform:"uppercase", letterSpacing:1, marginBottom:16 }}>Income Sources</div>
             <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
-              {incBreakdown.map((item, i) => (
-                <div key={i} style={{ display:"flex", alignItems:"center", gap:12 }}>
-                  <div style={{ width:40, height:40, borderRadius:13, background:"rgba(172,225,175,0.2)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, flexShrink:0 }}>{item.cat.emoji}</div>
+              {incBreakdown.map((item,i)=>(
+                <div key={i} style={{ display:"flex",alignItems:"center",gap:12 }}>
+                  <div style={{ width:40,height:40,borderRadius:13,background:"rgba(172,225,175,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0 }}>{item.cat.emoji}</div>
                   <div style={{ flex:1 }}>
-                    <div style={{ fontSize:13, fontWeight:600, color:T.dark, fontFamily:"'Noto Sans',sans-serif" }}>{catLabel(item.cat, lang)}</div>
-                    <div style={{ height:4, background:"rgba(45,45,58,0.07)", borderRadius:99, marginTop:5, overflow:"hidden" }}>
-                      <div style={{ height:"100%", width:`${(item.amount / income) * 100}%`, borderRadius:99, background:"#3da873" }}/>
+                    <div style={{ fontSize:13,fontWeight:600,color:T.dark,fontFamily:"'Noto Sans',sans-serif" }}>{catLabel(item.cat,lang)}</div>
+                    <div style={{ height:4,background:"rgba(45,45,58,0.07)",borderRadius:99,marginTop:5,overflow:"hidden" }}>
+                      <div style={{ height:"100%",width:`${(item.amount/income)*100}%`,borderRadius:99,background:"#3da873" }}/>
                     </div>
                   </div>
-                  <div style={{ fontSize:13, fontWeight:800, color:"#1A5A30", fontFamily:"'Noto Sans',sans-serif", flexShrink:0 }}>+{fmt(item.amount, selectedCur)}</div>
+                  <div style={{ fontSize:13,fontWeight:800,color:"#1A5A30",fontFamily:"'Noto Sans',sans-serif",flexShrink:0 }}>+{fmt(item.amount,selectedCur)}</div>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* Daily activity — last 7 days */}
-        {(() => {
-          const days = Array.from({ length: 7 }, (_, i) => {
-            const d = new Date();
-            d.setDate(d.getDate() - (6 - i));
+        {/* Last 7 days bar chart — only in month/all view */}
+        {(period === "month" || period === "all") && (()=>{
+          const days = Array.from({length:7},(_,i)=>{
+            const d = new Date(); d.setDate(d.getDate()-(6-i));
             const dateStr = d.toISOString().split("T")[0];
-            const dayTxs = transactions.filter(tx => tx.date === dateStr && tx.currency === selectedCur);
-            const spent = dayTxs.filter(x => x.type === "expense").reduce((s, x) => s + x.amount, 0);
-            const earned = dayTxs.filter(x => x.type === "income").reduce((s, x) => s + x.amount, 0);
-            return { label: d.toLocaleDateString("en-US", { weekday:"short" }), date: dateStr, spent, earned };
+            const dayTxs = transactions.filter(tx=>tx.date===dateStr&&tx.currency===selectedCur);
+            return { label:d.toLocaleDateString("en-US",{weekday:"short"}), date:dateStr, spent:dayTxs.filter(x=>x.type==="expense").reduce((s,x)=>s+x.amount,0), earned:dayTxs.filter(x=>x.type==="income").reduce((s,x)=>s+x.amount,0) };
           });
-          const maxDay = Math.max(...days.map(d => Math.max(d.spent, d.earned)), 1);
-          const todayStr = new Date().toISOString().split("T")[0];
-          return (
-            <div style={{ background:T.surface, borderRadius:22, padding:"20px 18px", boxShadow:T.shadow }}>
-              <div style={{ fontSize:12, fontWeight:700, color:T.muted, textTransform:"uppercase", letterSpacing:1, marginBottom:16 }}>Last 7 Days</div>
-              <div style={{ display:"flex", gap:6, alignItems:"flex-end", height:80 }}>
-                {days.map((day, i) => (
-                  <div key={i} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:4 }}>
-                    <div style={{ width:"100%", display:"flex", flexDirection:"column", justifyContent:"flex-end", gap:2, height:60 }}>
-                      {day.earned > 0 && (
-                        <div style={{ width:"100%", height:`${(day.earned / maxDay) * 60}px`, borderRadius:"4px 4px 0 0", background:"#3da873", minHeight:3 }}/>
-                      )}
-                      {day.spent > 0 && (
-                        <div style={{ width:"100%", height:`${(day.spent / maxDay) * 60}px`, borderRadius:"4px 4px 0 0", background:"#e8857a", minHeight:3 }}/>
-                      )}
-                      {day.spent === 0 && day.earned === 0 && (
-                        <div style={{ width:"100%", height:3, borderRadius:2, background:"rgba(45,45,58,0.08)" }}/>
-                      )}
+          const maxDay = Math.max(...days.map(d=>Math.max(d.spent,d.earned)),1);
+          const todayStr = now.toISOString().split("T")[0];
+          return(
+            <div style={{ background:T.surface,borderRadius:22,padding:"20px 18px",boxShadow:T.shadow }}>
+              <div style={{ fontSize:12,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:16 }}>Last 7 Days</div>
+              <div style={{ display:"flex",gap:6,alignItems:"flex-end",height:80 }}>
+                {days.map((day,i)=>(
+                  <div key={i} style={{ flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4 }}>
+                    <div style={{ width:"100%",display:"flex",flexDirection:"column",justifyContent:"flex-end",gap:2,height:60 }}>
+                      {day.earned>0&&<div style={{ width:"100%",height:`${(day.earned/maxDay)*60}px`,borderRadius:"4px 4px 0 0",background:"#3da873",minHeight:3 }}/>}
+                      {day.spent>0&&<div style={{ width:"100%",height:`${(day.spent/maxDay)*60}px`,borderRadius:"4px 4px 0 0",background:"#e8857a",minHeight:3 }}/>}
+                      {day.spent===0&&day.earned===0&&<div style={{ width:"100%",height:3,borderRadius:2,background:"rgba(45,45,58,0.08)" }}/>}
                     </div>
-                    <div style={{ fontSize:9, fontWeight:700, color: day.date === todayStr ? T.dark : T.muted, fontFamily:"'Noto Sans',sans-serif" }}>{day.label}</div>
+                    <div style={{ fontSize:9,fontWeight:700,color:day.date===todayStr?T.dark:T.muted }}>{day.label}</div>
                   </div>
                 ))}
               </div>
-              <div style={{ display:"flex", gap:16, marginTop:12, justifyContent:"center" }}>
-                <div style={{ display:"flex", alignItems:"center", gap:5 }}><div style={{ width:10, height:10, borderRadius:3, background:"#3da873" }}/><span style={{ fontSize:11, color:T.muted }}>Income</span></div>
-                <div style={{ display:"flex", alignItems:"center", gap:5 }}><div style={{ width:10, height:10, borderRadius:3, background:"#e8857a" }}/><span style={{ fontSize:11, color:T.muted }}>Expenses</span></div>
+              <div style={{ display:"flex",gap:16,marginTop:12,justifyContent:"center" }}>
+                <div style={{ display:"flex",alignItems:"center",gap:5 }}><div style={{ width:10,height:10,borderRadius:3,background:"#3da873" }}/><span style={{ fontSize:11,color:T.muted }}>Income</span></div>
+                <div style={{ display:"flex",alignItems:"center",gap:5 }}><div style={{ width:10,height:10,borderRadius:3,background:"#e8857a" }}/><span style={{ fontSize:11,color:T.muted }}>Expenses</span></div>
               </div>
             </div>
           );
@@ -2141,6 +2166,91 @@ function AiAdvisorModal({ profile, transactions, onClose }) {
   );
 }
 
+// ═══ SAFE TO SPEND ═══════════════════════════════════════════
+function SafeToSpend({ transactions, profile }) {
+  const { baseCurrency = "LAK", userId } = profile;
+  const [budgets, setBudgets] = useState([]);
+  const [goals,   setGoals]   = useState([]);
+
+  useEffect(() => {
+    if (!userId) return;
+    supabase.from("budgets").select("*").eq("user_id", userId).then(({ data }) => { if (data) setBudgets(data); });
+    supabase.from("goals").select("*").eq("user_id", userId).eq("is_completed", false).then(({ data }) => { if (data) setGoals(data); });
+  }, [userId]);
+
+  const cur = baseCurrency;
+  const sym = CURR[cur].symbol;
+  const now = new Date();
+  const mo = now.getMonth(), yr = now.getFullYear();
+
+  const monthTxs = transactions.filter(tx => {
+    const d = new Date(tx.date);
+    return d.getMonth()===mo && d.getFullYear()===yr && tx.currency===cur;
+  });
+
+  const income   = monthTxs.filter(x=>x.type==="income").reduce((s,x)=>s+x.amount,0);
+  const expenses = monthTxs.filter(x=>x.type==="expense").reduce((s,x)=>s+x.amount,0);
+
+  // Total monthly budget limits set
+  const totalBudget = budgets.filter(b=>b.currency===cur).reduce((s,b)=>s+Number(b.monthly_limit),0);
+
+  // Monthly goal savings needed
+  const goalSavings = goals.filter(g=>g.currency===cur&&g.deadline).reduce((g2,g)=>{
+    const dl = new Date(g.deadline);
+    const mLeft = Math.max(1,(dl.getFullYear()-now.getFullYear())*12+(dl.getMonth()-now.getMonth()));
+    return g2 + Math.ceil((g.target_amount-g.saved_amount)/mLeft);
+  },0);
+
+  // Days left in month
+  const daysInMonth = new Date(yr,mo+1,0).getDate();
+  const daysLeft = daysInMonth - now.getDate() + 1;
+  const dailyAvg = expenses > 0 ? expenses/now.getDate() : 0;
+  const projectedExpenses = expenses + dailyAvg*daysLeft;
+
+  // Safe to spend = income - expenses - reserved for goals
+  const safeTotal = income - expenses - goalSavings;
+  const safePerDay = daysLeft > 0 ? Math.floor(safeTotal / daysLeft) : 0;
+
+  // Only show if we have income data
+  if (income === 0) return null;
+
+  const isNegative = safeTotal < 0;
+  const isWarning  = !isNegative && safeTotal < income * 0.1;
+  const barColor   = isNegative ? "#C0392B" : isWarning ? "#d4993a" : "#3da873";
+  const barPct     = Math.min(100, Math.max(0, (safeTotal/income)*100));
+
+  return (
+    <div style={{padding:"0 16px 10px"}}>
+      <div style={{background:T.surface,backdropFilter:"blur(20px)",borderRadius:18,padding:"12px 16px",boxShadow:T.shadow}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+          <div>
+            <div style={{fontSize:10,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:0.8}}>Safe to spend this month</div>
+            <div style={{fontSize:20,fontWeight:800,color:isNegative?"#C0392B":T.dark,fontFamily:"'Noto Sans',sans-serif",marginTop:3}}>
+              {isNegative?"−":""}{fmtCompact(Math.abs(safeTotal),cur)}
+            </div>
+          </div>
+          <div style={{textAlign:"right"}}>
+            <div style={{fontSize:10,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:0.8}}>Per day</div>
+            <div style={{fontSize:16,fontWeight:800,color:barColor,fontFamily:"'Noto Sans',sans-serif",marginTop:3}}>
+              {isNegative||safePerDay<=0?"—":fmtCompact(safePerDay,cur)}
+            </div>
+          </div>
+        </div>
+        <div style={{height:5,background:"rgba(45,45,58,0.08)",borderRadius:99,overflow:"hidden",marginBottom:5}}>
+          <div style={{height:"100%",width:`${barPct}%`,background:barColor,borderRadius:99,transition:"width .6s ease"}}/>
+        </div>
+        <div style={{fontSize:11,color:barColor,fontWeight:700}}>
+          {isNegative
+            ? `⚠️ Over capacity by ${fmtCompact(Math.abs(safeTotal),cur)}`
+            : isWarning
+            ? `⚡ Almost out — ${daysLeft} days left this month`
+            : `✓ ${daysLeft} days left · ${goalSavings>0?`incl. ${fmtCompact(goalSavings,cur)} for goals`:"on track"}`}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ═══ BOTTOM NAV ═══════════════════════════════════════════════
 function BottomNav({active,onTab,lang}){
   const tabs=[{id:"home",icon:"🏠",label:t(lang,"home")},{id:"analytics",icon:"📊",label:t(lang,"analytics")},{id:"budget",icon:"💰",label:t(lang,"budget")},{id:"goals",icon:"🎯",label:"Goals"},{id:"settings",icon:"⚙️",label:t(lang,"settings")}];
@@ -2189,7 +2299,8 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
               </div>
             </div>
           </div>
-          <div style={{paddingBottom:16}}><WalletCards transactions={transactions}/></div>
+          <div style={{paddingBottom:8}}><WalletCards transactions={transactions}/></div>
+          <SafeToSpend transactions={transactions} profile={profile}/>
           <div style={{padding:"0 16px 8px",display:"flex",justifyContent:"space-between",alignItems:"center",borderBottom:"1px solid rgba(45,45,58,0.05)"}}>
             <div style={{fontSize:14,fontWeight:700,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"recent")}</div>
             <div style={{fontSize:12,color:T.muted}}>{transactions.length} total</div>
