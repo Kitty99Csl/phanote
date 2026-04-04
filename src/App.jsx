@@ -575,10 +575,9 @@ function EditTransactionModal({tx,lang,onSave,onClose,customCategories=[]}){
               ))}
             </div>
           </div>
-        </div>
-        {/* Sticky footer */}
-        <div style={{padding:"12px 20px",paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 16px)",borderTop:"1px solid rgba(45,45,58,0.06)",flexShrink:0}}>
-          <button onClick={save} style={{width:"100%",padding:"15px",borderRadius:16,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",color:"#1A4020",fontWeight:800,fontSize:15,fontFamily:"'Noto Sans',sans-serif",boxShadow:"0 4px 16px rgba(172,225,175,0.4)"}}>Save Changes ✓</button>
+          {/* Button inside scroll */}
+          <button onClick={save} style={{width:"100%",padding:"15px",borderRadius:16,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",color:"#1A4020",fontWeight:800,fontSize:15,fontFamily:"'Noto Sans',sans-serif",boxShadow:"0 4px 16px rgba(172,225,175,0.4)",marginTop:8}}>Save Changes ✓</button>
+          <div style={{height:80}}/>
         </div>
       </div>
     </div>
@@ -963,22 +962,19 @@ function GoalModal({ goal, profile, onSave, onClose }) {
       onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
       <div style={{background:"#fff",borderRadius:"28px 28px 0 0",width:"100%",maxWidth:430,animation:"slideUp .3s ease",maxHeight:"88vh",display:"flex",flexDirection:"column"}}>
 
-        {/* Fixed header — outside scroll */}
-        <div style={{padding:"20px 20px 12px",borderBottom:"1px solid rgba(45,45,58,0.07)",flexShrink:0}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <div style={{fontWeight:800,fontSize:17,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{isEdit?"Edit Goal ✏️":"New Goal 🎯"}</div>
-            <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:22,color:T.muted,padding:"4px 8px"}}>✕</button>
-          </div>
+        {/* Fixed header */}
+        <div style={{padding:"18px 20px 12px",borderBottom:"1px solid rgba(45,45,58,0.07)",flexShrink:0,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div style={{fontWeight:800,fontSize:17,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{isEdit?"Edit Goal ✏️":"New Goal 🎯"}</div>
+          <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:22,color:T.muted,padding:"4px 8px"}}>✕</button>
         </div>
 
-        {/* Scrollable content — minHeight:0 is critical for iOS flex scroll */}
-        <div style={{overflowY:"auto",flex:1,minHeight:0,padding:"16px 20px 8px",WebkitOverflowScrolling:"touch"}}>
+        {/* Everything scrollable including the button */}
+        <div style={{overflowY:"auto",flex:1,minHeight:0,padding:"16px 20px",WebkitOverflowScrolling:"touch"}}>
 
-          {/* Name + emoji row */}
           <div style={{fontSize:11,fontWeight:700,color:T.muted,letterSpacing:0.8,textTransform:"uppercase",marginBottom:6}}>Goal name</div>
           <div style={{display:"flex",gap:8,marginBottom:14}}>
             <button onClick={()=>setShowEmoji(!showEmoji)} style={{width:48,height:48,borderRadius:13,border:"1.5px solid rgba(45,45,58,0.12)",background:"rgba(172,225,175,0.08)",fontSize:22,cursor:"pointer",flexShrink:0}}>{emoji}</button>
-            <input value={name} onChange={e=>setName(e.target.value)} placeholder='e.g. "Bali Trip", "New Phone"' autoFocus
+            <input value={name} onChange={e=>setName(e.target.value)} placeholder='e.g. "Bali Trip", "New Phone"'
               style={{flex:1,padding:"11px 14px",borderRadius:13,border:"1.5px solid rgba(45,45,58,0.12)",outline:"none",fontSize:14,fontFamily:"'Noto Sans',sans-serif",color:T.dark,background:"rgba(172,225,175,0.05)"}}
               onFocus={e=>e.target.style.borderColor="#ACE1AF"} onBlur={e=>e.target.style.borderColor="rgba(45,45,58,0.12)"}/>
           </div>
@@ -988,7 +984,6 @@ function GoalModal({ goal, profile, onSave, onClose }) {
             </div>
           )}
 
-          {/* Currency */}
           <div style={{fontSize:11,fontWeight:700,color:T.muted,letterSpacing:0.8,textTransform:"uppercase",marginBottom:6}}>Currency</div>
           <div style={{display:"flex",gap:8,marginBottom:14}}>
             {["LAK","THB","USD"].map(c=>(
@@ -998,7 +993,6 @@ function GoalModal({ goal, profile, onSave, onClose }) {
             ))}
           </div>
 
-          {/* Target amount */}
           <div style={{fontSize:11,fontWeight:700,color:T.muted,letterSpacing:0.8,textTransform:"uppercase",marginBottom:6}}>Target amount</div>
           <div style={{display:"flex",alignItems:"center",gap:8,background:"rgba(172,225,175,0.08)",borderRadius:13,padding:"4px 4px 4px 14px",border:"1.5px solid #ACE1AF",marginBottom:8}}>
             <span style={{fontSize:18,fontWeight:800,color:T.dark}}>{sym}</span>
@@ -1011,8 +1005,7 @@ function GoalModal({ goal, profile, onSave, onClose }) {
             ))}
           </div>
 
-          {/* Already saved — only show on edit or if user wants to set initial */}
-          {isEdit && (<>
+          {isEdit&&(<>
             <div style={{fontSize:11,fontWeight:700,color:T.muted,letterSpacing:0.8,textTransform:"uppercase",marginBottom:6}}>Already saved</div>
             <div style={{display:"flex",alignItems:"center",gap:8,background:"rgba(45,45,58,0.04)",borderRadius:13,padding:"4px 4px 4px 14px",border:"1.5px solid rgba(45,45,58,0.1)",marginBottom:14}}>
               <span style={{fontSize:16,fontWeight:800,color:T.muted}}>{sym}</span>
@@ -1021,28 +1014,26 @@ function GoalModal({ goal, profile, onSave, onClose }) {
             </div>
           </>)}
 
-          {/* Deadline */}
           <div style={{fontSize:11,fontWeight:700,color:T.muted,letterSpacing:0.8,textTransform:"uppercase",marginBottom:6}}>Target month</div>
           <input type="month" value={deadline} onChange={e=>setDeadline(e.target.value)}
             min={new Date().toISOString().slice(0,7)}
-            style={{width:"100%",padding:"11px 14px",borderRadius:13,border:"1.5px solid rgba(45,45,58,0.12)",outline:"none",fontSize:14,fontFamily:"'Noto Sans',sans-serif",color:T.dark,background:"rgba(172,225,175,0.05)",marginBottom:12,boxSizing:"border-box"}}
+            style={{width:"100%",padding:"11px 14px",borderRadius:13,border:"1.5px solid rgba(45,45,58,0.12)",outline:"none",fontSize:14,fontFamily:"'Noto Sans',sans-serif",color:T.dark,background:"rgba(172,225,175,0.05)",marginBottom:14,boxSizing:"border-box"}}
             onFocus={e=>e.target.style.borderColor="#ACE1AF"} onBlur={e=>e.target.style.borderColor="rgba(45,45,58,0.12)"}/>
 
           {parseFloat(target) > 0 && deadline && (
-            <div style={{background:"rgba(172,225,175,0.12)",borderRadius:14,padding:"10px 14px",marginBottom:8}}>
+            <div style={{background:"rgba(172,225,175,0.12)",borderRadius:14,padding:"10px 14px",marginBottom:14}}>
               <div style={{fontSize:12,color:"#2A7A40",fontWeight:700}}>
                 💚 Save {fmt(monthlyNeeded(), currency)}/month for {monthsLeft()} months to hit your goal
               </div>
             </div>
           )}
-          <div style={{height:8}}/>{/* breathing room before footer */}
-        </div>{/* end scroll */}
 
-        {/* Sticky footer — always visible */}
-        <div style={{padding:"12px 20px",paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 16px)",borderTop:"1px solid rgba(45,45,58,0.06)",flexShrink:0}}>
-          <button onClick={save} style={{width:"100%",padding:"15px",borderRadius:16,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",color:"#1A4020",fontWeight:800,fontSize:15,fontFamily:"'Noto Sans',sans-serif",boxShadow:"0 4px 16px rgba(172,225,175,0.4)"}}>
+          {/* Button inside scroll — always reachable */}
+          <button onClick={save} style={{width:"100%",padding:"16px",borderRadius:16,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",color:"#1A4020",fontWeight:800,fontSize:15,fontFamily:"'Noto Sans',sans-serif",boxShadow:"0 4px 16px rgba(172,225,175,0.4)",marginBottom:8}}>
             {isEdit ? "Save Changes ✓" : "Create Goal 🎯"}
           </button>
+          {/* Extra padding so button clears the nav bar */}
+          <div style={{height:80}}/>
         </div>
       </div>
     </div>
@@ -1082,10 +1073,9 @@ function AddSavingsModal({ goal, onSave, onClose }) {
           ))}
           <button onClick={()=>setAmount(String(remaining))} style={{padding:"7px 12px",borderRadius:10,border:"none",cursor:"pointer",background:"rgba(172,225,175,0.2)",fontWeight:700,fontSize:12,color:"#1A5A30"}}>All ✓</button>
         </div>
+        <button onClick={save} style={{width:"100%",padding:"15px",borderRadius:16,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",color:"#1A4020",fontWeight:800,fontSize:15,fontFamily:"'Noto Sans',sans-serif",boxShadow:"0 4px 16px rgba(172,225,175,0.4)"}}>Add Savings 💚</button>
+        <div style={{height:80}}/>
         </div>{/* end scroll */}
-        <div style={{padding:"12px 24px",paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 16px)",borderTop:"1px solid rgba(45,45,58,0.06)",flexShrink:0}}>
-          <button onClick={save} style={{width:"100%",padding:"15px",borderRadius:16,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",color:"#1A4020",fontWeight:800,fontSize:15,fontFamily:"'Noto Sans',sans-serif",boxShadow:"0 4px 16px rgba(172,225,175,0.4)"}}>Add Savings 💚</button>
-        </div>
       </div>
     </div>
   );
@@ -1398,9 +1388,8 @@ function SetBudgetModal({ cat, currency, currentLimit, spent, lang, onSave, onCl
             }}>{fmtCompact(v, currency)}</button>
           ))}
         </div>
-        </div>{/* end scroll */}
-        {/* Sticky footer */}
-        <div style={{padding:"12px 24px",paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 16px)",borderTop:"1px solid rgba(45,45,58,0.06)",flexShrink:0,display:"flex",gap:10}}>
+        {/* Buttons inside scroll */}
+        <div style={{display:"flex",gap:10,marginTop:8}}>
           {currentLimit > 0 && (
             <button onClick={() => onSave(0)} style={{ flex:1, padding:"14px", borderRadius:16,
               border:"none", cursor:"pointer", background:"rgba(255,179,167,0.15)", color:"#C0392B",
@@ -1411,6 +1400,8 @@ function SetBudgetModal({ cat, currency, currentLimit, spent, lang, onSave, onCl
             fontWeight:800, fontSize:15, fontFamily:"'Noto Sans',sans-serif",
             boxShadow:"0 4px 16px rgba(172,225,175,0.4)" }}>Save Budget ✓</button>
         </div>
+        <div style={{height:80}}/>
+        </div>{/* end scroll */}
       </div>
     </div>
   );
