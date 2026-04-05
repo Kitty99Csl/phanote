@@ -1896,6 +1896,25 @@ function AnalyticsScreen({ profile, transactions }) {
 
   const now = new Date();
 
+  // Find earliest month with data for selected currency
+  const earliestTx = transactions
+    .filter(tx => tx.currency === selectedCur)
+    .map(tx => tx.date)
+    .sort()[0];
+  const earliestDate = earliestTx ? new Date(earliestTx) : now;
+  const earliestOffset = (earliestDate.getFullYear() - now.getFullYear()) * 12 + (earliestDate.getMonth() - now.getMonth());
+  const canGoBack = monthOffset > earliestOffset;
+  const canGoForward = monthOffset < 0;
+
+  // Check if previous month has data
+  const hasPrevData = (offset) => {
+    const d = new Date(now.getFullYear(), now.getMonth() + offset - 1, 1);
+    return transactions.some(tx => {
+      const txDate = new Date(tx.date);
+      return tx.currency === selectedCur && txDate.getMonth() === d.getMonth() && txDate.getFullYear() === d.getFullYear();
+    });
+  };
+
   // Compute date range based on period
   const getRange = () => {
     if (period === "today") {
@@ -1984,8 +2003,14 @@ function AnalyticsScreen({ profile, transactions }) {
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
           <div style={{ fontSize:13, fontWeight:700, color:T.dark, fontFamily:"'Noto Sans',sans-serif" }}>{range.label}</div>
           <div style={{ display:"flex", gap:6 }}>
-            <button onClick={()=>setMonthOffset(o=>o-1)} style={{ width:32,height:32,borderRadius:10,border:"none",cursor:"pointer",background:T.surface,boxShadow:T.shadow,fontSize:15,color:T.dark }}>←</button>
-            {monthOffset < 0 && <button onClick={()=>setMonthOffset(o=>Math.min(0,o+1))} style={{ width:32,height:32,borderRadius:10,border:"none",cursor:"pointer",background:T.surface,boxShadow:T.shadow,fontSize:15,color:T.dark }}>→</button>}
+            {/* Back button — only show if previous month has data */}
+            {hasPrevData(monthOffset) && (
+              <button onClick={()=>setMonthOffset(o=>o-1)} style={{ width:32,height:32,borderRadius:10,border:"none",cursor:"pointer",background:T.surface,boxShadow:T.shadow,fontSize:15,color:T.dark }}>←</button>
+            )}
+            {/* Forward button — only show if not at current month */}
+            {canGoForward && (
+              <button onClick={()=>setMonthOffset(o=>Math.min(0,o+1))} style={{ width:32,height:32,borderRadius:10,border:"none",cursor:"pointer",background:T.surface,boxShadow:T.shadow,fontSize:15,color:T.dark }}>→</button>
+            )}
           </div>
         </div>
       )}
@@ -2571,6 +2596,7 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
   const[showEdit,setShowEdit]=useState(false);
   const[showStreak,setShowStreak]=useState(false);
   const[showAdvisor,setShowAdvisor]=useState(false);
+  const[txFilter,setTxFilter]=useState("today"); // today | recent | all
   const{lang,customCategories=[]}=profile;
   const greet=()=>{const h=new Date().getHours();if(h<12)return t(lang,"morning");if(h<17)return t(lang,"afternoon");return t(lang,"evening");};
   const dateStr=new Date().toLocaleDateString(lang==="th"?"th-TH":lang==="lo"?"lo-LA":"en-US",{weekday:"long",month:"long",day:"numeric"});
@@ -2600,14 +2626,43 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
           </div>
           <div style={{paddingBottom:6}}><WalletCards transactions={transactions}/></div>
           <SafeToSpend transactions={transactions} profile={profile}/>
-          <div style={{padding:"0 16px 6px",display:"flex",justifyContent:"space-between",alignItems:"center",borderBottom:"1px solid rgba(45,45,58,0.05)"}}>
-            <div style={{fontSize:13,fontWeight:700,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"recent")}</div>
-            <div style={{fontSize:11,color:T.muted}}>{transactions.length} {t(lang,"total")}</div>
+          <div style={{padding:"0 16px 6px",borderBottom:"1px solid rgba(45,45,58,0.05)"}}>
+            <div style={{display:"flex",gap:6}}>
+              {[
+                {id:"today", lo:"ມື້ນີ້", th:"วันนี้", en:"Today"},
+                {id:"recent",lo:"ລ່າສຸດ",th:"ล่าสุด",en:"Recent"},
+                {id:"all",   lo:"ທັງໝົດ",th:"ทั้งหมด",en:"All"},
+              ].map(f=>{
+                const label=lang==="lo"?f.lo:lang==="th"?f.th:f.en;
+                const active=txFilter===f.id;
+                return(
+                  <button key={f.id} onClick={()=>setTxFilter(f.id)} style={{
+                    padding:"5px 12px",borderRadius:20,border:"none",cursor:"pointer",
+                    background:active?T.celadon:"rgba(45,45,58,0.06)",
+                    color:active?"#1A4020":T.muted,
+                    fontWeight:active?700:500,fontSize:12,
+                    fontFamily:"'Noto Sans',sans-serif",transition:"all .2s",
+                  }}>{label}</button>
+                );
+              })}
+              <div style={{flex:1}}/>
+              <div style={{fontSize:11,color:T.muted,alignSelf:"center"}}>
+                {transactions.length} {t(lang,"total")}
+              </div>
+            </div>
           </div>
         </div>
       )}
       <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
-        {tab==="home"&&(<><div style={{paddingTop:8}}/><TransactionList transactions={transactions} lang={lang} onUpdateNote={onUpdateNote} onDeleteTx={onDeleteTx} onEditCategory={(tx)=>{setEditTx(tx);setShowEdit(true);}} customCategories={customCategories}/><div style={{height:16}}/></>)}
+        {tab==="home"&&(()=>{
+          const todayStr=new Date().toISOString().split("T")[0];
+          const filtered=txFilter==="today"
+            ?transactions.filter(tx=>tx.date===todayStr)
+            :txFilter==="recent"
+            ?transactions.slice(0,30)
+            :transactions;
+          return(<><div style={{paddingTop:8}}/><TransactionList transactions={filtered} lang={lang} onUpdateNote={onUpdateNote} onDeleteTx={onDeleteTx} onEditCategory={(tx)=>{setEditTx(tx);setShowEdit(true);}} customCategories={customCategories}/>{filtered.length===0&&<div style={{textAlign:"center",padding:"40px 24px",color:T.muted,fontSize:13}}>{txFilter==="today"?(lang==="lo"?"ບໍ່ມີລາຍການມື້ນີ້":lang==="th"?"ไม่มีรายการวันนี้":"No transactions today — start logging below!"):(lang==="lo"?"ຍັງບໍ່ມີລາຍການ":lang==="th"?"ยังไม่มีรายการ":"No transactions yet")}</div>}<div style={{height:16}}/></>);
+        })()}
         {tab==="analytics"&&<AnalyticsScreen profile={profile} transactions={transactions}/>}
         {tab==="budget"&&<BudgetScreen profile={profile} transactions={transactions}/>}
         {tab==="goals"&&<GoalsScreen profile={profile} transactions={transactions}/>}
