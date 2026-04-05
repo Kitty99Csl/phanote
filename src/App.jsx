@@ -811,7 +811,8 @@ function OcrButton({ profile, onAdd, lang }) {
 
       const data = await res.json();
       if (data.error || !data.amount) {
-        setErrMsg(data.error || "Could not read the receipt. Try a clearer photo.");
+        const detail = data.detail ? `\n\nDetail: ${data.detail}` : "";
+        setErrMsg((data.error || "Could not read the receipt. Try a clearer photo.") + detail);
         setStatus("error");
         return;
       }
@@ -2515,26 +2516,22 @@ function SafeToSpend({ transactions, profile }) {
     ? `⚡ ${t(lang,"almost_out")} — ${daysLeft} ${t(lang,"days_left")}`
     : `✓ ${daysLeft} ${t(lang,"days_left")} · ${goalSavings>0?`${t(lang,"incl_goals")} ${fmtCompact(goalSavings,cur)}`:t(lang,"on_track")}`;
   return (
-    <div style={{padding:"0 16px 10px"}}>
-      <div style={{background:T.surface,backdropFilter:"blur(20px)",borderRadius:18,padding:"12px 16px",boxShadow:T.shadow}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-          <div>
-            <div style={{fontSize:10,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:0.8}}>{t(lang,"safe_to_spend")}</div>
-            <div style={{fontSize:20,fontWeight:800,color:isNegative?"#C0392B":T.dark,fontFamily:"'Noto Sans',sans-serif",marginTop:3}}>
-              {isNegative?"−":""}{fmtCompact(Math.abs(safeTotal),cur)}
-            </div>
-          </div>
-          <div style={{textAlign:"right"}}>
-            <div style={{fontSize:10,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:0.8}}>{t(lang,"per_day")}</div>
-            <div style={{fontSize:16,fontWeight:800,color:barColor,fontFamily:"'Noto Sans',sans-serif",marginTop:3}}>
-              {isNegative||safePerDay<=0?"—":fmtCompact(safePerDay,cur)}
-            </div>
+    <div style={{padding:"0 16px 8px"}}>
+      <div style={{background:T.surface,backdropFilter:"blur(20px)",borderRadius:14,padding:"8px 14px",boxShadow:T.shadow,display:"flex",alignItems:"center",gap:10}}>
+        <div style={{fontSize:14}}>{isNegative?"⚠️":isWarning?"⚡":"✓"}</div>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontSize:10,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:0.8}}>{t(lang,"safe_to_spend")}</div>
+          <div style={{fontSize:13,fontWeight:800,color:isNegative?"#C0392B":T.dark,fontFamily:"'Noto Sans',sans-serif"}}>
+            {isNegative?"−":""}{fmtCompact(Math.abs(safeTotal),cur)}
+            <span style={{fontSize:10,fontWeight:600,color:T.muted,marginLeft:6}}>{statusText.replace(/[⚠️⚡✓]/g,"").trim()}</span>
           </div>
         </div>
-        <div style={{height:5,background:"rgba(45,45,58,0.08)",borderRadius:99,overflow:"hidden",marginBottom:5}}>
-          <div style={{height:"100%",width:`${barPct}%`,background:barColor,borderRadius:99,transition:"width .6s ease"}}/>
+        <div style={{textAlign:"right",flexShrink:0}}>
+          <div style={{fontSize:10,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:0.8}}>{t(lang,"per_day")}</div>
+          <div style={{fontSize:13,fontWeight:800,color:barColor,fontFamily:"'Noto Sans',sans-serif"}}>
+            {isNegative||safePerDay<=0?"—":fmtCompact(safePerDay,cur)}
+          </div>
         </div>
-        <div style={{fontSize:11,color:barColor,fontWeight:700}}>{statusText}</div>
       </div>
     </div>
   );
@@ -2793,13 +2790,24 @@ export default function App(){
   };
 
   const handleAddTransaction = async (tx) => {
+    // If _update flag, just update the existing transaction category (AI correction)
+    if (tx._update) {
+      setTransactions(prev => prev.map(t => t.id === tx.id ? { ...t, categoryId: tx.categoryId } : t));
+      // Also update in DB if it's been saved (has a real UUID)
+      if (tx.id && !tx.id.startsWith("tx_")) {
+        const cat = findCat(tx.categoryId, profile?.customCategories || []);
+        try { await dbUpdateTransaction(tx.id, { category_name: cat.en, category_emoji: cat.emoji }); } catch {}
+      }
+      return;
+    }
+    // Normal add — optimistic UI first
     setTransactions(prev => [tx, ...prev]);
     try {
       const cat = findCat(tx.categoryId, profile?.customCategories || []);
       const saved = await dbInsertTransaction(userId, { ...tx, categoryName: cat.en, categoryEmoji: cat.emoji, rawInput: tx.rawInput || tx.description });
+      // Replace temp ID with real DB ID
       setTransactions(prev => prev.map(t => t.id === tx.id ? { ...t, id: saved.id } : t));
       await dbTrackEvent(userId, "transaction_added", { type: tx.type, currency: tx.currency, category: tx.categoryId, amount: tx.amount });
-      // Update streak + XP
       const bonusToast = await updateStreak(userId, profile, setProfile);
       if (bonusToast) setStreakToast(bonusToast);
     } catch (e) { console.error("Save tx error:", e); }
