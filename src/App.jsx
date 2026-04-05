@@ -1087,7 +1087,7 @@ function TransactionList({transactions,lang,onUpdateNote,onDeleteTx,onEditCatego
   const cancelEdit=()=>{setEditingNote(null);setNoteInput("");};
 
   if(transactions.length===0)return(
-    <div style={{textAlign:"center",padding:"52px 24px",display:"flex",flexDirection:"column",alignItems:"center",gap:12}}>
+    <div style={{textAlign:"center",padding:"calc(env(safe-area-inset-top, 8px) + 8px) 24px",display:"flex",flexDirection:"column",alignItems:"center",gap:12}}>
       <div style={{fontSize:52}}>📒</div>
       <div style={{fontWeight:700,fontSize:17,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"empty")}</div>
       <div style={{fontSize:13,color:T.muted,maxWidth:220,lineHeight:1.6}}>{t(lang,"empty_sub")}</div>
@@ -1224,7 +1224,7 @@ function SettingsScreen({profile,transactions,onUpdateProfile,onReset}){
   const LANGS=[{code:"lo",flag:"🇱🇦",label:"ລາວ"},{code:"th",flag:"🇹🇭",label:"ไทย"},{code:"en",flag:"🇬🇧",label:"English"}];
   const btnStyle=(active)=>({display:"flex",alignItems:"center",gap:6,padding:"8px 14px",borderRadius:12,border:"none",cursor:"pointer",fontFamily:"'Noto Sans',sans-serif",background:active?"rgba(172,225,175,0.3)":"rgba(45,45,58,0.05)",fontWeight:active?700:500,fontSize:13,color:T.dark});
   return(
-    <div style={{padding:"52px 20px 24px",position:"relative",zIndex:1}}>
+    <div style={{padding:"calc(env(safe-area-inset-top, 8px) + 8px) 20px 24px",position:"relative",zIndex:1}}>
       <div style={{fontWeight:800,fontSize:22,color:T.dark,fontFamily:"'Noto Sans',sans-serif",marginBottom:24}}>{t(lang,"settings")}</div>
       <div style={{background:T.surface,backdropFilter:"blur(20px)",borderRadius:24,padding:"20px",boxShadow:T.shadow,marginBottom:20}}>
         <div style={{display:"flex",alignItems:"center",gap:16}}>
@@ -1547,7 +1547,7 @@ function GoalsScreen({ profile, transactions }) {
   };
 
   return (
-    <div style={{padding:"52px 16px 32px",position:"relative",zIndex:1}}>
+    <div style={{padding:"calc(env(safe-area-inset-top, 8px) + 8px) 16px 32px",position:"relative",zIndex:1}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20}}>
         <div>
           <div style={{fontWeight:800,fontSize:22,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"goals")} 🎯</div>
@@ -1830,7 +1830,7 @@ function BudgetScreen({ profile, transactions }) {
   const monthName = now.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 
   return (
-    <div style={{ padding:"52px 16px 32px", position:"relative", zIndex:1 }}>
+    <div style={{ padding:"calc(env(safe-area-inset-top, 8px) + 8px) 16px 32px", position:"relative", zIndex:1 }}>
       <div style={{ fontWeight:800, fontSize:22, color:T.dark, fontFamily:"'Noto Sans',sans-serif", marginBottom:2 }}>Budget 💰</div>
       <div style={{ fontSize:12, color:T.muted, marginBottom:20 }}>{monthName}</div>
       <div style={{ display:"flex", gap:8, marginBottom:20 }}>
@@ -2022,7 +2022,7 @@ function AnalyticsScreen({ profile, transactions }) {
   ];
 
   return (
-    <div style={{ padding:"52px 16px 32px", position:"relative", zIndex:1 }}>
+    <div style={{ padding:"calc(env(safe-area-inset-top, 8px) + 8px) 16px 32px", position:"relative", zIndex:1 }}>
 
       {/* Title */}
       <div style={{ fontWeight:800, fontSize:22, color:T.dark, fontFamily:"'Noto Sans',sans-serif", marginBottom:16 }}>Analytics 📊</div>
@@ -2244,21 +2244,17 @@ function StreakBadge({ profile, onPress }) {
   const pct   = getLevelProgress(xp);
   return (
     <button onClick={onPress} style={{
-      display:"flex", alignItems:"center", gap:6, padding:"5px 10px",
-      borderRadius:14, border:"none", cursor:"pointer",
-      background:"rgba(255,255,255,0.85)", backdropFilter:"blur(8px)",
-      boxShadow:"0 2px 10px rgba(45,45,58,0.08)",
+      display:"flex", alignItems:"center", gap:5, padding:"4px 10px 4px 8px",
+      borderRadius:20, border:"1px solid rgba(45,45,58,0.08)", cursor:"pointer",
+      background:"rgba(172,225,175,0.12)",
     }}>
-      <span style={{fontSize:14}}>{streakCount >= 7 ? "🔥" : "📅"}</span>
-      <div style={{textAlign:"left"}}>
-        <div style={{fontSize:11, fontWeight:800, color:T.dark, fontFamily:"'Noto Sans',sans-serif", lineHeight:1}}>
-          {streakCount} {t(lang, streakCount!==1 ? "days" : "day")}
-        </div>
-        <div style={{fontSize:9, color:T.muted, marginTop:1}}>{level.emoji} {t(lang,"level")}{level.index}</div>
-      </div>
-      <div style={{width:28, height:4, borderRadius:99, background:"rgba(45,45,58,0.1)", overflow:"hidden", marginLeft:2}}>
-        <div style={{height:"100%", width:`${pct}%`, background:T.celadon, borderRadius:99}}/>
-      </div>
+      <span style={{fontSize:13}}>{streakCount >= 7 ? "🔥" : "📅"}</span>
+      <span style={{fontSize:12, fontWeight:700, color:T.dark, fontFamily:"'Noto Sans',sans-serif"}}>
+        {streakCount}{lang==="lo"?"ວ":lang==="th"?"ว":"d"}
+      </span>
+      <span style={{fontSize:10, color:T.muted}}>·</span>
+      <span style={{fontSize:11}}>{level.emoji}</span>
+      <span style={{fontSize:10, fontWeight:600, color:T.muted}}>Lv.{level.index}</span>
     </button>
   );
 }
@@ -2654,15 +2650,15 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
       <AnimalBg/>
       {tab==="home"&&(
         <div style={{flexShrink:0,zIndex:10,background:"rgba(247,252,245,0.97)",backdropFilter:"blur(16px)"}}>
-          {/* Slim single-line header */}
-          <div style={{padding:"52px 16px 10px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          {/* Header — respects iOS safe area */}
+          <div style={{padding:"calc(env(safe-area-inset-top, 8px) + 8px) 16px 10px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
             <div>
               <div style={{fontSize:17,fontWeight:800,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{greet()}, {profile.name} 👋</div>
               <div style={{fontSize:11,color:T.muted,marginTop:1}}>{dateStr}</div>
             </div>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
               <StreakBadge profile={profile} onPress={()=>setShowStreak(true)}/>
-              <button onClick={()=>setTab("settings")} style={{width:38,height:38,borderRadius:13,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",fontSize:20,boxShadow:"0 3px 10px rgba(172,225,175,0.4)",flexShrink:0}}>{profile.avatar}</button>
+              <button onClick={()=>setTab("settings")} style={{width:36,height:36,borderRadius:12,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",fontSize:20,boxShadow:"0 3px 10px rgba(172,225,175,0.4)",flexShrink:0}}>{profile.avatar}</button>
             </div>
           </div>
           <div style={{paddingBottom:6}}><WalletCards transactions={transactions}/></div>
