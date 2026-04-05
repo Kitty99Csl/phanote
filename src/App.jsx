@@ -785,12 +785,14 @@ function QuickEditToast({tx,lang,onChangeCategory,onDone,customCategories=[]}){
 
 // ═══ OCR BUTTON + FLOW ═══════════════════════════════════════
 function OcrButton({ profile, onAdd, lang, compact=false }) {
-  const [status,  setStatus]  = useState("idle"); // idle | scanning | confirm | error
-  const [result,  setResult]  = useState(null);
-  const [errMsg,  setErrMsg]  = useState("");
-  const fileRef = useRef();
+  const [status,     setStatus]     = useState("idle"); // idle | picker | scanning | confirm | error
+  const [result,     setResult]     = useState(null);
+  const [errMsg,     setErrMsg]     = useState("");
+  const cameraRef  = useRef(); // capture=environment
+  const galleryRef = useRef(); // gallery pick
 
   const isPro = profile?.isPro || false;
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
   const handleFile = async (e) => {
     const file = e.target.files?.[0];
@@ -869,15 +871,54 @@ function OcrButton({ profile, onAdd, lang, compact=false }) {
 
   return (
     <>
-      <input ref={fileRef} type="file" accept="image/*" capture="environment"
-        style={{ display:"none" }} onChange={handleFile}/>
+      {/* Hidden inputs */}
+      <input ref={cameraRef}  type="file" accept="image/*" capture="environment" style={{display:"none"}} onChange={handleFile}/>
+      <input ref={galleryRef} type="file" accept="image/*" style={{display:"none"}} onChange={handleFile}/>
 
-      <button onClick={() => fileRef.current?.click()} disabled={status === "scanning"}
+      {/* Trigger button */}
+      <button
+        onClick={() => {
+          if (status === "scanning") return;
+          if (isMobile) { setStatus("picker"); }
+          else { galleryRef.current?.click(); }
+        }}
         style={{ width:compact?32:36, height:compact?32:36, borderRadius:compact?10:11, border:"none", cursor:"pointer", flexShrink:0,
           background: status==="scanning" ? "rgba(172,225,175,0.4)" : "rgba(172,225,175,0.18)",
           display:"flex", alignItems:"center", justifyContent:"center", fontSize:compact?14:18, transition:"all .2s" }}>
         {status === "scanning" ? "⏳" : "📷"}
       </button>
+
+      {/* Mobile picker sheet */}
+      {status === "picker" && (
+        <div style={{position:"fixed",inset:0,zIndex:3000,background:"rgba(30,30,40,0.5)",backdropFilter:"blur(4px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}}
+          onClick={e=>{if(e.target===e.currentTarget)setStatus("idle");}}>
+          <div style={{background:"#fff",borderRadius:"24px 24px 0 0",width:"100%",maxWidth:430,padding:"20px 20px",paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 20px)",animation:"slideUp .25s ease"}}>
+            <div style={{fontSize:13,fontWeight:700,color:T.muted,textAlign:"center",marginBottom:14}}>
+              {lang==="lo"?"ເລືອກຮູບໃບບິນ":lang==="th"?"เลือกรูปใบเสร็จ":"Scan a receipt"}
+            </div>
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={()=>{setStatus("idle");setTimeout(()=>cameraRef.current?.click(),50);}}
+                style={{flex:1,padding:"16px 10px",borderRadius:16,border:"1.5px solid rgba(172,225,175,0.4)",cursor:"pointer",background:"rgba(172,225,175,0.08)",display:"flex",flexDirection:"column",alignItems:"center",gap:8}}>
+                <span style={{fontSize:28}}>📷</span>
+                <span style={{fontSize:13,fontWeight:700,color:"#1A4020",fontFamily:"'Noto Sans',sans-serif"}}>
+                  {lang==="lo"?"ຖ່າຍຮູບ":lang==="th"?"ถ่ายรูป":"Take photo"}
+                </span>
+              </button>
+              <button onClick={()=>{setStatus("idle");setTimeout(()=>galleryRef.current?.click(),50);}}
+                style={{flex:1,padding:"16px 10px",borderRadius:16,border:"1.5px solid rgba(45,45,58,0.1)",cursor:"pointer",background:"rgba(45,45,58,0.04)",display:"flex",flexDirection:"column",alignItems:"center",gap:8}}>
+                <span style={{fontSize:28}}>🖼️</span>
+                <span style={{fontSize:13,fontWeight:700,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>
+                  {lang==="lo"?"ເລືອກຈາກຄັງ":lang==="th"?"เลือกจากคลัง":"Choose photo"}
+                </span>
+              </button>
+            </div>
+            <button onClick={()=>setStatus("idle")}
+              style={{width:"100%",marginTop:10,padding:"12px",borderRadius:14,border:"none",cursor:"pointer",background:"rgba(45,45,58,0.06)",color:T.muted,fontWeight:700,fontSize:14,fontFamily:"'Noto Sans',sans-serif"}}>
+              {lang==="lo"?"ຍົກເລີກ":lang==="th"?"ยกเลิก":"Cancel"}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Scanning overlay */}
       {status === "scanning" && (
@@ -901,7 +942,7 @@ function OcrButton({ profile, onAdd, lang, compact=false }) {
             </div>
             <div style={{ fontSize:13, color:T.muted, textAlign:"center", marginBottom:24 }}>{errMsg}</div>
             <div style={{ display:"flex", gap:10 }}>
-              <button onClick={() => { setStatus("idle"); fileRef.current?.click(); }}
+              <button onClick={() => { setStatus(isMobile ? "picker" : "idle"); if (!isMobile) galleryRef.current?.click(); }}
                 style={{ flex:1, padding:"14px", borderRadius:16, border:"none", cursor:"pointer", background:"rgba(172,225,175,0.2)", color:"#1A5A30", fontWeight:700, fontSize:14, fontFamily:"'Noto Sans',sans-serif" }}>
                 {lang==="lo"?"ລອງໃໝ່":lang==="th"?"ลองใหม่":"Try again"}
               </button>
