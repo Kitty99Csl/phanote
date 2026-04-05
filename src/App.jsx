@@ -772,6 +772,188 @@ function QuickEditToast({tx,lang,onChangeCategory,onDone,customCategories=[]}){
   );
 }
 
+// ═══ OCR BUTTON + FLOW ═══════════════════════════════════════
+function OcrButton({ profile, onAdd, lang }) {
+  const [status,  setStatus]  = useState("idle"); // idle | scanning | confirm | error
+  const [result,  setResult]  = useState(null);
+  const [errMsg,  setErrMsg]  = useState("");
+  const fileRef = useRef();
+
+  const isPro = profile?.isPro || false;
+
+  const handleFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Reset input so same file can be picked again
+    e.target.value = "";
+
+    setStatus("scanning");
+    setResult(null);
+
+    try {
+      // Convert to base64
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload  = () => resolve(reader.result.split(",")[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      const res = await fetch("https://api.phanote.com/ocr", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          image: base64,
+          mimeType: file.type || "image/jpeg",
+          userId: profile?.userId,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.error || !data.amount) {
+        setErrMsg(data.error || "Could not read the receipt. Try a clearer photo.");
+        setStatus("error");
+        return;
+      }
+      setResult(data);
+      setStatus("confirm");
+
+    } catch (e) {
+      setErrMsg("Connection error. Please try again.");
+      setStatus("error");
+    }
+  };
+
+  const confirmAdd = () => {
+    if (!result) return;
+    const catId = result.category || "other";
+    onAdd({
+      id: `tx_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+      amount: result.amount,
+      currency: result.currency || "LAK",
+      type: "expense",
+      categoryId: catId,
+      description: result.description || "Receipt",
+      note: "",
+      date: new Date().toISOString().split("T")[0],
+      confidence: result.confidence || 0.8,
+      createdAt: new Date().toISOString(),
+      rawInput: "OCR",
+    });
+    setStatus("idle");
+    setResult(null);
+  };
+
+  // Pro gate — show lock if not Pro
+  if (!isPro) {
+    return (
+      <button
+        onClick={() => alert(lang === "lo" ? "ຟີເຈີ Pro — ຕິດຕໍ່ເຈົ້າຂອງແອັບ" : lang === "th" ? "ฟีเจอร์ Pro — ติดต่อผู้ดูแลแอป" : "Pro feature — contact the app admin to enable")}
+        style={{ width:36, height:36, borderRadius:11, border:"1px dashed rgba(45,45,58,0.2)", cursor:"pointer", background:"rgba(45,45,58,0.04)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:16, flexShrink:0 }}>
+        🔒
+      </button>
+    );
+  }
+
+  return (
+    <>
+      <input ref={fileRef} type="file" accept="image/*" capture="environment"
+        style={{ display:"none" }} onChange={handleFile}/>
+
+      <button onClick={() => fileRef.current?.click()} disabled={status === "scanning"}
+        style={{ width:36, height:36, borderRadius:11, border:"none", cursor:"pointer", flexShrink:0,
+          background: status==="scanning" ? "rgba(172,225,175,0.4)" : "rgba(172,225,175,0.2)",
+          display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, transition:"all .2s" }}>
+        {status === "scanning" ? "⏳" : "📷"}
+      </button>
+
+      {/* Scanning overlay */}
+      {status === "scanning" && (
+        <div style={{ position:"fixed", inset:0, zIndex:3000, background:"rgba(30,30,40,0.7)", backdropFilter:"blur(4px)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:16 }}>
+          <div style={{ fontSize:52 }}>📷</div>
+          <div style={{ fontSize:16, fontWeight:700, color:"#fff", fontFamily:"'Noto Sans',sans-serif" }}>
+            {lang==="lo"?"ກຳລັງອ່ານໃບບິນ…":lang==="th"?"กำลังอ่านใบเสร็จ…":"Reading receipt…"}
+          </div>
+          <div style={{ fontSize:13, color:"rgba(255,255,255,0.6)" }}>Gemini AI Vision</div>
+        </div>
+      )}
+
+      {/* Error */}
+      {status === "error" && (
+        <div style={{ position:"fixed", inset:0, zIndex:3000, background:"rgba(30,30,40,0.6)", backdropFilter:"blur(4px)", display:"flex", alignItems:"flex-end", justifyContent:"center" }}
+          onClick={() => setStatus("idle")}>
+          <div style={{ background:"#fff", borderRadius:"28px 28px 0 0", padding:"28px 24px 52px", width:"100%", maxWidth:430, animation:"slideUp .3s ease" }}>
+            <div style={{ fontSize:40, textAlign:"center", marginBottom:12 }}>😕</div>
+            <div style={{ fontWeight:700, fontSize:16, color:T.dark, textAlign:"center", marginBottom:8, fontFamily:"'Noto Sans',sans-serif" }}>
+              {lang==="lo"?"ອ່ານໃບບິນບໍ່ໄດ້":lang==="th"?"อ่านใบเสร็จไม่ได้":"Couldn't read receipt"}
+            </div>
+            <div style={{ fontSize:13, color:T.muted, textAlign:"center", marginBottom:24 }}>{errMsg}</div>
+            <div style={{ display:"flex", gap:10 }}>
+              <button onClick={() => { setStatus("idle"); fileRef.current?.click(); }}
+                style={{ flex:1, padding:"14px", borderRadius:16, border:"none", cursor:"pointer", background:"rgba(172,225,175,0.2)", color:"#1A5A30", fontWeight:700, fontSize:14, fontFamily:"'Noto Sans',sans-serif" }}>
+                {lang==="lo"?"ລອງໃໝ່":lang==="th"?"ลองใหม่":"Try again"}
+              </button>
+              <button onClick={() => setStatus("idle")}
+                style={{ flex:1, padding:"14px", borderRadius:16, border:"none", cursor:"pointer", background:"rgba(45,45,58,0.06)", color:T.muted, fontWeight:700, fontSize:14, fontFamily:"'Noto Sans',sans-serif" }}>
+                {lang==="lo"?"ຍົກເລີກ":lang==="th"?"ยกเลิก":"Cancel"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm modal */}
+      {status === "confirm" && result && (
+        <div style={{ position:"fixed", inset:0, zIndex:3000, background:"rgba(30,30,40,0.6)", backdropFilter:"blur(4px)", display:"flex", alignItems:"flex-end", justifyContent:"center" }}
+          onClick={e => { if (e.target === e.currentTarget) setStatus("idle"); }}>
+          <div style={{ background:"#fff", borderRadius:"28px 28px 0 0", padding:"28px 24px 52px", width:"100%", maxWidth:430, animation:"slideUp .3s ease" }}>
+            <div style={{ textAlign:"center", marginBottom:20 }}>
+              <div style={{ fontSize:14, color:T.muted, marginBottom:6, fontWeight:600 }}>
+                {lang==="lo"?"📷 ອ່ານໃບບິນໄດ້!":lang==="th"?"📷 อ่านใบเสร็จได้!":"📷 Receipt scanned!"}
+              </div>
+              {/* Confidence badge */}
+              <div style={{ display:"inline-block", padding:"2px 10px", borderRadius:8, fontSize:11, fontWeight:700,
+                background: result.confidence >= 0.8 ? "rgba(172,225,175,0.2)" : "rgba(255,179,167,0.2)",
+                color: result.confidence >= 0.8 ? "#1A5A30" : "#A03020" }}>
+                {result.confidence >= 0.8 ? "✓ High confidence" : "⚠ Please verify"}
+              </div>
+            </div>
+
+            {/* Transaction preview */}
+            <div style={{ background:T.bg, borderRadius:20, padding:"16px 18px", marginBottom:20 }}>
+              <div style={{ display:"flex", alignItems:"center", gap:14 }}>
+                <div style={{ width:52, height:52, borderRadius:16, background:"rgba(255,179,167,0.2)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:26, flexShrink:0 }}>
+                  {findCat(result.category || "other", profile?.customCategories || []).emoji}
+                </div>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontWeight:700, fontSize:16, color:T.dark, fontFamily:"'Noto Sans',sans-serif" }}>{result.description}</div>
+                  <div style={{ fontSize:12, color:T.muted, marginTop:2 }}>
+                    {catLabel(findCat(result.category || "other", profile?.customCategories || []), lang)} · {result.currency}
+                  </div>
+                </div>
+                <div style={{ fontWeight:800, fontSize:20, color:"#C0392B", fontFamily:"'Noto Sans',sans-serif" }}>
+                  −{fmt(result.amount, result.currency || "LAK")}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display:"flex", gap:10 }}>
+              <button onClick={() => setStatus("idle")}
+                style={{ flex:1, padding:"14px", borderRadius:16, border:"none", cursor:"pointer", background:"rgba(45,45,58,0.06)", color:T.muted, fontWeight:700, fontSize:14, fontFamily:"'Noto Sans',sans-serif" }}>
+                {lang==="lo"?"ຍົກເລີກ":lang==="th"?"ยกเลิก":"Cancel"}
+              </button>
+              <button onClick={confirmAdd}
+                style={{ flex:2, padding:"14px", borderRadius:16, border:"none", cursor:"pointer", background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)", color:"#1A4020", fontWeight:800, fontSize:14, fontFamily:"'Noto Sans',sans-serif", boxShadow:"0 4px 16px rgba(172,225,175,0.4)" }}>
+                {lang==="lo"?"ບັນທຶກ ✓":lang==="th"?"บันทึก ✓":"Save ✓"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 // ═══ QUICK ADD BAR ════════════════════════════════════════════
 function QuickAddBar({lang,onAdd,customCategories=[],userId=null}){
   const[input,setInput]=useState("");
@@ -2434,7 +2616,12 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
             🤖 {t(lang,"ask_ai")}
             </button>
           </div>
-          <QuickAddBar lang={lang} onAdd={handleAdd} customCategories={customCategories} userId={profile?.userId}/>
+          <div style={{display:"flex",alignItems:"center",gap:6,padding:"0 12px"}}>
+            <div style={{flex:1}}>
+              <QuickAddBar lang={lang} onAdd={handleAdd} customCategories={customCategories} userId={profile?.userId}/>
+            </div>
+            <OcrButton profile={profile} onAdd={handleAdd} lang={lang}/>
+          </div>
         </div>
       )}
       <BottomNav active={tab} onTab={setTab} lang={lang}/>
@@ -2563,6 +2750,7 @@ export default function App(){
           streakCount: dbProfile.streak_count || 0,
           streakLastDate: dbProfile.streak_last_date || "",
           xp: dbProfile.xp || 0,
+          isPro: dbProfile.is_pro || false,
           userId: uid,
         });
         supabase.from("profiles").update({ last_seen_at: new Date().toISOString() }).eq("id", uid).then(()=>{});
