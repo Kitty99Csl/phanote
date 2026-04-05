@@ -3187,6 +3187,10 @@ export default function App(){
   const savePinConfig = (cfg) => {
     localStorage.setItem("phanote_pins", JSON.stringify(cfg));
     setPinConfig(cfg);
+    // Save to Supabase so PIN survives private browsing & works on any device
+    if (userId) {
+      supabase.from("profiles").update({ pin_config: cfg }).eq("id", userId).catch(()=>{});
+    }
   };
   const handlePinKey = (key) => {
     if (key === "⌫") { setPinInput(p => p.slice(0,-1)); return; }
@@ -3286,8 +3290,18 @@ export default function App(){
         })));
       }
     } catch (e) { console.error("Load error:", e); }
-    const pinCfg = JSON.parse(localStorage.getItem("phanote_pins") || "null");
-    if (pinCfg?.owner) setPinRole(null);
+    // ── Load PIN from Supabase (survives private browsing) ──
+    try {
+      const { data: pinRow } = await supabase.from("profiles")
+        .select("pin_config").eq("id", uid).single();
+      const pinCfg = pinRow?.pin_config || JSON.parse(localStorage.getItem("phanote_pins") || "null") || {owner:null,guest:null};
+      setPinConfig(pinCfg);
+      localStorage.setItem("phanote_pins", JSON.stringify(pinCfg));
+      if (pinCfg?.owner) setPinRole(null);
+    } catch {
+      const pinCfg = JSON.parse(localStorage.getItem("phanote_pins") || "null");
+      if (pinCfg?.owner) setPinRole(null);
+    }
     setLoadingProfile(false);
   };
 
