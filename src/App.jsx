@@ -1216,7 +1216,7 @@ function CategoryManager({lang,customCategories,onAdd,onRemove}){
 }
 
 // ═══ SETTINGS ════════════════════════════════════════════════
-function SettingsScreen({profile,transactions,onUpdateProfile,onReset}){
+function SettingsScreen({profile,transactions,onUpdateProfile,onReset,pinConfig={owner:null,guest:null},savePinConfig=()=>{},setPinRole=()=>{},setPinSetupMode=()=>{}}){
   const{lang,baseCurrency,name,avatar,customCategories=[]}=profile;
   const[showLang,setShowLang]=useState(false);
   const[showCur,setShowCur]=useState(false);
@@ -1272,6 +1272,47 @@ function SettingsScreen({profile,transactions,onUpdateProfile,onReset}){
         onRemove={(id)=>onUpdateProfile({customCategories:customCategories.filter(c=>c.id!==id)})}/>
       <div style={{marginTop:24}}/>
 
+      {/* ─── Security / PIN ─── */}
+      <div style={{fontSize:10,fontWeight:700,letterSpacing:1.4,color:T.muted,textTransform:"uppercase",marginBottom:10,fontFamily:"'Noto Sans',sans-serif"}}>Security / ຄວາມປອດໄພ</div>
+      <div style={{background:T.surface,backdropFilter:"blur(20px)",borderRadius:20,boxShadow:T.shadow,marginBottom:20,overflow:"hidden"}}>
+        <div style={{display:"flex",alignItems:"center",gap:12,padding:"16px 18px"}}>
+          <div style={{width:40,height:40,borderRadius:12,background:"rgba(172,225,175,0.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>🔐</div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:14,fontWeight:600,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>Owner PIN</div>
+            <div style={{fontSize:12,color:T.muted}}>{pinConfig.owner ? "PIN is set · Full access" : "Not set — no PIN required"}</div>
+          </div>
+          <button onClick={()=>setPinSetupMode("set-owner")} style={{fontSize:12,fontWeight:700,color:"#2A7A40",background:"rgba(172,225,175,0.2)",border:"none",borderRadius:9999,padding:"6px 14px",cursor:"pointer",fontFamily:"'Noto Sans',sans-serif",whiteSpace:"nowrap"}}>
+            {pinConfig.owner ? "Change" : "Set up"}
+          </button>
+        </div>
+        <div style={{height:1,background:"rgba(45,45,58,0.05)"}}/>
+        <div style={{display:"flex",alignItems:"center",gap:12,padding:"16px 18px"}}>
+          <div style={{width:40,height:40,borderRadius:12,background:"rgba(255,179,167,0.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>🔑</div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:14,fontWeight:600,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>Guest PIN</div>
+            <div style={{fontSize:12,color:T.muted}}>{pinConfig.guest ? "Set · Hides settings from guests" : "Not set"}</div>
+          </div>
+          <div style={{display:"flex",gap:6,flexShrink:0}}>
+            {pinConfig.guest && (
+              <button onClick={()=>savePinConfig({...pinConfig,guest:null})} style={{fontSize:12,fontWeight:700,color:"#C0392B",background:"rgba(255,179,167,0.2)",border:"none",borderRadius:9999,padding:"6px 12px",cursor:"pointer",fontFamily:"'Noto Sans',sans-serif"}}>Remove</button>
+            )}
+            <button onClick={()=>setPinSetupMode("set-guest")} style={{fontSize:12,fontWeight:700,color:"#2A7A40",background:"rgba(172,225,175,0.2)",border:"none",borderRadius:9999,padding:"6px 14px",cursor:"pointer",fontFamily:"'Noto Sans',sans-serif",whiteSpace:"nowrap"}}>
+              {pinConfig.guest ? "Change" : "Set up"}
+            </button>
+          </div>
+        </div>
+        {pinConfig.owner && (<>
+          <div style={{height:1,background:"rgba(45,45,58,0.05)"}}/>
+          <button onClick={()=>setPinRole(null)} style={{width:"100%",padding:"14px 18px",display:"flex",alignItems:"center",gap:12,background:"none",border:"none",cursor:"pointer",fontFamily:"'Noto Sans',sans-serif",textAlign:"left"}}>
+            <div style={{width:40,height:40,borderRadius:12,background:"rgba(45,45,58,0.06)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>🔒</div>
+            <div>
+              <div style={{fontSize:14,fontWeight:600,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>Lock app now</div>
+              <div style={{fontSize:12,color:T.muted}}>Requires PIN to unlock</div>
+            </div>
+            <div style={{marginLeft:"auto",fontSize:12,color:T.muted}}>›</div>
+          </button>
+        </>)}
+      </div>
       <div style={{fontSize:10,fontWeight:700,letterSpacing:1.4,color:T.muted,textTransform:"uppercase",marginBottom:10,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"account")}</div>
       <div style={{background:T.surface,backdropFilter:"blur(20px)",borderRadius:20,boxShadow:T.shadow,marginBottom:12,overflow:"hidden"}}>
         <button onClick={onReset} style={{width:"100%",padding:"16px 18px",border:"none",cursor:"pointer",background:"transparent",display:"flex",alignItems:"center",gap:12,textAlign:"left"}}>
@@ -1984,6 +2025,22 @@ function AnalyticsScreen({ profile, transactions }) {
   const expenses = filteredTxs.filter(x => x.type==="expense").reduce((s,x) => s+x.amount, 0);
   const net      = income - expenses;
   const savingsRate = income > 0 ? Math.round(((income-expenses)/income)*100) : 0;
+  const momDelta = (() => {
+    if (period !== "month") return null;
+    const prevDate = new Date(now.getFullYear(), now.getMonth() + monthOffset - 1, 1);
+    const pm = prevDate.getMonth(), py = prevDate.getFullYear();
+    const prevTxs = transactions.filter(tx => {
+      const d = new Date(tx.date);
+      return tx.currency === selectedCur && d.getMonth() === pm && d.getFullYear() === py;
+    });
+    const prevExp = prevTxs.filter(x=>x.type==="expense").reduce((s,x)=>s+x.amount,0);
+    const prevInc = prevTxs.filter(x=>x.type==="income").reduce((s,x)=>s+x.amount,0);
+    if (!prevExp && !prevInc) return null;
+    return {
+      expense: prevExp > 0 ? Math.round(((expenses-prevExp)/prevExp)*100) : null,
+      income:  prevInc > 0 ? Math.round(((income-prevInc)/prevInc)*100) : null,
+    };
+  })();
 
   const spentByCat = {};
   filteredTxs.filter(x=>x.type==="expense").forEach(tx => {
@@ -2090,11 +2147,25 @@ function AnalyticsScreen({ profile, transactions }) {
             <div style={{ fontSize:10, fontWeight:700, color:"#2A7A40", textTransform:"uppercase", letterSpacing:0.8 }}>Income</div>
             <div style={{ fontSize:18, fontWeight:800, color:"#1A5A30", fontFamily:"'Noto Sans',sans-serif", marginTop:4 }}>+{fmt(income, selectedCur)}</div>
             <div style={{ fontSize:11, color:T.muted, marginTop:2 }}>{filteredTxs.filter(x=>x.type==="income").length} transactions</div>
+            {momDelta?.income != null && (
+              <div style={{ marginTop:6, display:"inline-flex", alignItems:"center", gap:3, padding:"2px 8px", borderRadius:9999, fontSize:10, fontWeight:700,
+                background: momDelta.income >= 0 ? "rgba(172,225,175,0.2)" : "rgba(255,179,167,0.2)",
+                color: momDelta.income >= 0 ? "#1A5A30" : "#C0392B" }}>
+                {momDelta.income >= 0 ? "▲" : "▼"} {momDelta.income > 0 ? "+" : ""}{momDelta.income}% vs last mo
+              </div>
+            )}
           </div>
           <div style={{ background:T.surface, borderRadius:18, padding:"14px 16px", boxShadow:T.shadow }}>
             <div style={{ fontSize:10, fontWeight:700, color:"#A03020", textTransform:"uppercase", letterSpacing:0.8 }}>Expenses</div>
             <div style={{ fontSize:18, fontWeight:800, color:"#C0392B", fontFamily:"'Noto Sans',sans-serif", marginTop:4 }}>−{fmt(expenses, selectedCur)}</div>
             <div style={{ fontSize:11, color:T.muted, marginTop:2 }}>{filteredTxs.filter(x=>x.type==="expense").length} transactions</div>
+            {momDelta?.expense != null && (
+              <div style={{ marginTop:6, display:"inline-flex", alignItems:"center", gap:3, padding:"2px 8px", borderRadius:9999, fontSize:10, fontWeight:700,
+                background: momDelta.expense <= 0 ? "rgba(172,225,175,0.2)" : "rgba(255,179,167,0.2)",
+                color: momDelta.expense <= 0 ? "#1A5A30" : "#C0392B" }}>
+                {momDelta.expense > 0 ? "▲" : "▼"} {momDelta.expense > 0 ? "+" : ""}{momDelta.expense}% vs last mo
+              </div>
+            )}
           </div>
         </div>
 
@@ -2614,8 +2685,9 @@ function SafeToSpend({ transactions, profile }) {
 }
 
 // ═══ BOTTOM NAV ═══════════════════════════════════════════════
-function BottomNav({active,onTab,lang}){
-  const tabs=[{id:"home",icon:"🏠",label:t(lang,"home")},{id:"analytics",icon:"📊",label:t(lang,"analytics")},{id:"budget",icon:"💰",label:t(lang,"budget")},{id:"goals",icon:"🎯",label:t(lang,"goals")},{id:"settings",icon:"⚙️",label:t(lang,"settings")}];
+function BottomNav({active,onTab,lang,pinRole="owner"}){
+  const allTabs=[{id:"home",icon:"🏠",label:t(lang,"home")},{id:"analytics",icon:"📊",label:t(lang,"analytics")},{id:"budget",icon:"💰",label:t(lang,"budget")},{id:"goals",icon:"🎯",label:t(lang,"goals")},{id:"settings",icon:"⚙️",label:t(lang,"settings")}];
+  const tabs = pinRole === "guest" ? allTabs.filter(tab => tab.id !== "settings") : allTabs;
   return(<div style={{position:"sticky",bottom:0,background:"rgba(247,252,245,0.96)",backdropFilter:"blur(24px)",borderTop:"1px solid rgba(45,45,58,0.07)",display:"flex",zIndex:200,paddingBottom:"env(safe-area-inset-bottom,0px)"}}>
     {tabs.map(tab=>(<button key={tab.id} onClick={()=>onTab(tab.id)} style={{flex:1,padding:"10px 0 8px",border:"none",background:"transparent",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3,position:"relative"}}>
       {active===tab.id&&<div style={{position:"absolute",top:-1,left:"50%",transform:"translateX(-50%)",width:32,height:2,borderRadius:2,background:T.celadon}}/>}
@@ -2626,7 +2698,7 @@ function BottomNav({active,onTab,lang}){
 }
 
 // ═══ HOME SCREEN ══════════════════════════════════════════════
-function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdateNote,onUpdateCategory,onDeleteTx,streakToast,onStreakToastDone}){
+function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdateNote,onUpdateCategory,onDeleteTx,streakToast,onStreakToastDone,pinRole="owner",pinConfig={},savePinConfig,setPinRole,setPinSetupMode}){
   const[tab,setTab]=useState("home");
   const[toast,setToast]=useState(null);
   const[editTx,setEditTx]=useState(null);
@@ -2703,7 +2775,14 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
         {tab==="analytics"&&<AnalyticsScreen profile={profile} transactions={transactions}/>}
         {tab==="budget"&&<BudgetScreen profile={profile} transactions={transactions}/>}
         {tab==="goals"&&<GoalsScreen profile={profile} transactions={transactions}/>}
-        {tab==="settings"&&<SettingsScreen profile={profile} transactions={transactions} onUpdateProfile={onUpdateProfile} onReset={onReset}/>}
+        {tab==="settings" && (pinRole === "owner"
+          ? <SettingsScreen profile={profile} transactions={transactions} onUpdateProfile={onUpdateProfile} onReset={onReset} pinConfig={pinConfig} savePinConfig={savePinConfig} setPinRole={setPinRole} setPinSetupMode={setPinSetupMode}/>
+          : <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"80px 24px",textAlign:"center"}}>
+              <div style={{fontSize:44,marginBottom:16}}>🔒</div>
+              <div style={{fontSize:18,fontWeight:700,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>Settings unavailable</div>
+              <div style={{fontSize:13,color:T.muted,marginTop:8,lineHeight:1.6}}>You're using a guest session.<br/>Ask the account owner for full access.</div>
+            </div>
+        )}
       </div>
       {tab==="home"&&(
         <div style={{flexShrink:0,zIndex:150,background:"rgba(247,252,245,0.97)",backdropFilter:"blur(20px)",borderTop:"1px solid rgba(45,45,58,0.06)",padding:"6px 12px",paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 6px)"}}>
@@ -2711,7 +2790,7 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
             onShowAdvisor={()=>setShowAdvisor(true)} profile={profile}/>
         </div>
       )}
-      <BottomNav active={tab} onTab={setTab} lang={lang}/>
+      <BottomNav active={tab} onTab={setTab} lang={lang} pinRole={pinRole}/>
       {toast&&<Toast msg={toast} onDone={()=>setToast(null)}/>}
       {editTx&&!showEdit&&(<QuickEditToast tx={editTx} lang={lang} onChangeCategory={()=>setShowEdit(true)} onDone={()=>setEditTx(null)} customCategories={customCategories}/>)}
       {showEdit&&editTx&&(<EditTransactionModal tx={editTx} lang={lang} onSave={handleEditSave} onClose={()=>{setShowEdit(false);setEditTx(null);}} customCategories={customCategories}/>)}
@@ -2723,6 +2802,46 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
 }
 
 // ═══ LOGIN SCREEN ════════════════════════════════════════════
+// ═══ PIN LOCK ════════════════════════════════════════════════
+function PinLock({ pinConfig, pinInput, pinShake, onKey, isSetup, setupMode, setupStep }) {
+  const keys = ["1","2","3","4","5","6","7","8","9","","0","⌫"];
+  const dots = pinInput.length;
+  const title = isSetup
+    ? (setupMode === "set-owner" ? "Set Owner PIN" : "Set Guest PIN")
+    : "Welcome back";
+  const subtitle = isSetup
+    ? (setupStep === "confirm" ? "Confirm your PIN" : setupMode === "set-owner"
+        ? "Enter new 4-digit owner PIN" : "Enter a 4-digit guest PIN")
+    : "Enter your PIN to continue";
+  return (
+    <div style={{position:"fixed",inset:0,zIndex:9999,background:T.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:28}}>
+      <div style={{marginBottom:6,fontSize:38}}>🐾</div>
+      <div style={{fontSize:22,fontWeight:800,color:T.dark,letterSpacing:-0.5,fontFamily:"'Noto Sans',sans-serif"}}>Phanote</div>
+      <div style={{fontSize:13,color:T.muted,marginTop:4,marginBottom:32,textAlign:"center",lineHeight:1.5,fontFamily:"'Noto Sans',sans-serif"}}>{subtitle}</div>
+      <div style={{fontSize:17,fontWeight:700,color:T.dark,marginBottom:24,fontFamily:"'Noto Sans',sans-serif"}}>{title}</div>
+      <div style={{display:"flex",gap:18,marginBottom:40,animation:pinShake?"shake .4s ease":"none"}}>
+        {[0,1,2,3].map(i=>(
+          <div key={i} style={{width:16,height:16,borderRadius:8,background:i<dots?T.celadon:"rgba(172,225,175,0.2)",transition:"background .12s, transform .12s",transform:i<dots?"scale(1.15)":"scale(1)",boxShadow:i<dots?"0 0 0 4px rgba(172,225,175,0.2)":"none"}}/>
+        ))}
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3, 76px)",gap:14}}>
+        {keys.map((k,i)=>(
+          k===""?<div key={i}/>:
+          <button key={i} onClick={()=>k&&onKey(k)}
+            style={{width:76,height:76,borderRadius:22,border:"none",fontFamily:"'Noto Sans',sans-serif",background:k==="⌫"?"rgba(172,225,175,0.15)":T.surface,color:k==="⌫"?T.muted:T.dark,fontSize:k==="⌫"?20:26,fontWeight:k==="⌫"?400:500,cursor:"pointer",boxShadow:T.shadow,display:"flex",alignItems:"center",justifyContent:"center",WebkitTapHighlightColor:"transparent"}}
+            onPointerDown={e=>{e.currentTarget.style.transform="scale(0.91)";e.currentTarget.style.boxShadow="none";}}
+            onPointerUp={e=>{e.currentTarget.style.transform="scale(1)";e.currentTarget.style.boxShadow=T.shadow;}}
+          >{k}</button>
+        ))}
+      </div>
+      {!isSetup&&pinConfig?.guest&&(
+        <div style={{marginTop:28,fontSize:12,color:T.muted,textAlign:"center",fontFamily:"'Noto Sans',sans-serif"}}>Owner and guest PINs both accepted</div>
+      )}
+      <style>{`@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}`}</style>
+    </div>
+  );
+}
+
 function LoginScreen({ onLogin }) {
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("+856");
@@ -2791,6 +2910,56 @@ export default function App(){
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [streakToast, setStreakToast]   = useState(null);
 
+  // ── PIN state ──────────────────────────────────────────────
+  const [pinConfig, setPinConfig] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("phanote_pins") || "null") || {owner:null,guest:null}; }
+    catch { return {owner:null,guest:null}; }
+  });
+  const [pinRole, setPinRole] = useState(() => {
+    const cfg = JSON.parse(localStorage.getItem("phanote_pins") || "null");
+    return cfg?.owner ? null : "owner";
+  });
+  const [pinInput, setPinInput]     = useState("");
+  const [pinShake, setPinShake]     = useState(false);
+  const [pinSetupMode, setPinSetupMode] = useState(null);
+  const [pinSetupStep, setPinSetupStep] = useState("enter");
+  const [pinSetupFirst, setPinSetupFirst] = useState("");
+
+  const savePinConfig = (cfg) => {
+    localStorage.setItem("phanote_pins", JSON.stringify(cfg));
+    setPinConfig(cfg);
+  };
+  const handlePinKey = (key) => {
+    if (key === "⌫") { setPinInput(p => p.slice(0,-1)); return; }
+    const next = pinInput + key; setPinInput(next);
+    if (next.length < 4) return;
+    setTimeout(() => {
+      if (next === pinConfig.owner) { setPinRole("owner"); setPinInput(""); }
+      else if (pinConfig.guest && next === pinConfig.guest) { setPinRole("guest"); setPinInput(""); }
+      else { setPinShake(true); setTimeout(() => { setPinShake(false); setPinInput(""); }, 600); }
+    }, 80);
+  };
+  const handleSetupKey = (key) => {
+    if (key === "⌫") { setPinInput(p => p.slice(0,-1)); return; }
+    const next = pinInput + key; setPinInput(next);
+    if (next.length < 4) return;
+    setTimeout(() => {
+      if (pinSetupStep === "enter") {
+        setPinSetupFirst(next); setPinSetupStep("confirm"); setPinInput("");
+      } else if (next === pinSetupFirst) {
+        const newCfg = {...pinConfig};
+        if (pinSetupMode === "set-owner") newCfg.owner = next;
+        if (pinSetupMode === "set-guest") newCfg.guest = next;
+        savePinConfig(newCfg);
+        setPinSetupMode(null); setPinSetupStep("enter"); setPinSetupFirst(""); setPinInput("");
+      } else {
+        setPinShake(true);
+        setTimeout(() => { setPinShake(false); setPinInput(""); setPinSetupStep("enter"); setPinSetupFirst(""); }, 600);
+      }
+    }, 80);
+  };
+  // ───────────────────────────────────────────────────────────
+
   useEffect(()=>{
     const link=document.createElement("link");
     link.rel="stylesheet";
@@ -2858,7 +3027,6 @@ export default function App(){
         })));
       }
     } catch (e) { console.error("Load error:", e); }
-    // ★ If PIN is configured, always require unlock after every login/reload
     const pinCfg = JSON.parse(localStorage.getItem("phanote_pins") || "null");
     if (pinCfg?.owner) setPinRole(null);
     setLoadingProfile(false);
@@ -2990,17 +3158,44 @@ export default function App(){
   );
 
   return (
-    <HomeScreen
-      profile={profile}
-      transactions={transactions}
-      onAdd={handleAddTransaction}
-      onReset={handleReset}
-      onUpdateProfile={handleUpdateProfile}
-      onUpdateNote={handleUpdateNote}
-      onUpdateCategory={handleUpdateCategory}
-      onDeleteTx={handleDeleteTransaction}
-      streakToast={streakToast}
-      onStreakToastDone={()=>setStreakToast(null)}
-    />
+    <>
+      {(pinRole === null || pinSetupMode) && (
+        <PinLock
+          pinConfig={pinConfig}
+          pinInput={pinInput}
+          pinShake={pinShake}
+          onKey={pinSetupMode ? handleSetupKey : handlePinKey}
+          isSetup={!!pinSetupMode}
+          setupMode={pinSetupMode}
+          setupStep={pinSetupStep}
+        />
+      )}
+      {pinSetupMode && (
+        <button
+          onClick={()=>{ setPinSetupMode(null); setPinInput(""); setPinSetupStep("enter"); setPinSetupFirst(""); }}
+          style={{position:"fixed",top:"calc(env(safe-area-inset-top,0px) + 56px)",right:24,zIndex:10000,fontSize:14,color:T.muted,background:"none",border:"none",cursor:"pointer",fontFamily:"'Noto Sans',sans-serif"}}>
+          Cancel
+        </button>
+      )}
+      {pinRole !== null && !pinSetupMode && (
+        <HomeScreen
+          profile={profile}
+          transactions={transactions}
+          onAdd={handleAddTransaction}
+          onReset={handleReset}
+          onUpdateProfile={handleUpdateProfile}
+          onUpdateNote={handleUpdateNote}
+          onUpdateCategory={handleUpdateCategory}
+          onDeleteTx={handleDeleteTransaction}
+          streakToast={streakToast}
+          onStreakToastDone={()=>setStreakToast(null)}
+          pinRole={pinRole}
+          pinConfig={pinConfig}
+          savePinConfig={savePinConfig}
+          setPinRole={setPinRole}
+          setPinSetupMode={(mode)=>{ setPinSetupMode(mode); setPinInput(""); setPinSetupStep("enter"); setPinSetupFirst(""); }}
+        />
+      )}
+    </>
   );
 }
