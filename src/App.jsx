@@ -621,21 +621,32 @@ function WalletCards({transactions}){
     const moOut=monthly.filter(x=>x.type==="expense").reduce((s,x)=>s+x.amount,0);
     return{balance:allIn-allOut,income:moIn,expenses:moOut};
   };
+  const CircleFlag=({code})=>(
+    <div style={{width:16,height:16,borderRadius:"50%",overflow:"hidden",flexShrink:0,display:"inline-flex",border:"0.5px solid rgba(45,45,58,0.15)"}}>
+      <svg viewBox="0 0 24 24" width="22" height="22" style={{margin:"-3px"}}>
+        {code==="LAK"&&<><rect width="24" height="24" fill="#CE1126"/><rect y="6" width="24" height="12" fill="#002868"/><circle cx="12" cy="12" r="4" fill="#fff"/></>}
+        {code==="THB"&&<><rect width="24" height="24" fill="#A51931"/><rect y="4" width="24" height="4" fill="#F4F5F8"/><rect y="8" width="24" height="8" fill="#2D2A4A"/><rect y="16" width="24" height="4" fill="#F4F5F8"/></>}
+        {code==="USD"&&<><rect width="24" height="24" fill="#B22234"/><rect y="2" width="24" height="2" fill="#fff"/><rect y="6" width="24" height="2" fill="#fff"/><rect y="10" width="24" height="2" fill="#fff"/><rect y="14" width="24" height="2" fill="#fff"/><rect y="18" width="24" height="2" fill="#fff"/><rect y="22" width="24" height="2" fill="#fff"/><rect width="11" height="13" fill="#3C3B6E"/></>}
+      </svg>
+    </div>
+  );
   return(
     <div style={{padding:"0 16px"}}>
-      <div style={{background:T.surface,backdropFilter:"blur(20px)",borderRadius:20,boxShadow:T.shadow,overflow:"hidden"}}>
+      <div style={{background:T.surface,backdropFilter:"blur(20px)",borderRadius:18,boxShadow:T.shadow,overflow:"hidden"}}>
         <div style={{display:"flex",alignItems:"stretch"}}>
           {["LAK","THB","USD"].map((cur,i)=>{
             const stats=getStats(cur),open=expanded===cur,bal=stats.balance;
             return(
               <div key={cur} onClick={()=>setExpanded(open?null:cur)}
-                style={{flex:1,padding:"12px 10px",cursor:"pointer",
+                style={{flex:1,padding:"9px 8px",cursor:"pointer",
                   borderLeft:i>0?"1px solid rgba(45,45,58,0.07)":"none",
                   background:open?"rgba(172,225,175,0.08)":"transparent",
                   transition:"background .15s",textAlign:"center"}}>
-                <Flag code={cur} size={22}/>
-                <div style={{fontSize:10,fontWeight:600,color:T.muted,marginTop:4,letterSpacing:0.3}}>{cur}</div>
-                <div style={{fontSize:13,fontWeight:800,color:bal<0?"#C0392B":T.dark,fontFamily:"'Noto Sans',sans-serif",marginTop:2,letterSpacing:-0.3}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,marginBottom:3}}>
+                  <CircleFlag code={cur}/>
+                  <span style={{fontSize:10,fontWeight:700,color:T.muted,letterSpacing:0.3}}>{cur}</span>
+                </div>
+                <div style={{fontSize:13,fontWeight:800,color:bal<0?"#C0392B":T.dark,fontFamily:"'Noto Sans',sans-serif",letterSpacing:-0.3}}>
                   {bal<0?"−":""}{fmtCompact(Math.abs(bal),cur)}
                 </div>
               </div>
@@ -645,22 +656,22 @@ function WalletCards({transactions}){
         {expanded&&(()=>{
           const stats=getStats(expanded),cfg=CURR[expanded];
           return(
-            <div style={{borderTop:"1px solid rgba(45,45,58,0.07)",padding:"12px 14px",animation:"slideDown .2s ease",background:"rgba(172,225,175,0.04)"}}>
+            <div style={{borderTop:"1px solid rgba(45,45,58,0.07)",padding:"10px 14px",animation:"slideDown .2s ease",background:"rgba(172,225,175,0.04)"}}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                <div style={{display:"flex",alignItems:"center",gap:8}}>
-                  <Flag code={expanded} size={20}/>
+                <div style={{display:"flex",alignItems:"center",gap:6}}>
+                  <Flag code={expanded} size={16}/>
                   <span style={{fontSize:12,fontWeight:700,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{cfg.name}</span>
                 </div>
                 <button onClick={()=>setExpanded(null)} style={{fontSize:14,color:T.muted,background:"none",border:"none",cursor:"pointer"}}>✕</button>
               </div>
               <div style={{display:"flex",gap:8}}>
-                <div style={{flex:1,padding:"8px 12px",borderRadius:12,background:"rgba(172,225,175,0.15)"}}>
+                <div style={{flex:1,padding:"8px 10px",borderRadius:12,background:"rgba(172,225,175,0.15)"}}>
                   <div style={{fontSize:10,fontWeight:700,color:"#2A7A40",textTransform:"uppercase",letterSpacing:0.8}}>Income</div>
-                  <div style={{fontSize:15,fontWeight:800,color:"#1A5A30",marginTop:3,fontFamily:"'Noto Sans',sans-serif"}}>+{fmt(stats.income,expanded)}</div>
+                  <div style={{fontSize:14,fontWeight:800,color:"#1A5A30",marginTop:3,fontFamily:"'Noto Sans',sans-serif"}}>+{fmt(stats.income,expanded)}</div>
                 </div>
-                <div style={{flex:1,padding:"8px 12px",borderRadius:12,background:"rgba(255,179,167,0.15)"}}>
+                <div style={{flex:1,padding:"8px 10px",borderRadius:12,background:"rgba(255,179,167,0.12)"}}>
                   <div style={{fontSize:10,fontWeight:700,color:"#A03020",textTransform:"uppercase",letterSpacing:0.8}}>Expenses</div>
-                  <div style={{fontSize:15,fontWeight:800,color:"#C0392B",marginTop:3,fontFamily:"'Noto Sans',sans-serif"}}>−{fmt(stats.expenses,expanded)}</div>
+                  <div style={{fontSize:14,fontWeight:800,color:"#C0392B",marginTop:3,fontFamily:"'Noto Sans',sans-serif"}}>−{fmt(stats.expenses,expanded)}</div>
                 </div>
               </div>
             </div>
@@ -773,7 +784,7 @@ function QuickEditToast({tx,lang,onChangeCategory,onDone,customCategories=[]}){
 }
 
 // ═══ OCR BUTTON + FLOW ═══════════════════════════════════════
-function OcrButton({ profile, onAdd, lang }) {
+function OcrButton({ profile, onAdd, lang, compact=false }) {
   const [status,  setStatus]  = useState("idle"); // idle | scanning | confirm | error
   const [result,  setResult]  = useState(null);
   const [errMsg,  setErrMsg]  = useState("");
@@ -850,7 +861,7 @@ function OcrButton({ profile, onAdd, lang }) {
     return (
       <button
         onClick={() => alert(lang === "lo" ? "ຟີເຈີ Pro — ຕິດຕໍ່ເຈົ້າຂອງແອັບ" : lang === "th" ? "ฟีเจอร์ Pro — ติดต่อผู้ดูแลแอป" : "Pro feature — contact the app admin to enable")}
-        style={{ width:36, height:36, borderRadius:11, border:"1px dashed rgba(45,45,58,0.2)", cursor:"pointer", background:"rgba(45,45,58,0.04)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:16, flexShrink:0 }}>
+        style={{ width:compact?32:36, height:compact?32:36, borderRadius:compact?10:11, border:"1px dashed rgba(45,45,58,0.2)", cursor:"pointer", background:"rgba(45,45,58,0.04)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:compact?13:16, flexShrink:0 }}>
         🔒
       </button>
     );
@@ -862,9 +873,9 @@ function OcrButton({ profile, onAdd, lang }) {
         style={{ display:"none" }} onChange={handleFile}/>
 
       <button onClick={() => fileRef.current?.click()} disabled={status === "scanning"}
-        style={{ width:36, height:36, borderRadius:11, border:"none", cursor:"pointer", flexShrink:0,
-          background: status==="scanning" ? "rgba(172,225,175,0.4)" : "rgba(172,225,175,0.2)",
-          display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, transition:"all .2s" }}>
+        style={{ width:compact?32:36, height:compact?32:36, borderRadius:compact?10:11, border:"none", cursor:"pointer", flexShrink:0,
+          background: status==="scanning" ? "rgba(172,225,175,0.4)" : "rgba(172,225,175,0.18)",
+          display:"flex", alignItems:"center", justifyContent:"center", fontSize:compact?14:18, transition:"all .2s" }}>
         {status === "scanning" ? "⏳" : "📷"}
       </button>
 
@@ -956,7 +967,7 @@ function OcrButton({ profile, onAdd, lang }) {
 }
 
 // ═══ QUICK ADD BAR ════════════════════════════════════════════
-function QuickAddBar({lang,onAdd,customCategories=[],userId=null}){
+function QuickAddBar({lang,onAdd,customCategories=[],userId=null,onShowAdvisor=null,profile=null}){
   const[input,setInput]=useState("");
   const[status,setStatus]=useState("idle");
   const[pending,setPending]=useState(null);
@@ -1005,18 +1016,21 @@ function QuickAddBar({lang,onAdd,customCategories=[],userId=null}){
 
   const isIncome=mode==="income";
   return(<>
-    <div style={{padding:"0 12px"}}>
-      <div style={{background:T.surface,backdropFilter:"blur(20px)",borderRadius:18,padding:"8px 10px",boxShadow:T.shadow,display:"flex",alignItems:"center",gap:8,border:`1.5px solid ${isIncome?"rgba(172,225,175,0.4)":"rgba(255,179,167,0.3)"}`}}>
-        <button onClick={()=>setMode(isIncome?"expense":"income")} style={{flexShrink:0,padding:"5px 10px",borderRadius:10,border:"none",cursor:"pointer",background:isIncome?"rgba(172,225,175,0.25)":"rgba(255,179,167,0.25)",color:isIncome?"#1A5A30":"#C0392B",fontWeight:800,fontSize:11,fontFamily:"'Noto Sans',sans-serif",transition:"all .2s ease",whiteSpace:"nowrap"}}>{isIncome?"+ In":"− Out"}</button>
-        <input ref={inputRef} value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&submit()}
-          placeholder={isIncome?"salary, ເງິນເດືອນ, รายรับ…":t(lang,"placeholder")}
-          style={{flex:1,border:"none",outline:"none",background:"transparent",fontSize:13,color:T.dark,fontFamily:"'Noto Sans',sans-serif",minWidth:0}}/>
-        <button onClick={submit} disabled={status==="parsing"} style={{width:36,height:36,borderRadius:11,border:"none",cursor:"pointer",flexShrink:0,background:status==="error"?"#FFB3A7":status==="parsing"?"rgba(172,225,175,0.4)":T.celadon,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,transition:"all .2s ease",boxShadow:status==="parsing"?"none":"0 3px 8px rgba(172,225,175,0.4)"}}>
-          {status==="parsing"?"⏳":status==="error"?"✗":"↑"}
-        </button>
-      </div>
-      {status==="parsing"&&<div style={{fontSize:11,color:T.muted,textAlign:"center",marginTop:4,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"parsing")}</div>}
+    <div style={{background:T.surface,backdropFilter:"blur(20px)",borderRadius:18,padding:"6px 8px",boxShadow:T.shadow,display:"flex",alignItems:"center",gap:6,border:`1.5px solid ${isIncome?"rgba(172,225,175,0.4)":"rgba(255,179,167,0.3)"}`}}>
+      <button onClick={()=>setMode(isIncome?"expense":"income")} style={{flexShrink:0,padding:"5px 8px",borderRadius:9,border:"none",cursor:"pointer",background:isIncome?"rgba(172,225,175,0.25)":"rgba(255,179,167,0.25)",color:isIncome?"#1A5A30":"#C0392B",fontWeight:800,fontSize:11,fontFamily:"'Noto Sans',sans-serif",transition:"all .2s ease",whiteSpace:"nowrap"}}>{isIncome?"+ In":"− Out"}</button>
+      <input ref={inputRef} value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&submit()}
+        placeholder={isIncome?"salary, ເງິນເດືອນ, รายรับ…":t(lang,"placeholder")}
+        style={{flex:1,border:"none",outline:"none",background:"transparent",fontSize:13,color:T.dark,fontFamily:"'Noto Sans',sans-serif",minWidth:0}}/>
+      {/* AI button inline */}
+      {onShowAdvisor&&<button onClick={onShowAdvisor} title="Ask AI" style={{width:32,height:32,borderRadius:10,border:"none",cursor:"pointer",flexShrink:0,background:"rgba(172,225,175,0.18)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15}}>🤖</button>}
+      {/* OCR button inline */}
+      {profile&&<OcrButton profile={profile} onAdd={onAdd} lang={lang} compact={true}/>}
+      {/* Send button */}
+      <button onClick={submit} disabled={status==="parsing"} style={{width:32,height:32,borderRadius:10,border:"none",cursor:"pointer",flexShrink:0,background:status==="error"?"#FFB3A7":status==="parsing"?"rgba(172,225,175,0.4)":T.celadon,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,transition:"all .2s ease",boxShadow:status==="parsing"?"none":"0 3px 8px rgba(172,225,175,0.4)"}}>
+        {status==="parsing"?"⏳":status==="error"?"✗":"↑"}
+      </button>
     </div>
+    {status==="parsing"&&<div style={{fontSize:11,color:T.muted,textAlign:"center",marginTop:4,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"parsing")}</div>}
     {status==="confirm"&&pending&&<ConfirmModal parsed={pending} lang={lang} onConfirm={finalizeAdd} onEdit={()=>{setStatus("idle");setPending(null);}}/>}
   </>);
 }
@@ -2573,23 +2587,22 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
       <AnimalBg/>
       {tab==="home"&&(
         <div style={{flexShrink:0,zIndex:10,background:"rgba(247,252,245,0.97)",backdropFilter:"blur(16px)"}}>
-          <div style={{padding:"52px 20px 14px"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-              <div>
-                <div style={{fontSize:12,color:T.muted,fontFamily:"'Noto Sans',sans-serif"}}>{dateStr}</div>
-                <div style={{fontSize:20,fontWeight:800,color:T.dark,marginTop:2,fontFamily:"'Noto Sans',sans-serif"}}>{greet()}, {profile.name} 👋</div>
-              </div>
-              <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6}}>
-                <button onClick={()=>setTab("settings")} style={{width:46,height:46,borderRadius:15,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",fontSize:24,boxShadow:"0 3px 10px rgba(172,225,175,0.4)"}}>{profile.avatar}</button>
-                <StreakBadge profile={profile} onPress={()=>setShowStreak(true)}/>
-              </div>
+          {/* Slim single-line header */}
+          <div style={{padding:"52px 16px 10px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+            <div>
+              <div style={{fontSize:17,fontWeight:800,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{greet()}, {profile.name} 👋</div>
+              <div style={{fontSize:11,color:T.muted,marginTop:1}}>{dateStr}</div>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <StreakBadge profile={profile} onPress={()=>setShowStreak(true)}/>
+              <button onClick={()=>setTab("settings")} style={{width:38,height:38,borderRadius:13,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",fontSize:20,boxShadow:"0 3px 10px rgba(172,225,175,0.4)",flexShrink:0}}>{profile.avatar}</button>
             </div>
           </div>
-          <div style={{paddingBottom:8}}><WalletCards transactions={transactions}/></div>
+          <div style={{paddingBottom:6}}><WalletCards transactions={transactions}/></div>
           <SafeToSpend transactions={transactions} profile={profile}/>
-          <div style={{padding:"0 16px 8px",display:"flex",justifyContent:"space-between",alignItems:"center",borderBottom:"1px solid rgba(45,45,58,0.05)"}}>
-            <div style={{fontSize:14,fontWeight:700,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"recent")}</div>
-            <div style={{fontSize:12,color:T.muted}}>{transactions.length} {t(lang,"total")}</div>
+          <div style={{padding:"0 16px 6px",display:"flex",justifyContent:"space-between",alignItems:"center",borderBottom:"1px solid rgba(45,45,58,0.05)"}}>
+            <div style={{fontSize:13,fontWeight:700,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"recent")}</div>
+            <div style={{fontSize:11,color:T.muted}}>{transactions.length} {t(lang,"total")}</div>
           </div>
         </div>
       )}
@@ -2601,24 +2614,9 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
         {tab==="settings"&&<SettingsScreen profile={profile} transactions={transactions} onUpdateProfile={onUpdateProfile} onReset={onReset}/>}
       </div>
       {tab==="home"&&(
-        <div style={{flexShrink:0,zIndex:150,background:"rgba(247,252,245,0.97)",backdropFilter:"blur(20px)",borderTop:"1px solid rgba(45,45,58,0.06)",padding:"6px 0 4px"}}>
-          {/* AI Advisor button row */}
-          <div style={{padding:"0 12px 6px",display:"flex",justifyContent:"flex-end"}}>
-            <button onClick={()=>setShowAdvisor(true)} style={{
-              display:"flex",alignItems:"center",gap:6,padding:"6px 14px",borderRadius:20,
-              border:"1px solid rgba(172,225,175,0.5)",background:"rgba(172,225,175,0.12)",
-              color:"#2A7A40",fontSize:12,fontWeight:700,cursor:"pointer",
-              fontFamily:"'Noto Sans',sans-serif",
-            }}>
-            🤖 {t(lang,"ask_ai")}
-            </button>
-          </div>
-          <div style={{display:"flex",alignItems:"center",gap:6,padding:"0 12px"}}>
-            <div style={{flex:1}}>
-              <QuickAddBar lang={lang} onAdd={handleAdd} customCategories={customCategories} userId={profile?.userId}/>
-            </div>
-            <OcrButton profile={profile} onAdd={handleAdd} lang={lang}/>
-          </div>
+        <div style={{flexShrink:0,zIndex:150,background:"rgba(247,252,245,0.97)",backdropFilter:"blur(20px)",borderTop:"1px solid rgba(45,45,58,0.06)",padding:"6px 12px",paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 6px)"}}>
+          <QuickAddBar lang={lang} onAdd={handleAdd} customCategories={customCategories} userId={profile?.userId}
+            onShowAdvisor={()=>setShowAdvisor(true)} profile={profile}/>
         </div>
       )}
       <BottomNav active={tab} onTab={setTab} lang={lang}/>
