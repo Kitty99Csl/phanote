@@ -3187,9 +3187,11 @@ export default function App(){
   const savePinConfig = (cfg) => {
     localStorage.setItem("phanote_pins", JSON.stringify(cfg));
     setPinConfig(cfg);
-    // Save to Supabase so PIN survives private browsing & works on any device
     if (userId) {
-      supabase.from("profiles").update({ pin_config: cfg }).eq("id", userId).catch(()=>{});
+      (async () => {
+        try { await supabase.from("profiles").update({ pin_config: cfg }).eq("id", userId); }
+        catch {}
+      })();
     }
   };
   const handlePinKey = (key) => {
