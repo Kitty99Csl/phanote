@@ -1266,24 +1266,18 @@ function QuickAddBar({lang,onAdd,customCategories=[],userId=null,onShowAdvisor=n
 
       // Lower confidence → show confirm with local result NOW,
       // then update the card live while user is reading it
-      setPending({...local,rawInput:text,_aiDone:false});
-      setStatus("confirm");
-      setInput("");
+      // Save immediately — AI corrects silently in background (instant UX, no confirm wait)
+      const catId2=normalizeCategory(local.category,local.type);
+      const cat2=findCat(catId2,customCategories);
+      const txId2="tx_"+Date.now()+"_"+Math.random().toString(36).slice(2);
+      const tx2={id:txId2,amount:local.amount,currency:local.currency,type:local.type,categoryId:cat2.id,description:local.description||text,note:"",date:new Date().toISOString().split("T")[0],confidence:local.confidence,createdAt:new Date().toISOString()};
+      onAdd(tx2);
+      setInput("");setStatus("idle");inputRef.current?.focus();
       aiPromise.then(ai=>{
         if(ai&&ai.amount&&ai.category){
-          const aiCat=normalizeCategory(ai.category,mode);
-          setPending(prev=>prev?{
-            ...prev,
-            categoryId:aiCat,
-            category:aiCat,
-            description:ai.description||prev.description,
-            confidence:ai.confidence||prev.confidence,
-            _aiDone:true,
-            _aiUpdated:aiCat!==(prev.category),
-          }:null);
+          const aiCat2=normalizeCategory(ai.category,mode);
+          if(aiCat2!==catId2){onAdd({...tx2,categoryId:aiCat2,_update:true});}
           if(userId){dbSaveMemory(userId,text,ai.category,mode,ai.confidence||0.8).catch(()=>{});}
-        } else {
-          setPending(prev=>prev?{...prev,_aiDone:true}:null);
         }
       });
       return;
@@ -1427,11 +1421,11 @@ function TransactionList({transactions,lang,onUpdateNote,onDeleteTx,onEditCatego
 
                     {/* Expandable item list */}
                     {hasItems&&itemsExpanded&&(
-                      <div style={{marginTop:10,background:"rgba(247,252,245,0.8)",borderRadius:12,padding:"10px 12px",animation:"slideDown .15s ease"}}>
+                      <div style={{marginTop:10,background:"rgba(247,252,245,0.8)",borderRadius:12,padding:"10px 12px"}}>
                         {txItems.map((item,j)=>(
-                          <div key={j} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"4px 0",borderBottom:j<txItems.length-1?"0.5px solid rgba(45,45,58,0.05)":"none"}}>
-                            <span style={{fontSize:12,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{item.name}</span>
-                            <span style={{fontSize:12,fontWeight:700,color:T.muted}}>{fmt(item.amount,tx.currency)}</span>
+                          <div key={j} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"5px 0",borderBottom:j<txItems.length-1?"0.5px solid rgba(45,45,58,0.05)":"none"}}>
+                            <span style={{fontSize:12,color:T.dark,fontFamily:"'Noto Sans',sans-serif",flex:1,paddingRight:8}}>{item.name}</span>
+                            <span style={{fontSize:12,fontWeight:700,color:T.muted,flexShrink:0}}>{fmt(item.amount,tx.currency)}</span>
                           </div>
                         ))}
                         <div style={{display:"flex",justifyContent:"space-between",marginTop:6,paddingTop:6,borderTop:"0.5px solid rgba(45,45,58,0.1)"}}>
@@ -1442,12 +1436,13 @@ function TransactionList({transactions,lang,onUpdateNote,onDeleteTx,onEditCatego
                     )}
 
                     {expandedTx===tx.id&&(
-                      <div style={{display:"flex",gap:8,marginTop:8,animation:"slideDown .15s ease"}}>
-                        <button onClick={()=>{onEditCategory&&onEditCategory(tx);setExpandedTx(null);}} style={{flex:1,padding:"8px",borderRadius:12,border:"none",cursor:"pointer",background:"rgba(172,225,175,0.2)",color:"#1A5A30",fontWeight:700,fontSize:12,fontFamily:"'Noto Sans',sans-serif"}}>✏️ Edit</button>
-                        <button onClick={()=>{onDeleteTx(tx.id);setExpandedTx(null);}} style={{flex:1,padding:"8px",borderRadius:12,border:"none",cursor:"pointer",background:"rgba(255,179,167,0.2)",color:"#C0392B",fontWeight:700,fontSize:12,fontFamily:"'Noto Sans',sans-serif"}}>🗑️ Delete</button>
-                        <button onClick={()=>setExpandedTx(null)} style={{padding:"8px 14px",borderRadius:12,border:"none",cursor:"pointer",background:"rgba(45,45,58,0.06)",color:T.muted,fontWeight:700,fontSize:12,fontFamily:"'Noto Sans',sans-serif"}}>✕</button>
+                      <div style={{display:"flex",gap:8,marginTop:10,paddingTop:10,borderTop:"0.5px solid rgba(45,45,58,0.05)"}}>
+                        <button onClick={e=>{e.stopPropagation();onEditCategory&&onEditCategory(tx);setExpandedTx(null);}} style={{flex:1,padding:"10px 8px",borderRadius:12,border:"none",cursor:"pointer",background:"rgba(172,225,175,0.2)",color:"#1A5A30",fontWeight:700,fontSize:12,fontFamily:"'Noto Sans',sans-serif"}}>✏️ {lang==="lo"?"ແກ້ໄຂ":lang==="th"?"แก้ไข":"Edit"}</button>
+                        <button onClick={e=>{e.stopPropagation();onDeleteTx(tx.id);setExpandedTx(null);}} style={{flex:1,padding:"10px 8px",borderRadius:12,border:"none",cursor:"pointer",background:"rgba(255,179,167,0.2)",color:"#C0392B",fontWeight:700,fontSize:12,fontFamily:"'Noto Sans',sans-serif"}}>🗑️ {lang==="lo"?"ລຶບ":lang==="th"?"ลบ":"Delete"}</button>
+                        <button onClick={e=>{e.stopPropagation();setExpandedTx(null);}} style={{padding:"10px 14px",borderRadius:12,border:"none",cursor:"pointer",background:"rgba(45,45,58,0.06)",color:T.muted,fontWeight:700,fontSize:13}}>✕</button>
                       </div>
                     )}
+
                     {isEditing?(
                       <div style={{marginTop:8,display:"flex",gap:6,alignItems:"center"}}>
                         <input ref={noteRef} value={noteInput} onChange={e=>setNoteInput(e.target.value)}
@@ -3762,11 +3757,16 @@ export default function App(){
 
   const handleLogin = async (user, isNew, phone, countryCode) => {
     setUserId(user.id);
+    // Show loading immediately — prevents flash of OnboardingScreen for existing users
+    setLoadingProfile(true);
     try {
       await supabase.from("profiles").upsert({ id: user.id, phone: phone || null, phone_country_code: countryCode || null, last_seen_at: new Date().toISOString() }, { onConflict: "id" });
       await dbTrackEvent(user.id, "login", { phone, countryCode, isNew });
     } catch (e) { console.error("Login profile update:", e); }
-    if (!isNew) await loadUserData(user.id);
+    // Always try to load — if profile exists go home, if not show onboarding
+    await loadUserData(user.id);
+    // loadUserData sets loadingProfile=false at the end
+    // if profile is still null after load → new user → OnboardingScreen shows
   };
 
   const handleOnboarding = async (data) => {
