@@ -1080,7 +1080,7 @@ function QuickAddBar({lang,onAdd,customCategories=[],userId=null,onShowAdvisor=n
 
   const isIncome=mode==="income";
   return(<>
-    <div style={{background:T.surface,backdropFilter:"blur(20px)",borderRadius:18,padding:"6px 8px",boxShadow:T.shadow,display:"flex",alignItems:"center",gap:6,border:`1.5px solid ${isIncome?"rgba(172,225,175,0.4)":"rgba(255,179,167,0.3)"}`}}>
+    <div style={{background:"rgba(255,255,255,0.95)",borderRadius:18,padding:"6px 8px",boxShadow:T.shadow,display:"flex",alignItems:"center",gap:6,border:`1.5px solid ${isIncome?"rgba(172,225,175,0.4)":"rgba(255,179,167,0.3)"}`}}>
       <button onClick={()=>setMode(isIncome?"expense":"income")} style={{flexShrink:0,padding:"5px 8px",borderRadius:9,border:"none",cursor:"pointer",background:isIncome?"rgba(172,225,175,0.25)":"rgba(255,179,167,0.25)",color:isIncome?"#1A5A30":"#C0392B",fontWeight:800,fontSize:11,fontFamily:"'Noto Sans',sans-serif",transition:"all .2s ease",whiteSpace:"nowrap"}}>{isIncome?"+ In":"− Out"}</button>
       <input ref={inputRef} value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&submit()}
         placeholder={isIncome?"salary, ເງິນເດືອນ, รายรับ…":t(lang,"placeholder")}
