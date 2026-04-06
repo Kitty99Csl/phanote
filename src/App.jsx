@@ -841,6 +841,10 @@ function OcrButton({ profile, onAdd, lang, compact=false }) {
   const confirmAdd = () => {
     if (!result) return;
     const catId = result.category || "other";
+    // Store items as JSON in note if OCR extracted line items
+    const noteVal = result.items && result.items.length > 0
+      ? JSON.stringify({items: result.items, note: "", source: "ocr"})
+      : JSON.stringify({items: [], note: "", source: "ocr"});
     onAdd({
       id: `tx_${Date.now()}_${Math.random().toString(36).slice(2)}`,
       amount: result.amount,
@@ -848,7 +852,7 @@ function OcrButton({ profile, onAdd, lang, compact=false }) {
       type: "expense",
       categoryId: catId,
       description: result.description || "Receipt",
-      note: "",
+      note: noteVal,
       date: new Date().toISOString().split("T")[0],
       confidence: result.confidence || 0.8,
       createdAt: new Date().toISOString(),
@@ -988,6 +992,24 @@ function OcrButton({ profile, onAdd, lang, compact=false }) {
                   −{fmt(result.amount, result.currency || "LAK")}
                 </div>
               </div>
+              {/* Item list if OCR extracted line items */}
+              {result.items && result.items.length > 0 && (
+                <div style={{ marginTop:12, borderTop:"0.5px solid rgba(45,45,58,0.07)", paddingTop:10 }}>
+                  <div style={{ fontSize:10, fontWeight:700, color:T.muted, textTransform:"uppercase", letterSpacing:0.8, marginBottom:7 }}>
+                    {result.items.length} items detected
+                  </div>
+                  {result.items.map((item, i) => (
+                    <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"4px 0", borderBottom: i < result.items.length-1 ? "0.5px solid rgba(45,45,58,0.05)" : "none" }}>
+                      <span style={{ fontSize:12, color:T.dark }}>{item.name}</span>
+                      <span style={{ fontSize:12, fontWeight:700, color:T.muted }}>{fmt(item.amount, result.currency || "LAK")}</span>
+                    </div>
+                  ))}
+                  <div style={{ display:"flex", justifyContent:"space-between", marginTop:7, paddingTop:7, borderTop:"0.5px solid rgba(45,45,58,0.1)" }}>
+                    <span style={{ fontSize:12, fontWeight:800, color:T.dark }}>Total</span>
+                    <span style={{ fontSize:12, fontWeight:800, color:"#C0392B" }}>{fmt(result.amount, result.currency || "LAK")}</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div style={{ display:"flex", gap:10 }}>
@@ -1051,7 +1073,8 @@ function QuickAddBar({lang,onAdd,customCategories=[],userId=null,onShowAdvisor=n
   const finalizeAdd=(parsed)=>{
     const catId=normalizeCategory(parsed.category,parsed.type);
     const cat=findCat(catId,customCategories);
-    onAdd({id:`tx_${Date.now()}_${Math.random().toString(36).slice(2)}`,amount:parsed.amount,currency:parsed.currency,type:parsed.type,categoryId:cat.id,description:parsed.description||parsed.rawInput||"",note:parsed.note||"",date:new Date().toISOString().split("T")[0],confidence:parsed.confidence,createdAt:new Date().toISOString()});
+    const _nv=parsed.items&&parsed.items.length>0?JSON.stringify({items:parsed.items,note:parsed.note||""}):parsed.note||"";
+    onAdd({id:`tx_${Date.now()}_${Math.random().toString(36).slice(2)}`,amount:parsed.amount,currency:parsed.currency,type:parsed.type,categoryId:cat.id,description:parsed.description||parsed.rawInput||"",note:_nv,date:new Date().toISOString().split("T")[0],confidence:parsed.confidence,createdAt:new Date().toISOString()});
     setInput("");setStatus("idle");setPending(null);inputRef.current?.focus();
   };
 
@@ -1086,9 +1109,25 @@ function TransactionList({transactions,lang,onUpdateNote,onDeleteTx,onEditCatego
   const[editingNote,setEditingNote]=useState(null);
   const[noteInput,setNoteInput]=useState("");
   const[expandedTx,setExpandedTx]=useState(null);
+  const[expandedItems,setExpandedItems]=useState(null);
   const noteRef=useRef();
   const startEdit=(tx)=>{setEditingNote(tx.id);setNoteInput(tx.note||"");setTimeout(()=>noteRef.current?.focus(),50);};
-  const saveNote=(txId)=>{onUpdateNote(txId,noteInput.trim());setEditingNote(null);setNoteInput("");};
+  const saveNote=(txId)=>{
+    // Find the tx to check if it has items
+    const tx = transactions?.find ? transactions.find(t=>t.id===txId) : null;
+    let finalNote = noteInput.trim();
+    if (tx?.note) {
+      try {
+        const parsed = JSON.parse(tx.note);
+        if (parsed && Array.isArray(parsed.items)) {
+          finalNote = JSON.stringify({...parsed, note: noteInput.trim()});
+        }
+      } catch {}
+    }
+    onUpdateNote(txId, finalNote);
+    setEditingNote(null);
+    setNoteInput("");
+  };
   const cancelEdit=()=>{setEditingNote(null);setNoteInput("");};
 
   if(transactions.length===0)return(
@@ -1115,51 +1154,93 @@ function TransactionList({transactions,lang,onUpdateNote,onDeleteTx,onEditCatego
           <div style={{background:T.surface,backdropFilter:"blur(20px)",borderRadius:20,overflow:"hidden",boxShadow:T.shadow}}>
             {txs.map((tx,i)=>{
               const cat=findCat(tx.categoryId,customCategories);
-              const hasNote=tx.note&&tx.note.trim().length>0;
+              // Parse note — could be plain text or JSON with items
+              let txItems=[], txNote="", isOcr=false;
+              try {
+                const parsed = tx.note ? JSON.parse(tx.note) : null;
+                if (parsed && Array.isArray(parsed.items)) {
+                  txItems = parsed.items;
+                  txNote = parsed.note || "";
+                  isOcr = parsed.source === "ocr";
+                }
+              } catch { txNote = tx.note || ""; }
+              const hasNote = txNote.trim().length > 0;
+              const hasItems = txItems.length > 0;
               const isEditing=editingNote===tx.id;
+              const itemsExpanded = expandedItems===tx.id;
               return(
-                <div key={tx.id} style={{padding:"13px 16px",borderBottom:i<txs.length-1?"1px solid rgba(45,45,58,0.05)":"none"}}>
-                  <div style={{display:"flex",alignItems:"center",gap:12,cursor:"pointer"}}
-                    onClick={()=>setExpandedTx(expandedTx===tx.id?null:tx.id)}
-                    onPointerEnter={e=>e.currentTarget.style.opacity="0.85"}
-                    onPointerLeave={e=>e.currentTarget.style.opacity="1"}>
-                    <div style={{width:44,height:44,borderRadius:15,flexShrink:0,background:tx.type==="expense"?"rgba(255,179,167,0.2)":"rgba(172,225,175,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{cat.emoji}</div>
-                    <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontWeight:600,fontSize:14,color:T.dark,fontFamily:"'Noto Sans',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{tx.description||catLabel(cat,lang)}</div>
-                      <div style={{fontSize:12,color:T.muted,marginTop:2}}>{catLabel(cat,lang)}</div>
+                <div key={tx.id} style={{borderBottom:i<txs.length-1?"1px solid rgba(45,45,58,0.05)":"none"}}>
+                  <div style={{padding:"13px 16px"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:12,cursor:"pointer"}}
+                      onClick={()=>setExpandedTx(expandedTx===tx.id?null:tx.id)}
+                      onPointerEnter={e=>e.currentTarget.style.opacity="0.85"}
+                      onPointerLeave={e=>e.currentTarget.style.opacity="1"}>
+                      <div style={{width:44,height:44,borderRadius:15,flexShrink:0,background:tx.type==="expense"?"rgba(255,179,167,0.2)":"rgba(172,225,175,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,position:"relative"}}>
+                        {cat.emoji}
+                        {isOcr&&<div style={{position:"absolute",top:-3,right:-3,width:14,height:14,borderRadius:7,background:"#1A4020",display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,color:"#ACE1AF",fontWeight:700}}>✦</div>}
+                      </div>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
+                          <span style={{fontWeight:600,fontSize:14,color:T.dark,fontFamily:"'Noto Sans',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{tx.description||catLabel(cat,lang)}</span>
+                          {hasItems&&(
+                            <button onClick={e=>{e.stopPropagation();setExpandedItems(itemsExpanded?null:tx.id);}}
+                              style={{fontSize:10,fontWeight:700,padding:"2px 7px",borderRadius:9999,border:"none",cursor:"pointer",background:isOcr?"rgba(26,64,32,0.1)":"rgba(172,225,175,0.2)",color:isOcr?"#1A4020":"#2A7A40",flexShrink:0,fontFamily:"'Noto Sans',sans-serif",whiteSpace:"nowrap"}}>
+                              {txItems.length} items {itemsExpanded?"▴":"▾"}
+                            </button>
+                          )}
+                        </div>
+                        <div style={{fontSize:12,color:T.muted,marginTop:2}}>{catLabel(cat,lang)}</div>
+                      </div>
+                      <div style={{textAlign:"right",flexShrink:0}}>
+                        <div style={{fontSize:15,fontWeight:800,letterSpacing:-0.3,color:tx.type==="expense"?"#C0392B":"#1A5A30",fontFamily:"'Noto Sans',sans-serif"}}>{tx.type==="expense"?"−":"+"}{fmt(tx.amount,tx.currency)}</div>
+                        <div style={{display:"inline-block",marginTop:3,fontSize:10,fontWeight:700,padding:"2px 7px",borderRadius:6,background:CURR[tx.currency].pill,color:CURR[tx.currency].pillText}}>{tx.currency}</div>
+                      </div>
                     </div>
-                    <div style={{textAlign:"right",flexShrink:0}}>
-                      <div style={{fontSize:15,fontWeight:800,letterSpacing:-0.3,color:tx.type==="expense"?"#C0392B":"#1A5A30",fontFamily:"'Noto Sans',sans-serif"}}>{tx.type==="expense"?"−":"+"}{fmt(tx.amount,tx.currency)}</div>
-                      <div style={{display:"inline-block",marginTop:3,fontSize:10,fontWeight:700,padding:"2px 7px",borderRadius:6,background:CURR[tx.currency].pill,color:CURR[tx.currency].pillText}}>{tx.currency}</div>
-                    </div>
+
+                    {/* Expandable item list */}
+                    {hasItems&&itemsExpanded&&(
+                      <div style={{marginTop:10,background:"rgba(247,252,245,0.8)",borderRadius:12,padding:"10px 12px",animation:"slideDown .15s ease"}}>
+                        {txItems.map((item,j)=>(
+                          <div key={j} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"4px 0",borderBottom:j<txItems.length-1?"0.5px solid rgba(45,45,58,0.05)":"none"}}>
+                            <span style={{fontSize:12,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{item.name}</span>
+                            <span style={{fontSize:12,fontWeight:700,color:T.muted}}>{fmt(item.amount,tx.currency)}</span>
+                          </div>
+                        ))}
+                        <div style={{display:"flex",justifyContent:"space-between",marginTop:6,paddingTop:6,borderTop:"0.5px solid rgba(45,45,58,0.1)"}}>
+                          <span style={{fontSize:12,fontWeight:800,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>Total</span>
+                          <span style={{fontSize:12,fontWeight:800,color:"#C0392B"}}>{fmt(tx.amount,tx.currency)}</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {expandedTx===tx.id&&(
+                      <div style={{display:"flex",gap:8,marginTop:8,animation:"slideDown .15s ease"}}>
+                        <button onClick={()=>{onEditCategory&&onEditCategory(tx);setExpandedTx(null);}} style={{flex:1,padding:"8px",borderRadius:12,border:"none",cursor:"pointer",background:"rgba(172,225,175,0.2)",color:"#1A5A30",fontWeight:700,fontSize:12,fontFamily:"'Noto Sans',sans-serif"}}>✏️ Edit</button>
+                        <button onClick={()=>{onDeleteTx(tx.id);setExpandedTx(null);}} style={{flex:1,padding:"8px",borderRadius:12,border:"none",cursor:"pointer",background:"rgba(255,179,167,0.2)",color:"#C0392B",fontWeight:700,fontSize:12,fontFamily:"'Noto Sans',sans-serif"}}>🗑️ Delete</button>
+                        <button onClick={()=>setExpandedTx(null)} style={{padding:"8px 14px",borderRadius:12,border:"none",cursor:"pointer",background:"rgba(45,45,58,0.06)",color:T.muted,fontWeight:700,fontSize:12,fontFamily:"'Noto Sans',sans-serif"}}>✕</button>
+                      </div>
+                    )}
+                    {isEditing?(
+                      <div style={{marginTop:8,display:"flex",gap:6,alignItems:"center"}}>
+                        <input ref={noteRef} value={noteInput} onChange={e=>setNoteInput(e.target.value)}
+                          onKeyDown={e=>{if(e.key==="Enter")saveNote(tx.id);if(e.key==="Escape")cancelEdit();}}
+                          placeholder={t(lang,"note_placeholder")}
+                          style={{flex:1,padding:"8px 12px",borderRadius:10,border:"1.5px solid #ACE1AF",outline:"none",fontSize:13,fontFamily:"'Noto Sans',sans-serif",color:T.dark,background:"rgba(172,225,175,0.08)"}}/>
+                        <button onClick={()=>saveNote(tx.id)} style={{padding:"7px 12px",borderRadius:10,border:"none",cursor:"pointer",background:"#ACE1AF",color:"#1A4020",fontWeight:700,fontSize:12,fontFamily:"'Noto Sans',sans-serif"}}>✓</button>
+                        <button onClick={cancelEdit} style={{padding:"7px 10px",borderRadius:10,border:"none",cursor:"pointer",background:"rgba(45,45,58,0.08)",color:T.muted,fontWeight:700,fontSize:12}}>✕</button>
+                      </div>
+                    ):(
+                      <div style={{marginTop:5,display:"flex",alignItems:"center",gap:6}}>
+                        {hasNote?(
+                          <span onClick={()=>startEdit(tx)} style={{fontSize:12,color:"#5aae5f",cursor:"pointer",padding:"2px 8px",borderRadius:8,background:"rgba(172,225,175,0.15)",fontFamily:"'Noto Sans',sans-serif"}}>
+                            📝 {txNote.length>35?txNote.slice(0,35)+"…":txNote}
+                          </span>
+                        ):(
+                          <button onClick={()=>startEdit(tx)} style={{fontSize:11,color:T.muted,border:"none",cursor:"pointer",background:"transparent",padding:"2px 0",fontFamily:"'Noto Sans',sans-serif",letterSpacing:0.3}}>{t(lang,"add_note")}</button>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  {expandedTx===tx.id&&(
-                    <div style={{display:"flex",gap:8,marginTop:8,animation:"slideDown .15s ease"}}>
-                      <button onClick={()=>{onEditCategory&&onEditCategory(tx);setExpandedTx(null);}} style={{flex:1,padding:"8px",borderRadius:12,border:"none",cursor:"pointer",background:"rgba(172,225,175,0.2)",color:"#1A5A30",fontWeight:700,fontSize:12,fontFamily:"'Noto Sans',sans-serif"}}>✏️ Edit</button>
-                      <button onClick={()=>{onDeleteTx(tx.id);setExpandedTx(null);}} style={{flex:1,padding:"8px",borderRadius:12,border:"none",cursor:"pointer",background:"rgba(255,179,167,0.2)",color:"#C0392B",fontWeight:700,fontSize:12,fontFamily:"'Noto Sans',sans-serif"}}>🗑️ Delete</button>
-                      <button onClick={()=>setExpandedTx(null)} style={{padding:"8px 14px",borderRadius:12,border:"none",cursor:"pointer",background:"rgba(45,45,58,0.06)",color:T.muted,fontWeight:700,fontSize:12,fontFamily:"'Noto Sans',sans-serif"}}>✕</button>
-                    </div>
-                  )}
-                  {isEditing?(
-                    <div style={{marginTop:8,display:"flex",gap:6,alignItems:"center"}}>
-                      <input ref={noteRef} value={noteInput} onChange={e=>setNoteInput(e.target.value)}
-                        onKeyDown={e=>{if(e.key==="Enter")saveNote(tx.id);if(e.key==="Escape")cancelEdit();}}
-                        placeholder={t(lang,"note_placeholder")}
-                        style={{flex:1,padding:"8px 12px",borderRadius:10,border:"1.5px solid #ACE1AF",outline:"none",fontSize:13,fontFamily:"'Noto Sans',sans-serif",color:T.dark,background:"rgba(172,225,175,0.08)"}}/>
-                      <button onClick={()=>saveNote(tx.id)} style={{padding:"7px 12px",borderRadius:10,border:"none",cursor:"pointer",background:"#ACE1AF",color:"#1A4020",fontWeight:700,fontSize:12,fontFamily:"'Noto Sans',sans-serif"}}>✓</button>
-                      <button onClick={cancelEdit} style={{padding:"7px 10px",borderRadius:10,border:"none",cursor:"pointer",background:"rgba(45,45,58,0.08)",color:T.muted,fontWeight:700,fontSize:12}}>✕</button>
-                    </div>
-                  ):(
-                    <div style={{marginTop:5,display:"flex",alignItems:"center",gap:6}}>
-                      {hasNote?(
-                        <span onClick={()=>startEdit(tx)} style={{fontSize:12,color:"#5aae5f",cursor:"pointer",padding:"2px 8px",borderRadius:8,background:"rgba(172,225,175,0.15)",fontFamily:"'Noto Sans',sans-serif"}}>
-                          📝 {tx.note.length>35?tx.note.slice(0,35)+"…":tx.note}
-                        </span>
-                      ):(
-                        <button onClick={()=>startEdit(tx)} style={{fontSize:11,color:T.muted,border:"none",cursor:"pointer",background:"transparent",padding:"2px 0",fontFamily:"'Noto Sans',sans-serif",letterSpacing:0.3}}>{t(lang,"add_note")}</button>
-                      )}
-                    </div>
-                  )}
                 </div>
               );
             })}
