@@ -349,6 +349,14 @@ const localParse = (text) => {
     // Food — Lao-specific (highest priority within food)
     [/ຕຳໝາກຫຸ່ງ|ຕຳໝາກແດງ|ຕຳໝາກ|ສົ້ມຕຳ|som\s*tam/i,                        'food',          0.97],
     [/ເຝີ|ໝູກະທະ|ຊີ້ນດາດ|ຜັດໄທ|ໄຂ່ດາວ|ຂ້າວ|ເຂົ້າ|ອາຫານ|ກິນ|ຊີ້ນ|ໄກ່|ໄຂ່|ຜັກ|ປາ|ໝູ/i, 'food', 0.95],
+    // Romanized Lao food terms (typed in Latin alphabet)
+    [/kao\s*piek|khao\s*piek|ເຂົ້າປຽກ/i,                                    'food',          0.97],
+    [/laap|larb|lap\s*gai|lap\s*moo|ລາບ/i,                                  'food',          0.96],
+    [/tam\s*mak|ping\s*gai|ping\s*moo|or\s*lam|orlam|mok\s*pa/i,           'food',          0.95],
+    [/khao|kao(?!\s*lao)|khanom|khay|mee|pho\b|foe\b/i,                     'food',          0.90],
+    // Romanized Lao drinks
+    [/lao\s*lao|beerlao|beer\s*lao|ລາວລາວ/i,                               'drinks',        0.97],
+    [/kao\s*lao|lao\s*whisky/i,                                              'drinks',        0.95],
     [/ข้าว|อาหาร|ก๋วยเตี๋ยว|ส้มตำ|หมูกระทะ|ไข่|ผัก|เนื้อ|กิน/i,              'food',          0.93],
     [/noodle|rice|chicken|pork|fish|egg|meat|vegetable|vegies|grocery|meal|burger|pizza|kfc|sushi|bbq|food|eat|lunch|dinner|breakfast/i, 'food', 0.90],
     // Transport — Loca first (Lao-specific)
