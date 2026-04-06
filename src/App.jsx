@@ -239,6 +239,16 @@ const findCat=(id,customCats=[])=>buildAllCats(customCats).find(c=>c.id===id)||D
 
 const normalizeCategory=(cat,type)=>{
   const m={
+    // ── Self-mappings — when AI returns category ID directly ──
+    // Without these, normalizeCategory("drinks") returns "food" (the fallback)
+    food:"food",drinks:"drinks",coffee:"coffee",transport:"transport",
+    travel:"travel",rent:"rent",utilities:"utilities",phone_internet:"phone_internet",
+    household:"household",shopping:"shopping",health:"health",beauty:"beauty",
+    fitness:"fitness",entertainment:"entertainment",subscriptions:"subscriptions",
+    gaming:"gaming",education:"education",family:"family",donation:"donation",
+    debt_payment:"debt_payment",fees:"fees",repair:"repair",other:"other",
+    salary:"salary",freelance:"freelance",selling:"selling",bonus:"bonus",
+    investment:"investment",gift:"gift",transfer:"transfer",other_inc:"other_inc",
     // ── Food ──────────────────────────────────────────────────
     food:"food",eating:"food",restaurant:"food",dining:"food",
     lunch:"food",dinner:"food",breakfast:"food",meal:"food",
@@ -1250,7 +1260,7 @@ function OcrButton({ profile, onAdd, lang, compact=false }) {
 
   const confirmAdd = () => {
     if (!result) return;
-    const catId = result.category || "other";
+    const catId = normalizeCategory(result.category || "other", "expense");
     // Store items as JSON in note if OCR extracted line items
     const noteVal = result.items && result.items.length > 0
       ? JSON.stringify({items: result.items, note: "", source: "ocr"})
@@ -1593,7 +1603,7 @@ function TransactionList({transactions,lang,onUpdateNote,onDeleteTx,onEditCatego
   const todayStr=new Date().toISOString().split("T")[0];
   const yestStr=new Date(Date.now()-86400000).toISOString().split("T")[0];
   const groups={};
-  [...transactions].reverse().forEach(tx=>{
+  [...transactions].forEach(tx=>{ // newest-first from Supabase — no reverse needed
     const key=tx.date===todayStr?t(lang,"today"):tx.date===yestStr?t(lang,"yesterday"):tx.date;
     (groups[key]=groups[key]||[]).push(tx);
   });
