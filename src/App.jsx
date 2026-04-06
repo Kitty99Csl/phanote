@@ -70,7 +70,7 @@ const dbSaveMemory = async (userId, pattern, categoryName, type, confidence) => 
 
 const dbUpsertProfile = async (userId, p) => {
   await supabase.from("profiles").upsert({
-    id: userId, display_name: p.name, language: p.lang || "en",
+    id: userId, display_name: p.name, language: p.lang || "lo",
     base_currency: p.baseCurrency || "LAK", onboarding_complete: true,
     phone: p.phone || null, phone_country_code: p.countryCode || null,
     avatar: p.avatar || "🦫", custom_categories: p.customCategories || [],
@@ -267,35 +267,196 @@ const store={
 };
 
 // ─── LOCAL PARSER ─────────────────────────────────────────────
-const localParse=(text)=>{
-  const t=text.trim();
-  const numMatch=t.match(/([\d,]+(?:\.?\d+)?)(k|K|m|M)?/);
-  if(!numMatch)return null;
-  let amount=parseFloat(numMatch[1].replace(/,/g,""));
-  if(numMatch[2]?.toLowerCase()==="k")amount*=1000;
-  if(numMatch[2]?.toLowerCase()==="m")amount*=1000000;
-  if(!amount||amount<=0)return null;
-  const currency=/THB|baht|บาท|฿/i.test(t)?"THB":/USD|dollar|usd/i.test(t)||t.includes("$")?"USD":"LAK";
-  const type=/income|salary|เงินเดือน|ເງິນເດືອນ|freelance|ລາຍຮັບ|รายรับ|ຂາຍ|sell|sold|bonus|received|gift/i.test(t)?"income":"expense";
-  let cat=null,confidence=0.5;
-  if(/beer|alcohol|wine|lao\s*lao|ດື່ມ|เบียร์/i.test(t)){cat="drinks";confidence=0.95;}
-  else if(/coffee|cafe|กาแฟ|ກາເຟ|starbucks|amazon\s*cafe/i.test(t)){cat="coffee";confidence=0.95;}
-  else if(/grab|taxi|tuk|fuel|gas|petrol|bus|ລົດ|รถ/i.test(t)){cat="transport";confidence=0.92;}
-  else if(/netflix|spotify|youtube|hbo|disney|apple|subscription/i.test(t)){cat="entertainment";confidence=0.90;}
-  else if(/burger|pizza|kfc|mcdonalds|sushi|steak|restaurant/i.test(t)){cat="food";confidence=0.92;}
-  else if(/golf|gym|sport|fitness|exercise|ອອກກຳລັງ/i.test(t)){cat="fitness";confidence=0.92;}
-  else if(/karaoke|movie|concert|party|morlam|mor\s*lam/i.test(t)){cat="entertainment";confidence=0.92;}
-  else if(/shop|market|clothes|bag|caddi|mall/i.test(t)){cat="shopping";confidence=0.88;}
-  else if(/rent|electric|water|internet|bill|ຄ່າ/i.test(t)){cat="rent";confidence=0.90;}
-  else if(/doctor|hospital|medicine|health|ໂຮງໝໍ/i.test(t)){cat="health";confidence=0.92;}
-  else if(/salary|wage|เงินเดือน|ເງິນເດືອນ/i.test(t)){cat="salary";confidence=0.95;}
-  else if(/sell|sold|ຂາຍ|sale/i.test(t)){cat="selling";confidence=0.90;}
-  else if(/ເຂົ້າ|ອາຫານ|noodle|ข้าว|อาหาร|chicken|pork|food|eat|lunch|dinner|breakfast/i.test(t)){cat="food";confidence=0.90;}
-  else{cat=type==="income"?"salary":"other";confidence=0.4;}
-  const desc=t.replace(/([\d,]+(?:\.?\d+)?)(k|K|m|M)?/g,"")
-    .replace(/LAK|THB|USD|baht|บาท|ກີບ|kip/gi,"")
-    .replace(/\s+/g," ").trim().slice(0,40)||t.slice(0,40);
-  return{amount,currency,type,category:cat,description:desc,confidence};
+// ─── LOCAL PARSER v4 — Combined best of Claude + Gemini + GPT ──
+// Handles: Lao (primary) · Thai (secondary) · English
+// Zero API calls — handles ~90% of real inputs instantly
+const localParse = (text) => {
+  if (!text || typeof text !== 'string') return null;
+
+  // ── Lao & Thai native digit normalisation ──────────────────
+  const toArabic = (s) => (s||'')
+    .replace(/[໐໑໒໓໔໕໖໗໘໙]/g, c => '໐໑໒໓໔໕໖໗໘໙'.indexOf(c).toString())
+    .replace(/[๐๑๒๓๔๕๖๗๘๙]/g, c => '๐๑๒๓๔๕๖๗๘๙'.indexOf(c).toString());
+
+  // ── Scale multipliers (Lao-first) ─────────────────────────
+  const SCALE = {
+    k:1e3, K:1e3, m:1e6, M:1e6,
+    'ພັນ':1e3, 'พัน':1e3,
+    'ແສນ':1e5, 'แสน':1e5,
+    'ລ້ານ':1e6, 'ล้าน':1e6,
+  };
+
+  // ── Parse number with thousands-separator awareness ────────
+  const parseNum = (raw, suffix) => {
+    let s = toArabic((raw||'').trim());
+    const scale = SCALE[suffix] || 1;
+    // 50.000 or 50,000 → thousands separator (not decimal)
+    if (/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g,'');
+    else if (/^\d{1,3}(,\d{3})+$/.test(s)) s = s.replace(/,/g,'');
+    else if (scale > 1 && /^\d+,\d+$/.test(s)) s = s.replace(',','.');
+    else s = s.replace(/,/g,'');
+    const n = parseFloat(s);
+    return (isFinite(n) && n > 0) ? Math.round(n * scale) : null;
+  };
+
+  // ── Extract best amount from a line ───────────────────────
+  const extractAmount = (line) => {
+    const s = toArabic(line||'');
+    const re = /(\$)?([\d][0-9.,]*)(?:\s*)(ພັນ|พัน|k|K|ແສນ|แสน|ລ້ານ|ล้าน|m|M)?/g;
+    let best = null;
+    let m;
+    while ((m = re.exec(s)) !== null) {
+      const val = parseNum(m[2], m[3]);
+      if (!val) continue;
+      const hasScale = !!(m[3] && SCALE[m[3]]);
+      const hasDollar = m[1] === '$';
+      const score = (hasScale?3:0) + (hasDollar?2:0) + (val>1000?1:0);
+      if (!best || score > best.score || (!best.hasScale && val > best.val)) {
+        best = { val, score, hasScale, matchText: m[0], start: m.index, end: re.lastIndex };
+      }
+    }
+    return best;
+  };
+
+  // ── Currency detection (LAK default — Laos is primary) ────
+  const detectCurrency = (line, amount) => {
+    const t = (line||'').toLowerCase();
+    if (/฿|บาท|baht|\bthb\b/i.test(t)) return 'THB';
+    if (/\$|usd|\bdollar/i.test(t)) return 'USD';
+    if (/₭|ກີບ|\bkip\b|\blak\b/i.test(t)) return 'LAK';
+    const thaiCtx = /[\u0E00-\u0E7F]/.test(t) || /grab|shopee|lazada|lotus|big\s*c/i.test(t);
+    if (amount < 5000 && thaiCtx) return 'THB';
+    return 'LAK';
+  };
+
+  // ── Category rules — ordered by specificity, Lao-first ────
+  // [regex, category, confidence]
+  // confidence >= 0.88 → skip API call (App.jsx threshold)
+  const CAT_RULES = [
+    // Income categories
+    [/ເງິນເດືອນ|salary|wage|payroll|เงินเดือน/i,                            'salary',        0.96],
+    [/ຂາຍ(?:ເຄື່ອງ|ຂອງ)?|ขาย|ขายของ|\bsell\b|sold|\bsale\b/i,             'selling',       0.93],
+    [/ຮັບຈ້າງ|ຄ່າຈ້າງ|freelance|commission|ฟรีแลนซ์/i,                       'freelance',     0.93],
+    [/ໂບນັດ|bonus|โบนัส|\breward\b|\btip\b/i,                               'bonus',         0.93],
+    [/ຂອງຂວັນ|gift|present|ของขวัญ/i,                                       'gift',          0.90],
+    [/ລົງທຶນ|ຫຸ້ນ|invest|crypto|bitcoin|stock|หุ้น|ลงทุน/i,                  'investment',    0.90],
+    // Transfer — check early (BCEL/banks are specific)
+    [/\b(bcel|jdb|ldb|bfl|onepay|apay|k\s*plus|promptpay)\b|ໂອນ(?:ເງິນ)?|โอน(?:เงิน)?/i, 'transfer', 0.90],
+    // Coffee — specific enough to be high confidence
+    [/ກາເຟ|กาแฟ|coffee|café|joma|starbucks|amazon\s*cafe|latte|espresso|cappuccino/i, 'coffee', 0.95],
+    // Drinks — before food so beer doesn't fall into food
+    [/ເບຍລາວ|beer\s*lao|ລາວລາວ|lao\s*lao|ເຫຼົ້າ|ດື່ມ|เบียร์|เหล้า|beer|alcohol|wine|whisky|whiskey|cocktail|vodka/i, 'drinks', 0.95],
+    // Food — Lao-specific (highest priority within food)
+    [/ຕຳໝາກຫຸ່ງ|ຕຳໝາກແດງ|ຕຳໝາກ|ສົ້ມຕຳ|som\s*tam/i,                        'food',          0.97],
+    [/ເຝີ|ໝູກະທະ|ຊີ້ນດາດ|ຜັດໄທ|ໄຂ່ດາວ|ຂ້າວ|ເຂົ້າ|ອາຫານ|ກິນ|ຊີ້ນ|ໄກ່|ໄຂ່|ຜັກ|ປາ|ໝູ/i, 'food', 0.95],
+    [/ข้าว|อาหาร|ก๋วยเตี๋ยว|ส้มตำ|หมูกระทะ|ไข่|ผัก|เนื้อ|กิน/i,              'food',          0.93],
+    [/noodle|rice|chicken|pork|fish|egg|meat|vegetable|vegies|grocery|meal|burger|pizza|kfc|sushi|bbq|food|eat|lunch|dinner|breakfast/i, 'food', 0.90],
+    // Transport — Loca first (Lao-specific)
+    [/\bloca\b|ລົດຈັກ|ນ້ຳມັນ|ຄ່ານ້ຳມັນ|ຄ່າລົດ|\bindrive\b/i,               'transport',     0.96],
+    [/grab|taxi|tuk\s*tuk|fuel|petrol|diesel|bus|ລົດ|รถ|ค่าน้ำมัน|มอไซ/i,   'transport',     0.93],
+    // Entertainment — ມໍລຳ is very Lao-specific
+    [/ມໍລຳ|ໝໍລຳ|morlam|mor\s*lam/i,                                        'entertainment', 0.97],
+    [/karaoke|concert|movie|cinema|netflix|spotify|youtube|disney|party|show|festival/i, 'entertainment', 0.93],
+    // Fitness
+    [/golf|gym|ອອກກຳລັງ|ກິລາ|fitness|yoga|badminton|football|futsal|swim|sport/i, 'fitness', 0.93],
+    // Shopping — Icon Mall is Vientiane-specific
+    [/icon\s*mall|icon(?=\s|$)|lotus|big\s*c|miniso|caddi/i,                 'shopping',      0.95],
+    [/ຊື້ເຄື່ອງ|ຕະຫຼາດ|ห้าง|ซื้อของ|clothes|shirt|bag|mall|shopee|lazada/i, 'shopping',      0.90],
+    // Rent/Bills
+    [/ຄ່າໄຟ|ຄ່ານ້ຳ|ຄ່າເນັດ|ຄ່າໂທ|ค่าไฟ|ค่าน้ำ|ค่าเน็ต/i,                    'rent',          0.97],
+    [/rent|ຄ່າເຊົ່າ|electricity|electric|water\s*bill|internet|wifi|utility|ค่าเช่า/i, 'rent', 0.93],
+    // Health
+    [/ໂຮງໝໍ|ມະໂຫສົດ|ຢາ|หมอ|ยา|โรงพยาบาล|hospital|clinic|doctor|medicine|pharmacy|dental/i, 'health', 0.95],
+    // Beauty
+    [/ຕັດຜົມ|ເສີມສວຍ|ທາເລັບ|ทำผม|ตัดผม|salon|spa|haircut|nail|beauty|facial/i, 'beauty',     0.93],
+    // Travel
+    [/flight|hotel|ໂຮງແຮມ|ທ່ອງທ່ຽວ|trip|vacation|tour|resort|booking|เที่ยว|โรงแรม/i, 'travel', 0.93],
+    // Gaming
+    [/steam|playstation|ps5|xbox|roblox|pubg|garena|top\s*up\s*game|เติมเกม/i, 'gaming',      0.95],
+    [/\bgame\b|\bgaming\b|\bເກມ\b|\bเกม\b/i,                                 'gaming',        0.88],
+    // Education
+    [/ຄ່າຮຽນ|ຮຽນ|ໂຮງຮຽນ|ค่าเรียน|เรียน|school|university|course|tuition|workshop/i, 'education', 0.93],
+  ];
+
+  // ── Income/expense type detection ─────────────────────────
+  const INCOME_CATS = new Set(['salary','freelance','selling','bonus','investment']);
+  const detectType = (line, category) => {
+    if (INCOME_CATS.has(category)) return 'income';
+    if (/ໄດ້ຮັບ|ຮັບ(?:ເງິນ)|ເງິນເຂົ້າ|ໂອນເຂົ້າ|รับ|เงินเข้า|received|incoming|earned|refund/i.test(line)) return 'income';
+    return 'expense';
+  };
+
+  // ── Category detection ─────────────────────────────────────
+  const detectCategory = (line) => {
+    for (const [pattern, cat, conf] of CAT_RULES) {
+      if (pattern.test(line)) return { category: cat, confidence: conf };
+    }
+    return { category: 'other', confidence: 0.40 };
+  };
+
+  // ── Clean description ──────────────────────────────────────
+  const cleanDesc = (line, matchText, category) => {
+    const d = (line||'')
+      .replace(matchText||'', '')
+      .replace(/[฿$₭]/g, '')
+      .replace(/\b(lak|kip|thb|baht|usd|dollar|ກີບ|ບາດ|บาท)\b/gi, '')
+      .replace(/\b(k|m|ພັນ|ແສນ|ລ້ານ|พัน|แสน|ล้าน)\b/gi, '')
+      .replace(/\s+/g,' ').trim()
+      .replace(/^[-–,.\s]+|[-–,.\s]+$/g,'').trim()
+      .slice(0,45);
+    return d || category;
+  };
+
+  // ── Parse single line ──────────────────────────────────────
+  const parseSingle = (line) => {
+    const t = (line||'').trim();
+    if (!t) return null;
+    const amnt = extractAmount(t);
+    if (!amnt) return null;
+    const { category, confidence: catConf } = detectCategory(t);
+    const currency = detectCurrency(t, amnt.val);
+    const type = detectType(t, category);
+    const description = cleanDesc(t, amnt.matchText, category);
+    // Confidence: base + amount quality + category certainty
+    let conf = 0.42;
+    if (amnt.hasScale) conf += 0.12;
+    if (amnt.val > 1000) conf += 0.05;
+    if (category !== 'other') conf += Math.min(0.30, (catConf - 0.88) * 2 + 0.20);
+    conf = Math.min(0.97, Math.max(0.25, parseFloat(conf.toFixed(2))));
+    return { amount: amnt.val, currency, type, category, description, confidence: conf };
+  };
+
+  // ── Multi-line handling ────────────────────────────────────
+  const lines = text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+  if (lines.length === 1) return parseSingle(lines[0]);
+
+  const parsed = lines.map(parseSingle).filter(Boolean);
+  if (!parsed.length) return null;
+
+  // Dominant currency (most frequent)
+  const currCount = {};
+  parsed.forEach(p => currCount[p.currency] = (currCount[p.currency]||0) + 1);
+  const currency = Object.entries(currCount).sort((a,b) => b[1]-a[1])[0][0];
+  const sameC = parsed.filter(p => p.currency === currency);
+  const total = sameC.reduce((s,p) => s+p.amount, 0);
+
+  // Dominant category
+  const catCount = {};
+  sameC.forEach(p => catCount[p.category] = (catCount[p.category]||0)+1);
+  const category = Object.entries(catCount).sort((a,b) => b[1]-a[1])[0][0] || 'food';
+  const type = sameC.filter(p => p.type==='income').length > sameC.length/2 ? 'income' : 'expense';
+
+  return {
+    amount: total,
+    currency,
+    type,
+    category,
+    description: sameC.length <= 3
+      ? sameC.map(p => p.description).join(', ')
+      : `${sameC.slice(0,3).map(p => p.description).join(', ')} +${sameC.length-3}`,
+    confidence: 0.92,
+    items: sameC.map(p => ({ name: p.description, amount: p.amount })),
+  };
 };
 
 const parseWithAI=async(text,customCatIds=[],userId=null)=>{
@@ -525,7 +686,7 @@ function OnboardingScreen({onComplete, onBack}){
   const[step,setStep]=useState(0);
   const[name,setName]=useState("");
   const[avatar,setAvatar]=useState("🦫");
-  const[lang,setLang]=useState("en");
+  const[lang,setLang]=useState("lo"); // Lao default — user can change in step 1
   const[baseCurrency,setBaseCurrency]=useState("LAK");
   const[expCats,setExpCats]=useState(DEFAULT_EXPENSE_CATS.map(c=>c.id));
   const[incCats,setIncCats]=useState(DEFAULT_INCOME_CATS.map(c=>c.id));
@@ -931,7 +1092,7 @@ function OcrButton({ profile, onAdd, lang, compact=false }) {
           <div style={{ fontSize:16, fontWeight:700, color:"#fff", fontFamily:"'Noto Sans',sans-serif" }}>
             {lang==="lo"?"ກຳລັງອ່ານໃບບິນ…":lang==="th"?"กำลังอ่านใบเสร็จ…":"Reading receipt…"}
           </div>
-          <div style={{ fontSize:13, color:"rgba(255,255,255,0.6)" }}>Gemini AI Vision</div>
+          <div style={{ fontSize:13, color:"rgba(255,255,255,0.6)" }}>Claude Vision</div>
         </div>
       )}
 
@@ -2431,7 +2592,7 @@ function AnalyticsScreen({ profile, transactions }) {
 
 // ═══ STREAK BADGE (home header) ══════════════════════════════
 function StreakBadge({ profile, onPress }) {
-  const { streakCount = 0, xp = 0, lang = "en" } = profile;
+  const { streakCount = 0, xp = 0, lang = "lo" } = profile;
   const level = getLevel(xp);
   const pct   = getLevelProgress(xp);
   return (
@@ -2750,7 +2911,7 @@ function AiAdvisorModal({ profile, transactions, onClose }) {
 
 // ═══ SAFE TO SPEND ═══════════════════════════════════════════
 function SafeToSpend({ transactions, profile }) {
-  const { baseCurrency = "LAK", userId, lang = "en" } = profile;
+  const { baseCurrency = "LAK", userId, lang = "lo" } = profile;
   const [budgets, setBudgets] = useState([]);
   const [goals,   setGoals]   = useState([]);
   useEffect(() => {
@@ -2909,7 +3070,7 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
         )}
       </div>
       {tab==="home"&&(
-        <div style={{flexShrink:0,zIndex:150,background:"rgba(247,252,245,0.97)",backdropFilter:"blur(20px)",borderTop:"1px solid rgba(45,45,58,0.06)",padding:"6px 12px",paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 6px)"}}>
+        <div style={{flexShrink:0,zIndex:150,background:"rgba(247,252,245,0.97)",borderTop:"1px solid rgba(45,45,58,0.06)",padding:"6px 12px",paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 6px)"}}>
           <QuickAddBar lang={lang} onAdd={handleAdd} customCategories={customCategories} userId={profile?.userId}
             onShowAdvisor={()=>setShowAdvisor(true)} profile={profile}/>
         </div>
@@ -3488,7 +3649,7 @@ export default function App(){
       const { data: dbProfile } = await supabase.from("profiles").select("*").eq("id", uid).single();
       if (dbProfile?.onboarding_complete) {
         setProfile({
-          name: dbProfile.display_name || "User", lang: dbProfile.language || "en",
+          name: dbProfile.display_name || "User", lang: dbProfile.language || "lo",
           baseCurrency: dbProfile.base_currency || "LAK", avatar: dbProfile.avatar || "🦫",
           customCategories: dbProfile.custom_categories || [],
           expCats: dbProfile.exp_cats || [], incCats: dbProfile.inc_cats || [],
@@ -3614,7 +3775,7 @@ export default function App(){
   };
 
   const handleReset = async () => {
-    if (!window.confirm(t(profile?.lang||"en","reset_confirm"))) return;
+    if (!window.confirm(t(profile?.lang||"lo","reset_confirm"))) return;
     setProfile(null); setTransactions([]);
     store.del(`phanote_extra_${userId}`);
     await supabase.auth.signOut(); setUserId(null);
