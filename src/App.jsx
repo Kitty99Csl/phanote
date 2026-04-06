@@ -360,6 +360,27 @@ const store={
   del:(k)=>{try{localStorage.removeItem(k);}catch{}},
 };
 
+// ─── KEYBOARD OFFSET HOOK ─────────────────────────────────────
+// iOS Safari: position:fixed elements don't shrink when keyboard opens.
+// This hook returns how many px the keyboard is covering at bottom.
+// Apply as transform:translateY(-Xpx) or marginBottom:Xpx on modal sheets.
+const useKeyboardOffset = () => {
+  const [offset, setOffset] = useState(0);
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => {
+      const kh = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      setOffset(kh);
+    };
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    return () => { vv.removeEventListener('resize', update); vv.removeEventListener('scroll', update); };
+  }, []);
+  return offset;
+};
+
+
 // ─── LOCAL PARSER ─────────────────────────────────────────────
 // ─── LOCAL PARSER v4 — Combined best of Claude + Gemini + GPT ──
 // Handles: Lao (primary) · Thai (secondary) · English
@@ -885,7 +906,7 @@ function OnboardingScreen({onComplete, onBack}){
       <div style={{display:"flex",gap:5,marginBottom:24,zIndex:1}}>
         {[0,1,2,3,4].map(i=><div key={i} style={{height:5,width:i===step?26:6,borderRadius:3,background:i<=step?T.celadon:"rgba(172,225,175,0.25)",transition:"all .35s cubic-bezier(.34,1.56,.64,1)"}}/>)}
       </div>
-      <div style={{background:T.surface,backdropFilter:"blur(20px)",borderRadius:28,padding:"28px 24px",width:"100%",maxWidth:400,boxShadow:T.shadowLg,zIndex:1,maxHeight:"60vh",overflowY:"auto"}}>
+      <div style={{background:T.surface,backdropFilter:"blur(20px)",borderRadius:28,padding:"28px 24px",width:"100%",maxWidth:400,boxShadow:T.shadowLg,zIndex:1,maxHeight:"70dvh",overflowY:"auto"}}>
         {step===0&&(<>
           {onBack&&(<button onClick={onBack} style={{background:"none",border:"none",cursor:"pointer",fontSize:13,color:T.muted,marginBottom:12,padding:0,fontFamily:"'Noto Sans',sans-serif",display:"flex",alignItems:"center",gap:4}}>← Back to phone login</button>)}
           <h2 style={S.title}>{t(lang,"welcome")}</h2>
@@ -1027,6 +1048,7 @@ function EditTransactionModal({tx,lang,onSave,onClose,customCategories=[]}){
   const[amount,setAmount]=useState(String(tx.amount));
   const[desc,setDesc]=useState(tx.description||"");
   const[catId,setCatId]=useState(tx.categoryId);
+  const kbOffset=useKeyboardOffset();
   const cats=tx.type==="income"
     ?[...DEFAULT_INCOME_CATS,...customCategories.filter(c=>c.type==="income")]
     :[...DEFAULT_EXPENSE_CATS,...customCategories.filter(c=>c.type==="expense")];
@@ -1034,7 +1056,8 @@ function EditTransactionModal({tx,lang,onSave,onClose,customCategories=[]}){
   return(
     <div style={{position:"fixed",inset:0,zIndex:2000,background:"rgba(30,30,40,0.6)",backdropFilter:"blur(4px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}}
       onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
-      <div style={{background:"#fff",borderRadius:"28px 28px 0 0",width:"100%",maxWidth:430,animation:"slideUp .3s ease",maxHeight:"88vh",display:"flex",flexDirection:"column"}}>
+      <div style={{background:"#fff",borderRadius:"28px 28px 0 0",width:"100%",maxWidth:430,animation:"slideUp .3s ease",maxHeight:"88dvh",display:"flex",flexDirection:"column",
+        transform:kbOffset>0?`translateY(-${kbOffset}px)`:undefined,transition:"transform .25s ease"}}>
         {/* Scrollable content */}
         <div style={{overflowY:"auto",flex:1,minHeight:0,padding:"22px 20px 8px",display:"flex",flexDirection:"column",gap:14,WebkitOverflowScrolling:"touch"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
@@ -1067,9 +1090,11 @@ function EditTransactionModal({tx,lang,onSave,onClose,customCategories=[]}){
               ))}
             </div>
           </div>
-          {/* Button inside scroll */}
-          <button onClick={save} style={{width:"100%",padding:"15px",borderRadius:16,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",color:"#1A4020",fontWeight:800,fontSize:15,fontFamily:"'Noto Sans',sans-serif",boxShadow:"0 4px 16px rgba(172,225,175,0.4)",marginTop:8}}>Save Changes ✓</button>
-          <div style={{height:80}}/>
+          <div style={{height:8}}/>
+        </div>
+        {/* Pinned save — always above keyboard */}
+        <div style={{padding:"12px 20px",paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 12px)",borderTop:"0.5px solid rgba(45,45,58,0.06)",flexShrink:0,background:"#fff"}}>
+          <button onClick={save} style={{width:"100%",padding:"15px",borderRadius:16,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",color:"#1A4020",fontWeight:800,fontSize:15,fontFamily:"'Noto Sans',sans-serif",boxShadow:"0 4px 16px rgba(172,225,175,0.4)"}}>Save Changes ✓</button>
         </div>
       </div>
     </div>
@@ -1079,12 +1104,14 @@ function EditTransactionModal({tx,lang,onSave,onClose,customCategories=[]}){
 // ═══ CONFIRM MODAL ════════════════════════════════════════════
 function ConfirmModal({parsed,lang,onConfirm,onEdit}){
   const[note,setNote]=useState("");
+  const kbOffset=useKeyboardOffset();
   const cat=findCat(parsed.category||parsed.categoryId);
   const aiDone=parsed._aiDone;
   const aiUpdated=parsed._aiUpdated;
   return(
     <div style={{position:"fixed",inset:0,zIndex:1000,background:"rgba(30,30,40,0.5)",backdropFilter:"blur(4px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
-      <div style={{background:"#fff",borderRadius:"28px 28px 0 0",padding:"24px 24px",paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 24px)",width:"100%",maxWidth:430,animation:"slideUp .35s cubic-bezier(.34,1.2,.64,1)"}}>
+      <div style={{background:"#fff",borderRadius:"28px 28px 0 0",padding:"20px 24px",paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 20px)",width:"100%",maxWidth:430,animation:"slideUp .35s cubic-bezier(.34,1.2,.64,1)",
+        transform:kbOffset>0?`translateY(-${kbOffset}px)`:undefined,transition:"transform .25s ease"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
           <div style={{fontSize:13,color:T.muted,fontWeight:600}}>{t(lang,"confirm_q")}</div>
           {!aiDone&&(
@@ -1873,7 +1900,7 @@ function SettingsScreen({profile,transactions,onUpdateProfile,onReset,pinConfig=
       </div>
       <div style={{fontSize:10,fontWeight:700,letterSpacing:1.4,color:"#C0392B",textTransform:"uppercase",marginBottom:10,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"danger_zone")}</div>
       <button onClick={onReset} style={{width:"100%",padding:"14px",borderRadius:16,border:"1px solid rgba(192,57,43,0.2)",cursor:"pointer",background:"rgba(255,179,167,0.1)",color:"#C0392B",fontWeight:700,fontSize:14,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"reset_all")}</button>
-      <div style={{height:32}}/>
+      <div style={{height:"calc(env(safe-area-inset-bottom,0px) + 80px)"}}/>
     </div>
   );
 }
@@ -1881,6 +1908,7 @@ function SettingsScreen({profile,transactions,onUpdateProfile,onReset,pinConfig=
 // ═══ GOAL MODAL (create / edit) ══════════════════════════════
 function GoalModal({ goal, profile, onSave, onClose }) {
   const { lang } = profile;
+  const kbOffset = useKeyboardOffset();
   const [name,     setName]     = useState(goal?.name || "");
   const [emoji,    setEmoji]    = useState(goal?.emoji || "🎯");
   const [target,   setTarget]   = useState(goal ? String(goal.target_amount) : "");
@@ -1917,7 +1945,8 @@ function GoalModal({ goal, profile, onSave, onClose }) {
   return (
     <div style={{position:"fixed",inset:0,zIndex:2000,background:"rgba(30,30,40,0.6)",backdropFilter:"blur(4px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}}
       onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
-      <div style={{background:"#fff",borderRadius:"28px 28px 0 0",width:"100%",maxWidth:430,animation:"slideUp .3s ease",maxHeight:"88vh",display:"flex",flexDirection:"column"}}>
+      <div style={{background:"#fff",borderRadius:"28px 28px 0 0",width:"100%",maxWidth:430,animation:"slideUp .3s ease",maxHeight:"88dvh",display:"flex",flexDirection:"column",
+        transform:kbOffset>0?`translateY(-${kbOffset}px)`:undefined,transition:"transform .25s ease"}}>
 
         {/* Fixed header */}
         <div style={{padding:"18px 20px 12px",borderBottom:"1px solid rgba(45,45,58,0.07)",flexShrink:0,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
@@ -1985,12 +2014,13 @@ function GoalModal({ goal, profile, onSave, onClose }) {
             </div>
           )}
 
-          {/* Button inside scroll — always reachable */}
-          <button onClick={save} style={{width:"100%",padding:"16px",borderRadius:16,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",color:"#1A4020",fontWeight:800,fontSize:15,fontFamily:"'Noto Sans',sans-serif",boxShadow:"0 4px 16px rgba(172,225,175,0.4)",marginBottom:8}}>
+          <div style={{height:8}}/>
+        </div>
+        {/* Pinned save button */}
+        <div style={{padding:"12px 20px",paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 12px)",borderTop:"0.5px solid rgba(45,45,58,0.06)",flexShrink:0,background:"#fff"}}>
+          <button onClick={save} style={{width:"100%",padding:"16px",borderRadius:16,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",color:"#1A4020",fontWeight:800,fontSize:15,fontFamily:"'Noto Sans',sans-serif",boxShadow:"0 4px 16px rgba(172,225,175,0.4)"}}>
             {isEdit ? "Save Changes ✓" : "Create Goal 🎯"}
           </button>
-          {/* Extra padding so button clears the nav bar */}
-          <div style={{height:80}}/>
         </div>
       </div>
     </div>
@@ -2000,6 +2030,7 @@ function GoalModal({ goal, profile, onSave, onClose }) {
 // ═══ ADD SAVINGS MODAL ════════════════════════════════════════
 function AddSavingsModal({ goal, onSave, onClose }) {
   const [amount, setAmount] = useState("");
+  const kbOffset = useKeyboardOffset();
   const remaining = Math.max(0, goal.target_amount - goal.saved_amount);
   const QUICK = { LAK:[500000,1000000,2000000], THB:[500,1000,2000], USD:[50,100,200] };
   const save = () => {
@@ -2010,7 +2041,8 @@ function AddSavingsModal({ goal, onSave, onClose }) {
   return (
     <div style={{position:"fixed",inset:0,zIndex:2000,background:"rgba(30,30,40,0.6)",backdropFilter:"blur(4px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}}
       onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
-      <div style={{background:"#fff",borderRadius:"28px 28px 0 0",width:"100%",maxWidth:430,animation:"slideUp .3s ease",maxHeight:"80vh",display:"flex",flexDirection:"column"}}>
+      <div style={{background:"#fff",borderRadius:"28px 28px 0 0",width:"100%",maxWidth:430,animation:"slideUp .3s ease",maxHeight:"80dvh",display:"flex",flexDirection:"column",
+        transform:kbOffset>0?`translateY(-${kbOffset}px)`:undefined,transition:"transform .25s ease"}}>
         <div style={{overflowY:"auto",flex:1,minHeight:0,padding:"20px 20px 8px",WebkitOverflowScrolling:"touch"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
           <div>
@@ -2030,9 +2062,10 @@ function AddSavingsModal({ goal, onSave, onClose }) {
           ))}
           <button onClick={()=>setAmount(String(remaining))} style={{padding:"7px 12px",borderRadius:10,border:"none",cursor:"pointer",background:"rgba(172,225,175,0.2)",fontWeight:700,fontSize:12,color:"#1A5A30"}}>All ✓</button>
         </div>
-        <button onClick={save} style={{width:"100%",padding:"15px",borderRadius:16,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",color:"#1A4020",fontWeight:800,fontSize:15,fontFamily:"'Noto Sans',sans-serif",boxShadow:"0 4px 16px rgba(172,225,175,0.4)"}}>Add Savings 💚</button>
-        <div style={{height:80}}/>
         </div>{/* end scroll */}
+        <div style={{padding:"12px 20px",paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 12px)",borderTop:"0.5px solid rgba(45,45,58,0.06)",flexShrink:0,background:"#fff"}}>
+          <button onClick={save} style={{width:"100%",padding:"15px",borderRadius:16,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",color:"#1A4020",fontWeight:800,fontSize:15,fontFamily:"'Noto Sans',sans-serif",boxShadow:"0 4px 16px rgba(172,225,175,0.4)"}}>Add Savings 💚</button>
+        </div>
       </div>
     </div>
   );
@@ -2135,7 +2168,7 @@ function GoalsScreen({ profile, transactions }) {
   };
 
   return (
-    <div style={{padding:"calc(env(safe-area-inset-top, 8px) + 8px) 16px 32px",position:"relative",zIndex:1}}>
+    <div style={{padding:"calc(env(safe-area-inset-top, 8px) + 8px) 16px calc(env(safe-area-inset-bottom,0px) + 80px)",position:"relative",zIndex:1}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20}}>
         <div>
           <div style={{fontWeight:800,fontSize:22,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"goals")} 🎯</div>
@@ -2280,6 +2313,7 @@ function GoalsScreen({ profile, transactions }) {
 }
 function SetBudgetModal({ cat, currency, currentLimit, spent, lang, onSave, onClose }) {
   const [amount, setAmount] = useState(currentLimit > 0 ? String(currentLimit) : "");
+  const kbOffset = useKeyboardOffset();
   const sym = CURR[currency].symbol;
   const pct = currentLimit > 0 ? Math.min((spent / currentLimit) * 100, 100) : 0;
   const barColor = pct >= 100 ? "#C0392B" : pct >= 80 ? "#d4993a" : "#3da873";
@@ -2298,7 +2332,8 @@ function SetBudgetModal({ cat, currency, currentLimit, spent, lang, onSave, onCl
       backdropFilter:"blur(4px)", display:"flex", alignItems:"flex-end", justifyContent:"center" }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div style={{ background:"#fff", borderRadius:"28px 28px 0 0",
-        width:"100%", maxWidth:430, animation:"slideUp .3s ease", maxHeight:"88vh", display:"flex", flexDirection:"column" }}>
+        width:"100%", maxWidth:430, animation:"slideUp .3s ease", maxHeight:"88dvh", display:"flex", flexDirection:"column",
+        transform: kbOffset > 0 ? `translateY(-${kbOffset}px)` : undefined, transition:"transform .25s ease" }}>
         {/* Scrollable content */}
         <div style={{overflowY:"auto",flex:1,minHeight:0,padding:"20px 20px 8px",WebkitOverflowScrolling:"touch"}}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
@@ -2345,20 +2380,22 @@ function SetBudgetModal({ cat, currency, currentLimit, spent, lang, onSave, onCl
             }}>{fmtCompact(v, currency)}</button>
           ))}
         </div>
-        {/* Buttons inside scroll */}
-        <div style={{display:"flex",gap:10,marginTop:8}}>
-          {currentLimit > 0 && (
-            <button onClick={() => onSave(0)} style={{ flex:1, padding:"14px", borderRadius:16,
-              border:"none", cursor:"pointer", background:"rgba(255,179,167,0.15)", color:"#C0392B",
-              fontWeight:700, fontSize:13, fontFamily:"'Noto Sans',sans-serif" }}>Remove</button>
-          )}
-          <button onClick={save} style={{ flex:2, padding:"14px", borderRadius:16, border:"none",
-            cursor:"pointer", background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)", color:"#1A4020",
-            fontWeight:800, fontSize:15, fontFamily:"'Noto Sans',sans-serif",
-            boxShadow:"0 4px 16px rgba(172,225,175,0.4)" }}>Save Budget ✓</button>
-        </div>
-        <div style={{height:80}}/>
         </div>{/* end scroll */}
+        {/* Pinned buttons — always above keyboard */}
+        <div style={{padding:"12px 20px", paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 12px)",
+          borderTop:"0.5px solid rgba(45,45,58,0.06)", flexShrink:0, background:"#fff"}}>
+          <div style={{display:"flex",gap:10}}>
+            {currentLimit > 0 && (
+              <button onClick={() => onSave(0)} style={{ flex:1, padding:"14px", borderRadius:16,
+                border:"none", cursor:"pointer", background:"rgba(255,179,167,0.15)", color:"#C0392B",
+                fontWeight:700, fontSize:13, fontFamily:"'Noto Sans',sans-serif" }}>Remove</button>
+            )}
+            <button onClick={save} style={{ flex:2, padding:"14px", borderRadius:16, border:"none",
+              cursor:"pointer", background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)", color:"#1A4020",
+              fontWeight:800, fontSize:15, fontFamily:"'Noto Sans',sans-serif",
+              boxShadow:"0 4px 16px rgba(172,225,175,0.4)" }}>Save Budget ✓</button>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -2418,7 +2455,7 @@ function BudgetScreen({ profile, transactions }) {
   const monthName = now.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 
   return (
-    <div style={{ padding:"calc(env(safe-area-inset-top, 8px) + 8px) 16px 32px", position:"relative", zIndex:1 }}>
+    <div style={{ padding:"calc(env(safe-area-inset-top, 8px) + 8px) 16px calc(env(safe-area-inset-bottom,0px) + 80px)", position:"relative", zIndex:1 }}>
       <div style={{ fontWeight:800, fontSize:22, color:T.dark, fontFamily:"'Noto Sans',sans-serif", marginBottom:2 }}>Budget 💰</div>
       <div style={{ fontSize:12, color:T.muted, marginBottom:20 }}>{monthName}</div>
       <div style={{ display:"flex", gap:8, marginBottom:20 }}>
@@ -2626,7 +2663,7 @@ function AnalyticsScreen({ profile, transactions }) {
   ];
 
   return (
-    <div style={{ padding:"calc(env(safe-area-inset-top, 8px) + 8px) 16px 32px", position:"relative", zIndex:1 }}>
+    <div style={{ padding:"calc(env(safe-area-inset-top, 8px) + 8px) 16px calc(env(safe-area-inset-bottom,0px) + 80px)", position:"relative", zIndex:1 }}>
 
       {/* Title */}
       <div style={{ fontWeight:800, fontSize:22, color:T.dark, fontFamily:"'Noto Sans',sans-serif", marginBottom:16 }}>Analytics 📊</div>
@@ -2897,7 +2934,8 @@ function StreakModal({ profile, onClose }) {
     <div style={{position:"fixed",inset:0,zIndex:3000,background:"rgba(30,30,40,0.6)",
       backdropFilter:"blur(4px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}}
       onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
-      <div style={{background:"#fff",borderRadius:"28px 28px 0 0",width:"100%",maxWidth:430,animation:"slideUp .3s ease",maxHeight:"88vh",display:"flex",flexDirection:"column"}}>
+      <div style={{background:"#fff",borderRadius:"28px 28px 0 0",width:"100%",maxWidth:430,animation:"slideUp .3s ease",maxHeight:"88dvh",display:"flex",flexDirection:"column",
+        transform:kbOffset>0?`translateY(-${kbOffset}px)`:undefined,transition:"transform .25s ease"}}>
         <div style={{overflowY:"auto",flex:1,minHeight:0,padding:"24px 24px 24px",WebkitOverflowScrolling:"touch"}}>
 
         {/* Header */}
@@ -3092,7 +3130,7 @@ function AiAdvisorModal({ profile, transactions, onClose }) {
   return (
     <div style={{position:"fixed",inset:0,zIndex:3000,background:"rgba(30,30,40,0.6)",backdropFilter:"blur(4px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}}
       onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
-      <div style={{background:"#fff",borderRadius:"28px 28px 0 0",width:"100%",maxWidth:430,animation:"slideUp .3s ease",height:"80vh",display:"flex",flexDirection:"column"}}>
+      <div style={{background:"#fff",borderRadius:"28px 28px 0 0",width:"100%",maxWidth:430,animation:"slideUp .3s ease",height:"80dvh",display:"flex",flexDirection:"column"}}>
 
         {/* Header */}
         <div style={{padding:"20px 20px 14px",borderBottom:"1px solid rgba(45,45,58,0.07)",flexShrink:0}}>
@@ -3767,6 +3805,7 @@ function PinLock({ pinConfig, pinInput, pinShake, onKey, isSetup, setupMode, set
 function LoginScreen({ onLogin }) {
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("+856");
+  const kbOffset = useKeyboardOffset();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const CODES = [
@@ -3798,7 +3837,9 @@ function LoginScreen({ onLogin }) {
         <div style={{ fontSize:12, color:T.muted, marginTop:4 }}>ພາໂນດ · พาโนด</div>
       </div>
       <div style={{ background:T.surface, backdropFilter:"blur(20px)", borderRadius:28,
-        padding:"28px 24px", width:"100%", maxWidth:380, boxShadow:T.shadowLg, zIndex:1 }}>
+        padding:"28px 24px", width:"100%", maxWidth:380, boxShadow:T.shadowLg, zIndex:1,
+        transform:kbOffset>0?`translateY(-${Math.min(kbOffset*0.6,180)}px)`:undefined,
+        transition:"transform .3s ease" }}>
         <div style={{ fontWeight:800, fontSize:18, color:T.dark, marginBottom:6, fontFamily:"'Noto Sans',sans-serif" }}>Welcome back 👋</div>
         <div style={{ fontSize:13, color:T.muted, marginBottom:22, lineHeight:1.5 }}>
           Enter your phone number to continue. First time? We'll set you up automatically.
