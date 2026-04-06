@@ -1127,18 +1127,39 @@ function ConfirmModal({parsed,lang,onConfirm,onEdit}){
 function QuickEditToast({tx,lang,onChangeCategory,onDone,customCategories=[]}){
   const cat=findCat(tx.categoryId,customCategories);
   const[visible,setVisible]=useState(true);
-  useEffect(()=>{const t=setTimeout(()=>{setVisible(false);setTimeout(onDone,300);},4000);return()=>clearTimeout(t);},[]);
+  // Auto-dismiss after 2.5s — short enough to not block view
+  useEffect(()=>{const timer=setTimeout(()=>{setVisible(false);setTimeout(onDone,250);},2500);return()=>clearTimeout(timer);},[]);
   return(
-    <div style={{position:"fixed",bottom:160,left:"50%",transform:"translateX(-50%)",zIndex:500,width:"calc(100% - 32px)",maxWidth:398,opacity:visible?1:0,transition:"opacity .3s ease",pointerEvents:visible?"auto":"none"}}>
-      <div style={{background:"#1a2e1a",borderRadius:20,padding:"14px 16px",boxShadow:"0 8px 32px rgba(0,0,0,0.2)",display:"flex",alignItems:"center",gap:12}}>
-        <div style={{width:36,height:36,borderRadius:11,background:"rgba(255,255,255,0.1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{cat.emoji}</div>
+    <div style={{
+      position:"fixed",
+      // Sit just above the bottom nav bar (56px) + quick add bar (~58px) + 8px gap
+      bottom:"calc(env(safe-area-inset-bottom,0px) + 122px)",
+      right:16,
+      zIndex:400,
+      opacity:visible?1:0,
+      transform:visible?"translateY(0)":"translateY(8px)",
+      transition:"opacity .25s ease, transform .25s ease",
+      pointerEvents:visible?"auto":"none",
+    }}>
+      <div style={{
+        background:"rgba(26,46,26,0.95)",
+        backdropFilter:"blur(8px)",
+        borderRadius:14,
+        padding:"8px 12px 8px 10px",
+        display:"flex",alignItems:"center",gap:8,
+        boxShadow:"0 4px 16px rgba(0,0,0,0.18)",
+        maxWidth:200,
+      }}>
+        <span style={{fontSize:16,flexShrink:0}}>{cat.emoji}</span>
         <div style={{flex:1,minWidth:0}}>
-          <div style={{fontSize:13,fontWeight:600,color:"#fff",fontFamily:"'Noto Sans',sans-serif",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{tx.description}</div>
-          <div style={{fontSize:11,color:"rgba(255,255,255,0.5)",marginTop:1}}>{catLabel(cat,lang)}</div>
+          <div style={{fontSize:11,fontWeight:700,color:"#fff",fontFamily:"'Noto Sans',sans-serif",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+            {lang==="lo"?"ບັນທຶກແລ້ວ":lang==="th"?"บันทึกแล้ว":"Saved"} ✓
+          </div>
+          <div style={{fontSize:10,color:"rgba(255,255,255,0.55)",marginTop:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{tx.description}</div>
         </div>
         <button onClick={()=>{setVisible(false);onChangeCategory();}}
-          style={{padding:"6px 12px",borderRadius:10,border:"1px solid rgba(255,255,255,0.2)",background:"transparent",color:"#ACE1AF",fontSize:11,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",fontFamily:"'Noto Sans',sans-serif"}}>
-          ✏️ Fix
+          style={{padding:"4px 8px",borderRadius:8,border:"1px solid rgba(255,255,255,0.2)",background:"transparent",color:"#ACE1AF",fontSize:10,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",fontFamily:"'Noto Sans',sans-serif",flexShrink:0}}>
+          ✏️
         </button>
       </div>
     </div>
@@ -1321,16 +1342,21 @@ function OcrButton({ profile, onAdd, lang, compact=false }) {
         </div>
       )}
 
-      {/* Confirm modal */}
+      {/* Confirm modal — layout: header + scrollable items + pinned save button */}
       {status === "confirm" && result && (
         <div style={{ position:"fixed", inset:0, zIndex:3000, background:"rgba(30,30,40,0.6)", backdropFilter:"blur(4px)", display:"flex", alignItems:"flex-end", justifyContent:"center" }}
           onClick={e => { if (e.target === e.currentTarget) setStatus("idle"); }}>
-          <div style={{ background:"#fff", borderRadius:"28px 28px 0 0", padding:"28px 24px 52px", width:"100%", maxWidth:430, animation:"slideUp .3s ease" }}>
-            <div style={{ textAlign:"center", marginBottom:20 }}>
+          <div style={{ background:"#fff", borderRadius:"28px 28px 0 0", width:"100%", maxWidth:430, animation:"slideUp .3s ease",
+            display:"flex", flexDirection:"column",
+            maxHeight:"85dvh", // never taller than 85% of screen
+            paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 0px)",
+          }}>
+            {/* Scrollable content area */}
+            <div style={{ overflowY:"auto", WebkitOverflowScrolling:"touch", flex:1, padding:"24px 24px 0" }}>
+            <div style={{ textAlign:"center", marginBottom:16 }}>
               <div style={{ fontSize:14, color:T.muted, marginBottom:6, fontWeight:600 }}>
                 {lang==="lo"?"📷 ອ່ານໃບບິນໄດ້!":lang==="th"?"📷 อ่านใบเสร็จได้!":"📷 Receipt scanned!"}
               </div>
-              {/* Confidence badge */}
               <div style={{ display:"inline-block", padding:"2px 10px", borderRadius:8, fontSize:11, fontWeight:700,
                 background: result.confidence >= 0.8 ? "rgba(172,225,175,0.2)" : "rgba(255,179,167,0.2)",
                 color: result.confidence >= 0.8 ? "#1A5A30" : "#A03020" }}>
@@ -1339,7 +1365,7 @@ function OcrButton({ profile, onAdd, lang, compact=false }) {
             </div>
 
             {/* Transaction preview */}
-            <div style={{ background:T.bg, borderRadius:20, padding:"16px 18px", marginBottom:20 }}>
+            <div style={{ background:T.bg, borderRadius:20, padding:"16px 18px", marginBottom:16 }}>
               <div style={{ display:"flex", alignItems:"center", gap:14 }}>
                 <div style={{ width:52, height:52, borderRadius:16, background:"rgba(255,179,167,0.2)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:26, flexShrink:0 }}>
                   {findCat(result.category || "other", profile?.customCategories || []).emoji}
@@ -1374,15 +1400,21 @@ function OcrButton({ profile, onAdd, lang, compact=false }) {
               )}
             </div>
 
-            <div style={{ display:"flex", gap:10 }}>
-              <button onClick={() => setStatus("idle")}
-                style={{ flex:1, padding:"14px", borderRadius:16, border:"none", cursor:"pointer", background:"rgba(45,45,58,0.06)", color:T.muted, fontWeight:700, fontSize:14, fontFamily:"'Noto Sans',sans-serif" }}>
-                {lang==="lo"?"ຍົກເລີກ":lang==="th"?"ยกเลิก":"Cancel"}
-              </button>
-              <button onClick={confirmAdd}
-                style={{ flex:2, padding:"14px", borderRadius:16, border:"none", cursor:"pointer", background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)", color:"#1A4020", fontWeight:800, fontSize:14, fontFamily:"'Noto Sans',sans-serif", boxShadow:"0 4px 16px rgba(172,225,175,0.4)" }}>
-                {lang==="lo"?"ບັນທຶກ ✓":lang==="th"?"บันทึก ✓":"Save ✓"}
-              </button>
+            </div> {/* end scrollable content */}
+
+            {/* Pinned action buttons — always visible at bottom */}
+            <div style={{ padding:"12px 24px", paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 16px)",
+              borderTop:"0.5px solid rgba(45,45,58,0.06)", background:"#fff", flexShrink:0 }}>
+              <div style={{ display:"flex", gap:10 }}>
+                <button onClick={() => setStatus("idle")}
+                  style={{ flex:1, padding:"14px", borderRadius:16, border:"none", cursor:"pointer", background:"rgba(45,45,58,0.06)", color:T.muted, fontWeight:700, fontSize:14, fontFamily:"'Noto Sans',sans-serif" }}>
+                  {lang==="lo"?"ຍົກເລີກ":lang==="th"?"ยกเลิก":"Cancel"}
+                </button>
+                <button onClick={confirmAdd}
+                  style={{ flex:2, padding:"14px", borderRadius:16, border:"none", cursor:"pointer", background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)", color:"#1A4020", fontWeight:800, fontSize:15, fontFamily:"'Noto Sans',sans-serif", boxShadow:"0 4px 16px rgba(172,225,175,0.4)" }}>
+                  {lang==="lo"?"ບັນທຶກ ✓":lang==="th"?"บันทึก ✓":"Save ✓"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -3226,7 +3258,19 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
   const{lang,customCategories=[]}=profile;
   const greet=()=>{const h=new Date().getHours();if(h<12)return t(lang,"morning");if(h<17)return t(lang,"afternoon");return t(lang,"evening");};
   const dateStr=new Date().toLocaleDateString(lang==="th"?"th-TH":lang==="lo"?"lo-LA":"en-US",{weekday:"long",month:"long",day:"numeric"});
-  const handleAdd=(tx)=>{onAdd(tx);setEditTx(tx);setToast(null);};
+  const scrollRef=useRef();
+  const handleAdd=(tx)=>{
+    onAdd(tx);
+    // Skip QuickEditToast for AI background corrections (_update flag)
+    if(!tx._update){
+      setEditTx(tx);
+      // Auto-switch to today filter so user sees their new transaction
+      setTxFilter("today");
+    }
+    setToast(null);
+    // Scroll list to top so new transaction is visible
+    setTimeout(()=>scrollRef.current?.scrollTo({top:0,behavior:"smooth"}),80);
+  };
   const handleEditSave=(updated)=>{
     if(!editTx)return;
     setShowEdit(false);setEditTx(null);
@@ -3280,7 +3324,7 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
           </div>
         </div>
       )}
-      <div style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
+      <div ref={scrollRef} style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
         {tab==="home"&&(()=>{
           const todayStr=new Date().toISOString().split("T")[0];
           const filtered=txFilter==="today"
