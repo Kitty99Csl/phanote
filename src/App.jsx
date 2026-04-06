@@ -188,20 +188,39 @@ const GOAL_EMOJIS=["🎯","✈️","🏖️","🏠","🚗","💍","📱","💻",
 
 // ─── DEFAULT CATEGORIES ───────────────────────────────────────
 const DEFAULT_EXPENSE_CATS = [
-  {id:"food",       emoji:"🍜",en:"Food",          lo:"ອາຫານ",    th:"อาหาร"},
-  {id:"drinks",     emoji:"🍺",en:"Drinks",         lo:"ເຄື່ອງດື່ມ", th:"เครื่องดื่ม"},
-  {id:"coffee",     emoji:"☕",en:"Coffee",         lo:"ກາເຟ",     th:"กาแฟ"},
-  {id:"transport",  emoji:"🛵",en:"Transport",      lo:"ຂົນສົ່ງ",   th:"เดินทาง"},
-  {id:"travel",     emoji:"✈️",en:"Travel",         lo:"ການທ່ອງທ່ຽວ",th:"ท่องเที่ยว"},
-  {id:"rent",       emoji:"🏠",en:"Rent / Bills",   lo:"ຄ່າເຊົ່າ",  th:"ค่าเช่า"},
-  {id:"shopping",   emoji:"🛍️",en:"Shopping",      lo:"ຊື້ເຄື່ອງ", th:"ช้อปปิ้ง"},
-  {id:"health",     emoji:"💊",en:"Health",         lo:"ສຸຂະພາບ",   th:"สุขภาพ"},
-  {id:"beauty",     emoji:"💇",en:"Beauty",         lo:"ຄວາມງາມ",   th:"ความงาม"},
-  {id:"fitness",    emoji:"🏋️",en:"Fitness",        lo:"ອອກກຳລັງ",  th:"ออกกำลัง"},
-  {id:"entertainment",emoji:"🎉",en:"Entertainment",lo:"ບັນເທີງ",   th:"บันเทิง"},
-  {id:"gaming",     emoji:"🎮",en:"Gaming",         lo:"ເກມ",       th:"เกม"},
-  {id:"education",  emoji:"📚",en:"Education",      lo:"ການສຶກສາ",  th:"การศึกษา"},
-  {id:"other",      emoji:"📦",en:"Other",          lo:"ອື່ນໆ",     th:"อื่นๆ"},
+  // ── Daily food & drink ──────────────────────────────────────
+  {id:"food",          emoji:"🍜",en:"Food",             lo:"ອາຫານ",        th:"อาหาร"},
+  {id:"groceries",     emoji:"🛒",en:"Groceries",        lo:"ຊື້ຂອງກິນ",    th:"ของชำ"},
+  {id:"drinks",        emoji:"🍺",en:"Drinks",           lo:"ເຄື່ອງດື່ມ",   th:"เครื่องดื่ม"},
+  {id:"coffee",        emoji:"☕",en:"Coffee / Cafe",    lo:"ກາເຟ",         th:"กาแฟ"},
+  // ── Getting around ─────────────────────────────────────────
+  {id:"transport",     emoji:"🛵",en:"Transport",        lo:"ຂົນສົ່ງ",      th:"เดินทาง"},
+  {id:"travel",        emoji:"✈️",en:"Travel",           lo:"ທ່ອງທ່ຽວ",     th:"ท่องเที่ยว"},
+  // ── Home & bills ───────────────────────────────────────────
+  {id:"rent",          emoji:"🏠",en:"Housing / Rent",  lo:"ທີ່ພັກ",        th:"ที่พัก"},
+  {id:"utilities",     emoji:"💡",en:"Utilities",        lo:"ຄ່ານ້ຳ-ໄຟ",    th:"สาธารณูปโภค"},
+  {id:"phone_internet",emoji:"📱",en:"Phone & Internet", lo:"ຄ່າໂທ/ເນັດ",   th:"ค่าโทร/เน็ต"},
+  {id:"household",     emoji:"🏡",en:"Household",        lo:"ຂອງໃຊ້ເຮືອນ",  th:"ของใช้ในบ้าน"},
+  // ── Personal spending ──────────────────────────────────────
+  {id:"shopping",      emoji:"🛍️",en:"Shopping",        lo:"ຊື້ເຄື່ອງ",    th:"ช้อปปิ้ง"},
+  {id:"health",        emoji:"💊",en:"Health",           lo:"ສຸຂະພາບ",      th:"สุขภาพ"},
+  {id:"beauty",        emoji:"💇",en:"Beauty",           lo:"ຄວາມງາມ",      th:"ความงาม"},
+  {id:"fitness",       emoji:"🏋️",en:"Fitness",         lo:"ອອກກຳລັງ",     th:"ออกกำลัง"},
+  // ── Fun & leisure ──────────────────────────────────────────
+  {id:"entertainment", emoji:"🎉",en:"Entertainment",   lo:"ບັນເທີງ",      th:"บันเทิง"},
+  {id:"subscriptions", emoji:"📺",en:"Subscriptions",   lo:"ສະໝັກລາຍການ",  th:"สมาชิกรายเดือน"},
+  {id:"gaming",        emoji:"🎮",en:"Gaming",           lo:"ເກມ",           th:"เกม"},
+  // ── Growth & family ────────────────────────────────────────
+  {id:"education",     emoji:"📚",en:"Education",        lo:"ການສຶກສາ",     th:"การศึกษา"},
+  {id:"family",        emoji:"👨‍👩‍👧",en:"Family",        lo:"ຄອບຄົວ",       th:"ครอบครัว"},
+  // ── Culture & community ────────────────────────────────────
+  {id:"donation",      emoji:"🙏",en:"Donation / Merit", lo:"ເຮັດບຸນ",      th:"ทำบุญ"},
+  // ── Financial obligations ──────────────────────────────────
+  {id:"debt_payment",  emoji:"💳",en:"Debt Payment",    lo:"ຊຳລະໜີ້",      th:"ชำระหนี้"},
+  {id:"fees",          emoji:"🏦",en:"Fees & Charges",   lo:"ຄ່າທຳນຽມ",    th:"ค่าธรรมเนียม"},
+  {id:"repair",        emoji:"🔧",en:"Repair",           lo:"ຄ່າຊ່ອມ",      th:"ค่าซ่อม"},
+  // ── Catch-all ──────────────────────────────────────────────
+  {id:"other",         emoji:"📦",en:"Other",            lo:"ອື່ນໆ",         th:"อื่นๆ"},
 ];
 const DEFAULT_INCOME_CATS = [
   {id:"salary",    emoji:"💼",en:"Salary",     lo:"ເງິນເດືອນ", th:"เงินเดือน"},
@@ -220,39 +239,114 @@ const findCat=(id,customCats=[])=>buildAllCats(customCats).find(c=>c.id===id)||D
 
 const normalizeCategory=(cat,type)=>{
   const m={
-    food:"food",eating:"food",restaurant:"food",lunch:"food",dinner:"food",
-    breakfast:"food",meal:"food",rice:"food",noodle:"food",pho:"food",
-    ເຂົ້າ:"food",ເຂົ້າປຽກ:"food",ອາຫານ:"food",
-    beer:"drinks",alcohol:"drinks",wine:"drinks",lao:"drinks","beer lao":"drinks",
-    whiskey:"drinks",drinking:"drinks",ດື່ມ:"drinks",
-    coffee:"coffee",cafe:"coffee",กาแฟ:"coffee",ກາເຟ:"coffee",latte:"coffee",
-    transport:"transport",taxi:"transport",grab:"taxi",uber:"transport",
-    bus:"transport",fuel:"transport",gas:"transport",car:"transport",
-    petrol:"transport",tuk:"transport",
+    // ── Food ──────────────────────────────────────────────────
+    food:"food",eating:"food",restaurant:"food",dining:"food",
+    lunch:"food",dinner:"food",breakfast:"food",meal:"food",
+    rice:"food",noodle:"food",pho:"food",bbq:"food",
+    ເຂົ້າ:"food",ເຂົ້າປຽກ:"food",ອາຫານ:"food",ກິນ:"food",
+    ຕຳ:"food",ເຝີ:"food",ລາບ:"food",laap:"food",larb:"food",
+    // ── Groceries (NEW) ───────────────────────────────────────
+    groceries:"groceries",grocery:"groceries",supermarket:"groceries",
+    "fresh market":"groceries","villa market":"groceries",
+    "that luang market":"groceries","t-mart":"groceries",
+    ຊື້ຂອງ:"groceries",ຊື້ຂອງກິນ:"groceries",talat:"groceries",
+    // ── Drinks ────────────────────────────────────────────────
+    beer:"drinks",alcohol:"drinks",wine:"drinks","beer lao":"drinks",
+    whiskey:"drinks",whisky:"drinks",drinking:"drinks",vodka:"drinks",
+    ດື່ມ:"drinks",ເຫຼົ້າ:"drinks","lao lao":"drinks",ລາວລາວ:"drinks",
+    // ── Coffee ────────────────────────────────────────────────
+    coffee:"coffee",cafe:"coffee",กาแฟ:"coffee",ກາເຟ:"coffee",
+    latte:"coffee",espresso:"coffee",joma:"coffee",
+    // ── Transport ─────────────────────────────────────────────
+    transport:"transport",taxi:"transport",grab:"transport",
+    uber:"transport",loca:"transport",indrive:"transport",
+    bus:"transport",fuel:"transport",gas:"transport",
+    petrol:"transport",tuk:"transport",ນ້ຳມັນ:"transport",
+    // ── Travel ────────────────────────────────────────────────
     travel:"travel",flight:"travel",hotel:"travel",trip:"travel",
-    vacation:"travel",holiday:"travel",
-    rent:"rent",bills:"rent",utilities:"rent",housing:"rent",electric:"rent",
-    water:"rent",internet:"rent",phone:"rent",electricity:"rent",
-    shopping:"shopping",clothes:"shopping",shop:"shopping",market:"shopping",
-    bag:"shopping",plastic:"shopping",grocery:"shopping",
-    caddie:"shopping",caddy:"shopping",
-    health:"health",medical:"health",doctor:"health",medicine:"health",hospital:"health",
-    clinic:"health",pharmacy:"health",
+    vacation:"travel",holiday:"travel",resort:"travel",ທ່ອງທ່ຽວ:"travel",
+    // ── Housing (id="rent", was mixing everything) ────────────
+    rent:"rent",housing:"rent",apartment:"rent",room:"rent",
+    ຄ່າເຊົ່າ:"rent",ເຊົ່າ:"rent",ທີ່ພັກ:"rent",
+    // ── Utilities (NEW — fixed from rent) ─────────────────────
+    utilities:"utilities",electricity:"utilities",electric:"utilities",
+    edl:"utilities","nam papa":"utilities",
+    ຄ່າໄຟ:"utilities",ໄຟຟ້າ:"utilities",ຄ່ານ້ຳ:"utilities",ນ້ຳປະປາ:"utilities",
+    // ── Phone & Internet (NEW — fixed from rent) ──────────────
+    phone_internet:"phone_internet","phone internet":"phone_internet",
+    phone:"phone_internet",mobile:"phone_internet",
+    topup:"phone_internet","top-up":"phone_internet","top up":"phone_internet",
+    unitel:"phone_internet",etl:"phone_internet",ltc:"phone_internet",
+    internet:"phone_internet",wifi:"phone_internet",
+    ຄ່າໂທ:"phone_internet",ຄ່າໂທລະສັບ:"phone_internet",
+    ຄ່າເນັດ:"phone_internet",ເຕີມ:"phone_internet",
+    // ── Household (NEW) ───────────────────────────────────────
+    household:"household",cleaning:"household",detergent:"household",
+    furniture:"household",appliance:"household",
+    ຂອງໃຊ້:"household",ຂອງໃຊ້ເຮືອນ:"household",
+    // ── Shopping ──────────────────────────────────────────────
+    shopping:"shopping",clothes:"shopping",shop:"shopping",
+    bag:"shopping",caddie:"shopping",caddy:"shopping",mall:"shopping",
+    // ── Health ────────────────────────────────────────────────
+    health:"health",medical:"health",doctor:"health",
+    medicine:"health",hospital:"health",clinic:"health",pharmacy:"health",
+    ໂຮງໝໍ:"health",ຢາ:"health",
+    // ── Beauty ────────────────────────────────────────────────
     beauty:"beauty",salon:"beauty",haircut:"beauty",nail:"beauty",spa:"beauty",
+    ຕັດຜົມ:"beauty",
+    // ── Fitness ───────────────────────────────────────────────
     fitness:"fitness",gym:"fitness",sport:"fitness",exercise:"fitness",
-    golf:"fitness",swimming:"fitness",yoga:"fitness",
+    golf:"fitness",swimming:"fitness",yoga:"fitness",ອອກກຳລັງ:"fitness",
+    // ── Entertainment ─────────────────────────────────────────
     entertainment:"entertainment",movie:"entertainment",concert:"entertainment",
     event:"entertainment",party:"entertainment",festival:"entertainment",
     karaoke:"entertainment","mor lam":"entertainment",morlam:"entertainment",
-    nightclub:"entertainment",bar:"entertainment",
-    gaming:"gaming",game:"gaming",games:"gaming",
-    education:"education",school:"education",book:"education",course:"education",
-    salary:"salary",wage:"salary",paycheck:"salary",เงินเดือน:"salary",ເງິນເດືອນ:"salary",
-    freelance:"freelance",commission:"freelance",
+    ມໍລຳ:"entertainment",
+    // ── Subscriptions (NEW — fixed from entertainment) ────────
+    subscriptions:"subscriptions",subscription:"subscriptions",
+    netflix:"subscriptions",spotify:"subscriptions",
+    youtube:"subscriptions",disney:"subscriptions",
+    icloud:"subscriptions","google one":"subscriptions",
+    "apple one":"subscriptions","line tv":"subscriptions",wetv:"subscriptions",
+    ສະໝັກ:"subscriptions",
+    // ── Gaming ────────────────────────────────────────────────
+    gaming:"gaming",game:"gaming",games:"gaming",steam:"gaming",
+    playstation:"gaming",xbox:"gaming",ເກມ:"gaming",
+    // ── Education ─────────────────────────────────────────────
+    education:"education",school:"education",book:"education",
+    course:"education",tuition:"education",ຮຽນ:"education",
+    // ── Family (NEW) ──────────────────────────────────────────
+    family:"family",parents:"family",mom:"family",dad:"family",
+    kids:"family",children:"family",baby:"family",childcare:"family",
+    ຄອບຄົວ:"family",ພໍ່ແມ່:"family",ລູກ:"family",
+    "ໃຫ້ພໍ່":"family","ໃຫ້ແມ່":"family",ສົ່ງໃຫ້:"family",
+    // ── Donation (NEW — very Lao-specific) ────────────────────
+    donation:"donation",donate:"donation",temple:"donation",
+    merit:"donation",charity:"donation",monk:"donation",
+    ເຮັດບຸນ:"donation",ໃສ່ບາດ:"donation",ວັດ:"donation",
+    ຖວາຍ:"donation",ທຳທານ:"donation",ທານ:"donation",ບໍລິຈາກ:"donation",
+    // ── Debt Payment (NEW) ────────────────────────────────────
+    debt:"debt_payment",debt_payment:"debt_payment",loan:"debt_payment",
+    installment:"debt_payment",repayment:"debt_payment",
+    ຜ່ອນ:"debt_payment",ໜີ້:"debt_payment",ກູ້:"debt_payment",
+    ໃຊ້ໜີ້:"debt_payment",ຊຳລະ:"debt_payment",
+    // ── Fees (NEW) ────────────────────────────────────────────
+    fees:"fees",fee:"fees",charge:"fees",
+    "atm fee":"fees","transfer fee":"fees","service charge":"fees","bank fee":"fees",
+    "visa fee":"fees","document fee":"fees",tax:"fees",fine:"fees",
+    ຄ່າທຳນຽມ:"fees",ຄ່າບໍລິການ:"fees",
+    // ── Repair (NEW) ──────────────────────────────────────────
+    repair:"repair",fix:"repair",maintenance:"repair",mechanic:"repair",
+    ຊ່ອມ:"repair",ສ້ອມ:"repair",ແກ້:"repair",
+    // ── Income ────────────────────────────────────────────────
+    salary:"salary",wage:"salary",paycheck:"salary",
+    เงินเดือน:"salary",ເງິນເດືອນ:"salary",payroll:"salary",
+    freelance:"freelance",commission:"freelance",ຄ່າຈ້າງ:"freelance",
     selling:"selling",sale:"selling",sold:"selling",sell:"selling",ຂາຍ:"selling",
-    gift:"gift",bonus:"bonus",award:"bonus",
-    investment:"investment",invest:"investment",dividend:"investment",interest:"investment",
-    transfer:"transfer",received:"transfer",
+    gift:"gift",ຂອງຂວັນ:"gift",
+    bonus:"bonus",award:"bonus",ໂບນັດ:"bonus",
+    investment:"investment",invest:"investment",dividend:"investment",ລົງທຶນ:"investment",
+    transfer:"transfer",received:"transfer",ໂອນ:"transfer",
     other_inc:"other_inc",
     other:type==="income"?"other_inc":"other",
     income:type==="income"?"salary":"other",
@@ -332,58 +426,135 @@ const localParse = (text) => {
   // ── Category rules — ordered by specificity, Lao-first ────
   // [regex, category, confidence]
   // confidence >= 0.88 → skip API call (App.jsx threshold)
+  // Lao terms always listed first within each rule
   const CAT_RULES = [
-    // Income categories
-    [/ເງິນເດືອນ|salary|wage|payroll|เงินเดือน/i,                            'salary',        0.96],
-    [/ຂາຍ(?:ເຄື່ອງ|ຂອງ)?|ขาย|ขายของ|\bsell\b|sold|\bsale\b/i,             'selling',       0.93],
-    [/ຮັບຈ້າງ|ຄ່າຈ້າງ|freelance|commission|ฟรีแลนซ์/i,                       'freelance',     0.93],
-    [/ໂບນັດ|bonus|โบนัส|\breward\b|\btip\b/i,                               'bonus',         0.93],
-    [/ຂອງຂວັນ|gift|present|ของขวัญ/i,                                       'gift',          0.90],
-    [/ລົງທຶນ|ຫຸ້ນ|invest|crypto|bitcoin|stock|หุ้น|ลงทุน/i,                  'investment',    0.90],
-    // Transfer — check early (BCEL/banks are specific)
-    [/\b(bcel|jdb|ldb|bfl|onepay|apay|k\s*plus|promptpay)\b|ໂອນ(?:ເງິນ)?|โอน(?:เงิน)?/i, 'transfer', 0.90],
-    // Coffee — specific enough to be high confidence
-    [/ກາເຟ|กาแฟ|coffee|café|joma|starbucks|amazon\s*cafe|latte|espresso|cappuccino/i, 'coffee', 0.95],
-    // Drinks — before food so beer doesn't fall into food
-    [/ເບຍລາວ|beer\s*lao|ລາວລາວ|lao\s*lao|ເຫຼົ້າ|ດື່ມ|เบียร์|เหล้า|beer|alcohol|wine|whisky|whiskey|cocktail|vodka/i, 'drinks', 0.95],
-    // Food — Lao-specific (highest priority within food)
-    [/ຕຳໝາກຫຸ່ງ|ຕຳໝາກແດງ|ຕຳໝາກ|ສົ້ມຕຳ|som\s*tam/i,                        'food',          0.97],
-    [/ເຝີ|ໝູກະທະ|ຊີ້ນດາດ|ຜັດໄທ|ໄຂ່ດາວ|ຂ້າວ|ເຂົ້າ|ອາຫານ|ກິນ|ຊີ້ນ|ໄກ່|ໄຂ່|ຜັກ|ປາ|ໝູ/i, 'food', 0.95],
-    // Romanized Lao food terms (typed in Latin alphabet)
-    [/kao\s*piek|khao\s*piek|ເຂົ້າປຽກ/i,                                    'food',          0.97],
-    [/laap|larb|lap\s*gai|lap\s*moo|ລາບ/i,                                  'food',          0.96],
-    [/tam\s*mak|ping\s*gai|ping\s*moo|or\s*lam|orlam|mok\s*pa/i,           'food',          0.95],
-    [/khao|kao(?!\s*lao)|khanom|khay|mee|pho\b|foe\b/i,                     'food',          0.90],
-    // Romanized Lao drinks
-    [/lao\s*lao|beerlao|beer\s*lao|ລາວລາວ/i,                               'drinks',        0.97],
-    [/kao\s*lao|lao\s*whisky/i,                                              'drinks',        0.95],
-    [/ข้าว|อาหาร|ก๋วยเตี๋ยว|ส้มตำ|หมูกระทะ|ไข่|ผัก|เนื้อ|กิน/i,              'food',          0.93],
-    [/noodle|rice|chicken|pork|fish|egg|meat|vegetable|vegies|grocery|meal|burger|pizza|kfc|sushi|bbq|food|eat|lunch|dinner|breakfast/i, 'food', 0.90],
-    // Transport — Loca first (Lao-specific)
-    [/\bloca\b|ລົດຈັກ|ນ້ຳມັນ|ຄ່ານ້ຳມັນ|ຄ່າລົດ|\bindrive\b/i,               'transport',     0.96],
-    [/grab|taxi|tuk\s*tuk|fuel|petrol|diesel|bus|ລົດ|รถ|ค่าน้ำมัน|มอไซ/i,   'transport',     0.93],
-    // Entertainment — ມໍລຳ is very Lao-specific
-    [/ມໍລຳ|ໝໍລຳ|morlam|mor\s*lam/i,                                        'entertainment', 0.97],
-    [/karaoke|concert|movie|cinema|netflix|spotify|youtube|disney|party|show|festival/i, 'entertainment', 0.93],
-    // Fitness
-    [/golf|gym|ອອກກຳລັງ|ກິລາ|fitness|yoga|badminton|football|futsal|swim|sport/i, 'fitness', 0.93],
-    // Shopping — Icon Mall is Vientiane-specific
-    [/icon\s*mall|icon(?=\s|$)|lotus|big\s*c|miniso|caddi/i,                 'shopping',      0.95],
-    [/ຊື້ເຄື່ອງ|ຕະຫຼາດ|ห้าง|ซื้อของ|clothes|shirt|bag|mall|shopee|lazada/i, 'shopping',      0.90],
-    // Rent/Bills
-    [/ຄ່າໄຟ|ຄ່ານ້ຳ|ຄ່າເນັດ|ຄ່າໂທ|ค่าไฟ|ค่าน้ำ|ค่าเน็ต/i,                    'rent',          0.97],
-    [/rent|ຄ່າເຊົ່າ|electricity|electric|water\s*bill|internet|wifi|utility|ค่าเช่า/i, 'rent', 0.93],
-    // Health
-    [/ໂຮງໝໍ|ມະໂຫສົດ|ຢາ|หมอ|ยา|โรงพยาบาล|hospital|clinic|doctor|medicine|pharmacy|dental/i, 'health', 0.95],
-    // Beauty
-    [/ຕັດຜົມ|ເສີມສວຍ|ທາເລັບ|ทำผม|ตัดผม|salon|spa|haircut|nail|beauty|facial/i, 'beauty',     0.93],
-    // Travel
-    [/flight|hotel|ໂຮງແຮມ|ທ່ອງທ່ຽວ|trip|vacation|tour|resort|booking|เที่ยว|โรงแรม/i, 'travel', 0.93],
-    // Gaming
-    [/steam|playstation|ps5|xbox|roblox|pubg|garena|top\s*up\s*game|เติมเกม/i, 'gaming',      0.95],
-    [/\bgame\b|\bgaming\b|\bເກມ\b|\bเกม\b/i,                                 'gaming',        0.88],
-    // Education
-    [/ຄ່າຮຽນ|ຮຽນ|ໂຮງຮຽນ|ค่าเรียน|เรียน|school|university|course|tuition|workshop/i, 'education', 0.93],
+
+    // ── INCOME (check first — specific keywords) ───────────────
+    [/ເງິນເດືອນ|ເງິນເດືອນ|salary|wage|payroll|เงินเดือน/i,                'salary',        0.96],
+    [/ຂາຍ(?:ເຄື່ອງ|ຂອງ)?|ขาย|\bsell\b|\bsold\b|\bsale\b/i,             'selling',       0.93],
+    [/ຮັບຈ້າງ|ຄ່າຈ້າງ|freelance|commission|ฟรีแลนซ์/i,                      'freelance',     0.93],
+    [/ໂບນັດ|\bbonus\b|โบนัส/i,                                             'bonus',         0.93],
+    [/ລົງທຶນ|ຫຸ້ນ|\binvest|crypto|bitcoin|\bstock|หุ้น|ลงทุน/i,            'investment',    0.90],
+
+    // ── TRANSFER (banks — very specific, check before food) ───
+    [/\b(bcel|jdb|ldb|bfl|onepay|apay|k\s*plus|promptpay|truemoney)\b/i,  'transfer',      0.92],
+    [/ໂອນ(?:ເງິນ)?(?!\s*ອອກ)|โอน(?:เงิน)?/i,                              'transfer',      0.90],
+
+    // ── DONATION (ເຮັດບຸນ — very Lao, must be early) ──────────
+    [/ເຮັດບຸນ|ໃສ່ບາດ|ຖວາຍ|ທຳທານ|ບໍລິຈາກ/i,                               'donation',      0.98],
+    [/ວັດ(?:\s|$)|\bwat\b|merit\s*mak|\bmonk\b|alms|ทำบุญ|ใส่บาตร/i,  'donation',      0.94],
+    [/\bdonate\b|\bdonation\b|\bcharity\b|\btemple\b/i,               'donation',      0.92],
+
+    // ── DEBT PAYMENT (ຜ່ອນ/ໜີ້ — common in Laos) ──────────────
+    [/ຜ່ອນ|ໜີ້|ໃຊ້ໜີ້|ກູ້(?!ຢືມ)|ຊຳລະໜີ້/i,                               'debt_payment',  0.97],
+    [/\bloan\b|\binstallment\b|\brepayment\b|ผ่อน|หนี้|ชำระหนี้/i,     'debt_payment',  0.93],
+
+    // ── PHONE & INTERNET (before utilities — more specific) ───
+    [/ເຕີມ(?:ເງິນ)?|ຄ່າໂທ|ຄ່າໂທລະສັບ|ຄ່າເນັດ/i,                           'phone_internet',0.97],
+    [/\b(unitel|etl|ltc|beeline|ອູນີເທລ)\b/i,                             'phone_internet',0.97],
+    [/\btopup\b|top[\s-]up|mobile\s*package|data\s*package/i,           'phone_internet',0.93],
+    [/wifi\s*bill|phone\s*bill|internet\s*bill|ค่าเน็ต|ค่าโทร/i,         'phone_internet',0.93],
+
+    // ── UTILITIES (electricity, water — fixed from rent) ──────
+    [/ຄ່າໄຟ|ໄຟຟ້າ|\bedl\b|ຄ່ານ້ຳ|ນ້ຳປະປາ|\bnam\s*papa\b/i,           'utilities',     0.98],
+    [/electricity|\belectric\b|water\s*bill|utility|ค่าไฟ|ค่าน้ำ/i,      'utilities',     0.95],
+    [/ຄ່າຂີ້ເຫຍື້ອ|garbage\s*fee|building\s*fee|service\s*fee(?!\s*bank)/i,'utilities',  0.90],
+
+    // ── HOUSING (rent only — fixed from mixing everything) ────
+    [/ຄ່າເຊົ່າ|ເຊົ່າຫ້ອງ|ເຊົ່າບ້ານ|เช่าบ้าน|ค่าเช่า/i,                    'rent',          0.97],
+    [/\brent\b|apartment\s*fee|room\s*rent|\bhousing\b/i,               'rent',          0.93],
+
+    // ── FAMILY (giving to parents, childcare — Lao culture) ───
+    [/ໃຫ້ພໍ່|ໃຫ້ແມ່|ໃຫ້ພໍ່ແມ່|ສົ່ງໃຫ້ພໍ່|ສົ່ງໃຫ້ແມ່/i,                   'family',        0.97],
+    [/ຄ່ານົມ|ຜ້າອ້ອມ|ລ້ຽງລູກ|ຊ່ວຍຄ່ານ້ອງ|ຄ່າລ້ຽງ/i,                      'family',        0.95],
+    [/give\s*mom|give\s*dad|send\s*parents|baby\s*milk|diapers|แม่|พ่อ/i,'family',        0.92],
+
+    // ── FEES (bank fees, ATM, govt fees) ──────────────────────
+    [/ຄ່າທຳນຽມ|ຄ່າ\s*atm|ຄ່າໂອນ|ຄ່າຝາກ/i,                              'fees',          0.97],
+    [/\batm\s*fee|transfer\s*fee|bank\s*fee|late\s*fee/i,               'fees',          0.94],
+    [/visa\s*fee|document\s*fee|ຄ່າວີຊາ|ຄ່າເອກະສານ|ຄ່າໃບຂັບຂີ່/i,      'fees',          0.93],
+    [/ຄ່າປັບ|\bfine\b|\bpenalty\b|ค่าปรับ/i,                            'fees',          0.90],
+
+    // ── REPAIR (motorbike, phone, home — very common in Laos) ─
+    [/ຊ່ອມລົດ|ຊ່ອມ(?:ຈັກ|ໂທ|ເຮືອນ|ຕູ້ເຢັນ|ແອ)|ສ້ອມແຊມ/i,               'repair',        0.97],
+    [/\brepair\b|\bfix\b|mechanic|motorbike\s*service|ซ่อม/i,           'repair',        0.93],
+    [/ຄ່າຊ່ອມ|ຊ່ອມໂທລະສັບ|ຊ່ອມຄອມ|ling\s*repair/i,                       'repair',        0.95],
+
+    // ── SUBSCRIPTIONS (recurring apps — before entertainment) ─
+    [/netflix|spotify|youtube\s*premium|disney\s*\+|icloud/i,             'subscriptions', 0.98],
+    [/google\s*one|apple\s*one|line\s*tv|wetv|\bviu\b|canva/i,         'subscriptions', 0.97],
+    [/ສະໝັກ(?:\s*ລາຍ)?|ຕໍ່ອາຍຸ|auto\s*renew|monthly\s*sub/i,           'subscriptions', 0.93],
+
+    // ── HOUSEHOLD (home goods, cleaning, appliances) ──────────
+    [/ຂອງໃຊ້ເຮືອນ|ຂອງໃຊ້|ຜ້າທຳຄວາມສະອາດ|ນ້ຳຍາ/i,                        'household',     0.95],
+    [/detergent|cleaning|tissue|shampoo|\bsoap\b|toothpaste/i,             'household',     0.93],
+    [/rice\s*cooker|\bfan\b(?!\s*club)|furniture|ເຄື່ອງໃຊ້ຟ້າ/i,        'household',     0.90],
+
+    // ── COFFEE (specific cafes before generic food) ────────────
+    [/ກາເຟ|กาแฟ|\bcoffee\b|\bcafe\b|joma|starbucks|amazon\s*cafe/i,    'coffee',        0.95],
+    [/latte|espresso|cappuccino|americano|iced\s*coffee|flat\s*white/i,    'coffee',        0.93],
+
+    // ── DRINKS (before food so beer doesn't fall into food) ───
+    [/ເບຍລາວ|beer\s*lao|ລາວລາວ|lao\s*lao|ເຫຼົ້າ/i,                      'drinks',        0.98],
+    [/\bbeer\b|alcohol|\bwine\b|whisky|whiskey|cocktail|vodka|ດື່ມ/i,   'drinks',        0.95],
+    [/ຊານົມ|boba|milk\s*tea|fruit\s*juice|soft\s*drink|ນ້ຳໝາກ/i,         'drinks',        0.93],
+
+    // ── GROCERIES (market shopping vs eating out) ──────────────
+    [/ຊື້ຂອງກິນ|ຊື້ຂອງ(?!\s*ໃຊ້)|ທ້ອງຕະຫຼາດ|ຕະຫຼາດເຊົ້າ/i,              'groceries',     0.96],
+    [/villa\s*market|phimphone|t-mart|that\s*luang\s*market/i,            'groceries',     0.97],
+    [/supermarket|fresh\s*market|\bgrocery\b|produce|big\s*c/i,          'groceries',     0.93],
+
+    // ── FOOD (Lao dishes — highest priority) ──────────────────
+    [/ຕຳໝາກຫຸ່ງ|ຕຳໝາກແດງ|ຕຳໝາກ|ສົ້ມຕຳ|som\s*tam/i,                      'food',          0.98],
+    [/ເຝີ|ໝູກະທະ|ຊີ້ນດາດ|ລາບ(?:ໄກ່|ໝູ|ງົວ)?|ອໍ້ລາມ|orlam/i,             'food',          0.97],
+    [/ຜັດໄທ|ຂ້າວຜັດ|ຂ້າວໜຽວ|ເຂົ້າໜຽວ|ເຂົ້າຈີ່|ping\s*gai/i,             'food',          0.96],
+    [/ເຂົ້າ|ອາຫານ|ກິນ|ຊີ້ນ|ໄກ່|ໄຂ່|ຜັກ|ປາ|ໝູ/i,                          'food',          0.95],
+    [/kao\s*piek|khao\s*piek|khao|kao(?!\s*lao)|mee\s*sua/i,             'food',          0.95],
+    [/laap|larb|lap\s*gai|lap\s*moo|tam\s*mak|mok\s*pa/i,               'food',          0.95],
+    [/ข้าว|อาหาร|ก๋วยเตี๋ยว|ส้มตำ|หมูกระทะ|ไข่|ผัก|เนื้อ/i,              'food',          0.93],
+    [/noodle|\brice\b|chicken|\bpork\b|\bfish\b|\begg\b/i,           'food',          0.92],
+    [/burger|pizza|kfc|sushi|bbq|\bfood\b|\beat\b|lunch|dinner|breakfast/i,'food',        0.90],
+
+    // ── TRANSPORT (Loca first — main Lao ride app) ────────────
+    [/\bloca\b|ລົດຈັກ|ຕື່ມນ້ຳມັນ|ປ້ຳນ້ຳມັນ|ຄ່ານ້ຳມັນ/i,                'transport',     0.97],
+    [/\bindrive\b|\bgrab\b|tuk\s*tuk|\btaxi\b/i,                      'transport',     0.95],
+    [/\bfuel\b|petrol|diesel|\bparking\b|ลำ|ค่าน้ำมัน/i,                'transport',     0.93],
+
+    // ── ENTERTAINMENT (ມໍລຳ is very Lao) ─────────────────────
+    [/ມໍລຳ|ໝໍລຳ|morlam|mor\s*lam/i,                                        'entertainment', 0.98],
+    [/karaoke|\bconcert\b|\bmovie\b|cinema|\bparty\b|festival/i,       'entertainment', 0.93],
+    [/nightclub|\bbar\b(?!code)|night\s*market|ງານບຸນ/i,                 'entertainment', 0.90],
+
+    // ── FITNESS ───────────────────────────────────────────────
+    [/\bgolf\b|\bgym\b|ອອກກຳລັງ|ກິລາ|fitness|yoga/i,                    'fitness',       0.95],
+    [/badminton|football|futsal|\bswim|running|\bjog/i,                    'fitness',       0.93],
+
+    // ── SHOPPING (Icon Mall = Vientiane-specific) ──────────────
+    [/icon\s*mall|\bminiso\b|\bcaddi\b|\bcd\s*i\b/i,                 'shopping',      0.96],
+    [/ຊື້ເຄື່ອງ|shopee|lazada|\bclothes\b|\bshirt\b|\bshoes\b/i,       'shopping',      0.93],
+    [/\bmall\b|\bshop\b(?!ke)|\bstore\b|lotus|department/i,            'shopping',      0.90],
+
+    // ── HEALTH ────────────────────────────────────────────────
+    [/ໂຮງໝໍ|ມະໂຫສົດ|ຄລີນິກ|\bຢາ\b|ໝໍ(?!ລຳ)/i,                          'health',        0.97],
+    [/hospital|\bclinic\b|\bdoctor\b|\bmedicine\b|pharmacy|dental/i,   'health',        0.95],
+    [/หมอ|ยา|โรงพยาบาล|คลินิก/i,                                            'health',        0.93],
+
+    // ── BEAUTY ────────────────────────────────────────────────
+    [/ຕັດຜົມ|ເສີມສວຍ|ທາເລັບ|ฟิตเนส/i,                                      'beauty',        0.95],
+    [/salon|\bspa\b|haircut|\bnail\b|facial|ทำผม|ตัดผม/i,               'beauty',        0.93],
+
+    // ── TRAVEL ────────────────────────────────────────────────
+    [/\bflight\b|\bhotel\b|ໂຮງແຮມ|ທ່ອງທ່ຽວ/i,                          'travel',        0.95],
+    [/\bresort\b|\bbooking\b|vacation|เที่ยว|โรงแรม/i,                   'travel',        0.93],
+
+    // ── GAMING ────────────────────────────────────────────────
+    [/steam|playstation|\bps[45]\b|xbox|roblox|pubg|garena/i,              'gaming',        0.97],
+    [/top\s*up\s*game|เติมเกม|\bgame\s*coin|in-game/i,                   'gaming',        0.95],
+    [/\bgame\b|\bgaming\b|\bເກມ\b|\bเกม\b/i,                         'gaming',        0.88],
+
+    // ── EDUCATION ─────────────────────────────────────────────
+    [/ຄ່າຮຽນ|ໂຮງຮຽນ|\bຮຽນ\b|ค่าเรียน|เรียน/i,                            'education',     0.95],
+    [/\bschool\b|university|\bcourse\b|tuition|workshop|\bbook\b/i,    'education',     0.93],
   ];
 
   // ── Income/expense type detection ─────────────────────────
