@@ -900,14 +900,35 @@ function EditTransactionModal({tx,lang,onSave,onClose,customCategories=[]}){
 // ═══ CONFIRM MODAL ════════════════════════════════════════════
 function ConfirmModal({parsed,lang,onConfirm,onEdit}){
   const[note,setNote]=useState("");
-  const cat=findCat(parsed.category);
+  const cat=findCat(parsed.category||parsed.categoryId);
+  const aiDone=parsed._aiDone;
+  const aiUpdated=parsed._aiUpdated;
   return(
     <div style={{position:"fixed",inset:0,zIndex:1000,background:"rgba(30,30,40,0.5)",backdropFilter:"blur(4px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
       <div style={{background:"#fff",borderRadius:"28px 28px 0 0",padding:"24px 24px",paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 24px)",width:"100%",maxWidth:430,animation:"slideUp .35s cubic-bezier(.34,1.2,.64,1)"}}>
-        <div style={{fontSize:13,color:T.muted,fontWeight:600,marginBottom:14}}>{t(lang,"confirm_q")}</div>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
+          <div style={{fontSize:13,color:T.muted,fontWeight:600}}>{t(lang,"confirm_q")}</div>
+          {!aiDone&&(
+            <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"#2A7A40",fontWeight:700,background:"rgba(172,225,175,0.15)",padding:"3px 9px",borderRadius:9999}}>
+              <div style={{width:6,height:6,borderRadius:3,background:"#ACE1AF",animation:"pulse 1s infinite"}}/>
+              AI checking…
+            </div>
+          )}
+          {aiDone&&aiUpdated&&(
+            <div style={{fontSize:11,color:"#2A7A40",fontWeight:700,background:"rgba(172,225,175,0.15)",padding:"3px 9px",borderRadius:9999}}>
+              ✦ AI corrected
+            </div>
+          )}
+          {aiDone&&!aiUpdated&&(
+            <div style={{fontSize:11,color:T.muted,padding:"3px 9px"}}>✓ AI confirmed</div>
+          )}
+        </div>
         <div style={{display:"flex",alignItems:"center",gap:14,background:T.bg,borderRadius:20,padding:"14px 16px",marginBottom:14}}>
           <div style={{width:48,height:48,borderRadius:15,fontSize:24,background:parsed.type==="expense"?"rgba(255,179,167,0.25)":"rgba(172,225,175,0.25)",display:"flex",alignItems:"center",justifyContent:"center"}}>{cat.emoji}</div>
-          <div style={{flex:1}}><div style={{fontWeight:700,fontSize:15,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{parsed.description}</div><div style={{fontSize:12,color:T.muted,marginTop:2}}>{catLabel(cat,lang)} · {parsed.currency}</div></div>
+          <div style={{flex:1}}>
+            <div style={{fontWeight:700,fontSize:15,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{parsed.description}</div>
+            <div style={{fontSize:12,color:T.muted,marginTop:2}}>{catLabel(cat,lang)} · {parsed.currency}</div>
+          </div>
           <div style={{fontWeight:800,fontSize:18,fontFamily:"'Noto Sans',sans-serif",color:parsed.type==="expense"?"#C0392B":"#1A5A30"}}>{parsed.type==="expense"?"-":"+"}{fmt(parsed.amount,parsed.currency)}</div>
         </div>
         <input value={note} onChange={e=>setNote(e.target.value)} placeholder={t(lang,"note_placeholder")}
@@ -918,6 +939,7 @@ function ConfirmModal({parsed,lang,onConfirm,onEdit}){
           <button onClick={()=>onConfirm({...parsed,note:note.trim()})} style={{flex:2,padding:"14px",borderRadius:16,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",color:"#1A4020",fontWeight:800,fontSize:14,fontFamily:"'Noto Sans',sans-serif",boxShadow:"0 4px 16px rgba(172,225,175,0.4)"}}>{t(lang,"confirm_yes")}</button>
         </div>
       </div>
+      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}`}</style>
     </div>
   );
 }
@@ -1202,43 +1224,80 @@ function QuickAddBar({lang,onAdd,customCategories=[],userId=null,onShowAdvisor=n
     if(!input.trim()||status==="parsing")return;
     const text=input.trim();
     setStatus("parsing");
+
+    // Start AI in background immediately — don't wait
+    const aiPromise=fetch("https://api.phanote.com/parse",{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({text,userId})
+    }).then(r=>r.json()).catch(()=>null);
+
     const local=localParse(text);
+    const customCatIds=customCategories.map(c=>c.id);
+
     if(local&&local.amount>0){
       local.type=mode;
       local.category=normalizeCategory(local.category,mode);
-      const txId="tx_"+Date.now()+"_"+Math.random().toString(36).slice(2);
-      const catId=normalizeCategory(local.category,local.type);
-      const cat=findCat(catId,customCategories);
-      const tx={id:txId,amount:local.amount,currency:local.currency,type:local.type,categoryId:cat.id,description:local.description||text,note:"",date:new Date().toISOString().split("T")[0],confidence:local.confidence,createdAt:new Date().toISOString()};
-      onAdd(tx);
-      setInput("");setStatus("idle");inputRef.current?.focus();
-      fetch("https://api.phanote.com/parse",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text,userId})})
-        .then(r=>r.json()).then(ai=>{
+
+      // High confidence → save instantly, AI corrects silently in background
+      if(local.confidence>=0.88){
+        const catId=normalizeCategory(local.category,local.type);
+        const cat=findCat(catId,customCategories);
+        const txId="tx_"+Date.now()+"_"+Math.random().toString(36).slice(2);
+        const tx={id:txId,amount:local.amount,currency:local.currency,type:local.type,categoryId:cat.id,description:local.description||text,note:"",date:new Date().toISOString().split("T")[0],confidence:local.confidence,createdAt:new Date().toISOString()};
+        onAdd(tx);
+        setInput("");setStatus("idle");inputRef.current?.focus();
+        aiPromise.then(ai=>{
           if(ai&&ai.amount&&ai.category){
             const aiCat=normalizeCategory(ai.category,mode);
             if(aiCat!==catId){onAdd({...tx,categoryId:aiCat,_update:true});}
             if(userId){dbSaveMemory(userId,text,ai.category,mode,ai.confidence||0.8).catch(()=>{});}
           }
-        }).catch(()=>{});
+        });
+        return;
+      }
+
+      // Lower confidence → show confirm with local result NOW,
+      // then update the card live while user is reading it
+      setPending({...local,rawInput:text,_aiDone:false});
+      setStatus("confirm");
+      setInput("");
+      aiPromise.then(ai=>{
+        if(ai&&ai.amount&&ai.category){
+          const aiCat=normalizeCategory(ai.category,mode);
+          setPending(prev=>prev?{
+            ...prev,
+            categoryId:aiCat,
+            category:aiCat,
+            description:ai.description||prev.description,
+            confidence:ai.confidence||prev.confidence,
+            _aiDone:true,
+            _aiUpdated:aiCat!==(prev.category),
+          }:null);
+          if(userId){dbSaveMemory(userId,text,ai.category,mode,ai.confidence||0.8).catch(()=>{});}
+        } else {
+          setPending(prev=>prev?{...prev,_aiDone:true}:null);
+        }
+      });
       return;
     }
-    const customCatIds=customCategories.map(c=>c.id);
-    const result=await parseWithAI(text,customCatIds,userId);
+
+    // No local result → wait for AI fully then show confirm
+    const result=await aiPromise;
     if(!result||!result.amount||result.amount<=0){setStatus("error");setTimeout(()=>setStatus("idle"),2500);return;}
     result.type=mode;
     result.category=normalizeCategory(result.category,mode);
-    if(result.confidence<0.72){setPending({...result,rawInput:text});setStatus("confirm");}
-    else finalizeAdd({...result,rawInput:text,note:""});
-  },[input,status,customCategories,mode,onAdd]);
+    setPending({...result,rawInput:text,_aiDone:true});
+    setStatus("confirm");
+    setInput("");
+  },[input,status,customCategories,mode,onAdd,userId]);
 
   const finalizeAdd=(parsed)=>{
-    const catId=normalizeCategory(parsed.category,parsed.type);
+    const catId=normalizeCategory(parsed.category||parsed.categoryId,parsed.type);
     const cat=findCat(catId,customCategories);
     const _nv=parsed.items&&parsed.items.length>0?JSON.stringify({items:parsed.items,note:parsed.note||""}):parsed.note||"";
     onAdd({id:`tx_${Date.now()}_${Math.random().toString(36).slice(2)}`,amount:parsed.amount,currency:parsed.currency,type:parsed.type,categoryId:cat.id,description:parsed.description||parsed.rawInput||"",note:_nv,date:new Date().toISOString().split("T")[0],confidence:parsed.confidence,createdAt:new Date().toISOString()});
     setInput("");setStatus("idle");setPending(null);inputRef.current?.focus();
   };
-
   const isIncome=mode==="income";
   return(<>
     <div style={{background:"rgba(255,255,255,0.95)",borderRadius:18,padding:"6px 8px",boxShadow:T.shadow,display:"flex",alignItems:"center",gap:6,border:`1.5px solid ${isIncome?"rgba(172,225,175,0.4)":"rgba(255,179,167,0.3)"}`}}>
