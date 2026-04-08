@@ -1426,7 +1426,7 @@ function OcrButton({ profile, onAdd, lang, compact=false }) {
 
       {/* Confirm modal — uses Sheet for pinned footer + scroll fix */}
       {status === "confirm" && result && (
-        <Sheet open={true} onClose={() => setStatus("idle")} showCloseButton={false} maxHeight="85dvh" footer={
+        <Sheet open={true} onClose={() => setStatus("idle")} showCloseButton={false} maxHeight="calc(85dvh - 90px)" footer={
           <div style={{ borderTop:"0.5px solid rgba(45,45,58,0.06)", paddingTop:12 }}>
             <div style={{ display:"flex", gap:10 }}>
               <button onClick={() => setStatus("idle")}

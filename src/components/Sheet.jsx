@@ -27,7 +27,7 @@ export default function Sheet({
   title,
   children,
   footer,
-  maxHeight = "88dvh",
+  maxHeight = "calc(88dvh - 90px)",
   showCloseButton = true,
 }) {
   const kbOffset = useKeyboardOffset();
@@ -45,7 +45,6 @@ export default function Sheet({
         display: "flex",
         alignItems: "flex-end",
         justifyContent: "center",
-        paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 72px)",
       }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
@@ -55,6 +54,7 @@ export default function Sheet({
         style={{
           background: "#fff",
           borderRadius: "28px 28px 0 0",
+          marginBottom: "calc(env(safe-area-inset-bottom, 0px) + 90px)",
           width: "100%",
           maxWidth: 430,
           maxHeight,
