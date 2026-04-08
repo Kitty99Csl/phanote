@@ -10,6 +10,7 @@
  */
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@supabase/supabase-js";
+import Sheet from "./components/Sheet";
 
 // ─── SUPABASE ─────────────────────────────────────────────────
 const supabase = createClient(
@@ -1161,49 +1162,46 @@ function EditTransactionModal({tx,lang,onSave,onClose,customCategories=[]}){
 // ═══ CONFIRM MODAL ════════════════════════════════════════════
 function ConfirmModal({parsed,lang,onConfirm,onEdit}){
   const[note,setNote]=useState("");
-  const kbOffset=useKeyboardOffset();
   const cat=findCat(parsed.category||parsed.categoryId);
   const aiDone=parsed._aiDone;
   const aiUpdated=parsed._aiUpdated;
   return(
-    <div style={{position:"fixed",inset:0,zIndex:1000,background:"rgba(30,30,40,0.5)",backdropFilter:"blur(4px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
-      <div style={{background:"#fff",borderRadius:"28px 28px 0 0",padding:"20px 24px",paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 20px)",width:"100%",maxWidth:430,animation:"slideUp .35s cubic-bezier(.34,1.2,.64,1)",
-        transform:kbOffset>0?`translateY(-${kbOffset}px)`:undefined,transition:"transform .25s ease"}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
-          <div style={{fontSize:13,color:T.muted,fontWeight:600}}>{t(lang,"confirm_q")}</div>
-          {!aiDone&&(
-            <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"#2A7A40",fontWeight:700,background:"rgba(172,225,175,0.15)",padding:"3px 9px",borderRadius:9999}}>
-              <div style={{width:6,height:6,borderRadius:3,background:"#ACE1AF",animation:"pulse 1s infinite"}}/>
-              AI checking…
-            </div>
-          )}
-          {aiDone&&aiUpdated&&(
-            <div style={{fontSize:11,color:"#2A7A40",fontWeight:700,background:"rgba(172,225,175,0.15)",padding:"3px 9px",borderRadius:9999}}>
-              ✦ AI corrected
-            </div>
-          )}
-          {aiDone&&!aiUpdated&&(
-            <div style={{fontSize:11,color:T.muted,padding:"3px 9px"}}>✓ AI confirmed</div>
-          )}
-        </div>
-        <div style={{display:"flex",alignItems:"center",gap:14,background:T.bg,borderRadius:20,padding:"14px 16px",marginBottom:14}}>
-          <div style={{width:48,height:48,borderRadius:15,fontSize:24,background:parsed.type==="expense"?"rgba(255,179,167,0.25)":"rgba(172,225,175,0.25)",display:"flex",alignItems:"center",justifyContent:"center"}}>{cat.emoji}</div>
-          <div style={{flex:1}}>
-            <div style={{fontWeight:700,fontSize:15,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{parsed.description}</div>
-            <div style={{fontSize:12,color:T.muted,marginTop:2}}>{catLabel(cat,lang)} · {parsed.currency}</div>
-          </div>
-          <div style={{fontWeight:800,fontSize:18,fontFamily:"'Noto Sans',sans-serif",color:parsed.type==="expense"?"#C0392B":"#1A5A30"}}>{parsed.type==="expense"?"-":"+"}{fmt(parsed.amount,parsed.currency)}</div>
-        </div>
-        <input value={note} onChange={e=>setNote(e.target.value)} placeholder={t(lang,"note_placeholder")}
-          style={{width:"100%",padding:"11px 14px",borderRadius:14,border:"1.5px solid rgba(45,45,58,0.1)",outline:"none",fontSize:13,fontFamily:"'Noto Sans',sans-serif",color:T.dark,background:"rgba(172,225,175,0.06)",marginBottom:14,boxSizing:"border-box"}}
-          onFocus={e=>e.target.style.borderColor="#ACE1AF"} onBlur={e=>e.target.style.borderColor="rgba(45,45,58,0.1)"}/>
-        <div style={{display:"flex",gap:10}}>
-          <button onClick={onEdit} style={{flex:1,padding:"14px",borderRadius:16,border:"none",cursor:"pointer",background:"rgba(155,155,173,0.12)",color:T.muted,fontWeight:700,fontSize:14,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"confirm_edit")}</button>
-          <button onClick={()=>onConfirm({...parsed,note:note.trim()})} style={{flex:2,padding:"14px",borderRadius:16,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",color:"#1A4020",fontWeight:800,fontSize:14,fontFamily:"'Noto Sans',sans-serif",boxShadow:"0 4px 16px rgba(172,225,175,0.4)"}}>{t(lang,"confirm_yes")}</button>
-        </div>
+    <Sheet open={true} onClose={onEdit} showCloseButton={false} footer={
+      <div style={{display:"flex",gap:10}}>
+        <button onClick={onEdit} style={{flex:1,padding:"14px",borderRadius:16,border:"none",cursor:"pointer",background:"rgba(155,155,173,0.12)",color:T.muted,fontWeight:700,fontSize:14,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"confirm_edit")}</button>
+        <button onClick={()=>onConfirm({...parsed,note:note.trim()})} style={{flex:2,padding:"14px",borderRadius:16,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",color:"#1A4020",fontWeight:800,fontSize:14,fontFamily:"'Noto Sans',sans-serif",boxShadow:"0 4px 16px rgba(172,225,175,0.4)"}}>{t(lang,"confirm_yes")}</button>
       </div>
+    }>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14,paddingTop:20}}>
+        <div style={{fontSize:13,color:T.muted,fontWeight:600}}>{t(lang,"confirm_q")}</div>
+        {!aiDone&&(
+          <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"#2A7A40",fontWeight:700,background:"rgba(172,225,175,0.15)",padding:"3px 9px",borderRadius:9999}}>
+            <div style={{width:6,height:6,borderRadius:3,background:"#ACE1AF",animation:"pulse 1s infinite"}}/>
+            AI checking…
+          </div>
+        )}
+        {aiDone&&aiUpdated&&(
+          <div style={{fontSize:11,color:"#2A7A40",fontWeight:700,background:"rgba(172,225,175,0.15)",padding:"3px 9px",borderRadius:9999}}>
+            ✦ AI corrected
+          </div>
+        )}
+        {aiDone&&!aiUpdated&&(
+          <div style={{fontSize:11,color:T.muted,padding:"3px 9px"}}>✓ AI confirmed</div>
+        )}
+      </div>
+      <div style={{display:"flex",alignItems:"center",gap:14,background:T.bg,borderRadius:20,padding:"14px 16px",marginBottom:14}}>
+        <div style={{width:48,height:48,borderRadius:15,fontSize:24,background:parsed.type==="expense"?"rgba(255,179,167,0.25)":"rgba(172,225,175,0.25)",display:"flex",alignItems:"center",justifyContent:"center"}}>{cat.emoji}</div>
+        <div style={{flex:1}}>
+          <div style={{fontWeight:700,fontSize:15,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{parsed.description}</div>
+          <div style={{fontSize:12,color:T.muted,marginTop:2}}>{catLabel(cat,lang)} · {parsed.currency}</div>
+        </div>
+        <div style={{fontWeight:800,fontSize:18,fontFamily:"'Noto Sans',sans-serif",color:parsed.type==="expense"?"#C0392B":"#1A5A30"}}>{parsed.type==="expense"?"-":"+"}{fmt(parsed.amount,parsed.currency)}</div>
+      </div>
+      <input value={note} onChange={e=>setNote(e.target.value)} placeholder={t(lang,"note_placeholder")}
+        style={{width:"100%",padding:"11px 14px",borderRadius:14,border:"1.5px solid rgba(45,45,58,0.1)",outline:"none",fontSize:13,fontFamily:"'Noto Sans',sans-serif",color:T.dark,background:"rgba(172,225,175,0.06)",boxSizing:"border-box"}}
+        onFocus={e=>e.target.style.borderColor="#ACE1AF"} onBlur={e=>e.target.style.borderColor="rgba(45,45,58,0.1)"}/>
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}`}</style>
-    </div>
+    </Sheet>
   );
 }
 
@@ -1426,82 +1424,69 @@ function OcrButton({ profile, onAdd, lang, compact=false }) {
         </div>
       )}
 
-      {/* Confirm modal — layout: header + scrollable items + pinned save button */}
+      {/* Confirm modal — uses Sheet for pinned footer + scroll fix */}
       {status === "confirm" && result && (
-        <div style={{ position:"fixed", inset:0, zIndex:3000, background:"rgba(30,30,40,0.6)", backdropFilter:"blur(4px)", display:"flex", alignItems:"flex-end", justifyContent:"center" }}
-          onClick={e => { if (e.target === e.currentTarget) setStatus("idle"); }}>
-          <div style={{ background:"#fff", borderRadius:"28px 28px 0 0", width:"100%", maxWidth:430, animation:"slideUp .3s ease",
-            display:"flex", flexDirection:"column",
-            maxHeight:"85dvh", // never taller than 85% of screen
-            paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 0px)",
-          }}>
-            {/* Scrollable content area */}
-            <div style={{ overflowY:"auto", WebkitOverflowScrolling:"touch", flex:1, padding:"24px 24px 0" }}>
-            <div style={{ textAlign:"center", marginBottom:16 }}>
-              <div style={{ fontSize:14, color:T.muted, marginBottom:6, fontWeight:600 }}>
-                {lang==="lo"?"📷 ອ່ານໃບບິນໄດ້!":lang==="th"?"📷 อ่านใบเสร็จได้!":"📷 Receipt scanned!"}
-              </div>
-              <div style={{ display:"inline-block", padding:"2px 10px", borderRadius:8, fontSize:11, fontWeight:700,
-                background: result.confidence >= 0.8 ? "rgba(172,225,175,0.2)" : "rgba(255,179,167,0.2)",
-                color: result.confidence >= 0.8 ? "#1A5A30" : "#A03020" }}>
-                {result.confidence >= 0.8 ? "✓ High confidence" : "⚠ Please verify"}
-              </div>
-            </div>
-
-            {/* Transaction preview */}
-            <div style={{ background:T.bg, borderRadius:20, padding:"16px 18px", marginBottom:16 }}>
-              <div style={{ display:"flex", alignItems:"center", gap:14 }}>
-                <div style={{ width:52, height:52, borderRadius:16, background:"rgba(255,179,167,0.2)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:26, flexShrink:0 }}>
-                  {findCat(result.category || "other", profile?.customCategories || []).emoji}
-                </div>
-                <div style={{ flex:1 }}>
-                  <div style={{ fontWeight:700, fontSize:16, color:T.dark, fontFamily:"'Noto Sans',sans-serif" }}>{result.description}</div>
-                  <div style={{ fontSize:12, color:T.muted, marginTop:2 }}>
-                    {catLabel(findCat(result.category || "other", profile?.customCategories || []), lang)} · {result.currency}
-                  </div>
-                </div>
-                <div style={{ fontWeight:800, fontSize:20, color:"#C0392B", fontFamily:"'Noto Sans',sans-serif" }}>
-                  −{fmt(result.amount, result.currency || "LAK")}
-                </div>
-              </div>
-              {/* Item list if OCR extracted line items */}
-              {result.items && result.items.length > 0 && (
-                <div style={{ marginTop:12, borderTop:"0.5px solid rgba(45,45,58,0.07)", paddingTop:10 }}>
-                  <div style={{ fontSize:10, fontWeight:700, color:T.muted, textTransform:"uppercase", letterSpacing:0.8, marginBottom:7 }}>
-                    {result.items.length} items detected
-                  </div>
-                  {result.items.map((item, i) => (
-                    <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"4px 0", borderBottom: i < result.items.length-1 ? "0.5px solid rgba(45,45,58,0.05)" : "none" }}>
-                      <span style={{ fontSize:12, color:T.dark }}>{item.name}</span>
-                      <span style={{ fontSize:12, fontWeight:700, color:T.muted }}>{fmt(item.amount, result.currency || "LAK")}</span>
-                    </div>
-                  ))}
-                  <div style={{ display:"flex", justifyContent:"space-between", marginTop:7, paddingTop:7, borderTop:"0.5px solid rgba(45,45,58,0.1)" }}>
-                    <span style={{ fontSize:12, fontWeight:800, color:T.dark }}>Total</span>
-                    <span style={{ fontSize:12, fontWeight:800, color:"#C0392B" }}>{fmt(result.amount, result.currency || "LAK")}</span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            </div> {/* end scrollable content */}
-
-            {/* Pinned action buttons — always visible at bottom */}
-            <div style={{ padding:"12px 24px", paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 16px)",
-              borderTop:"0.5px solid rgba(45,45,58,0.06)", background:"#fff", flexShrink:0 }}>
-              <div style={{ display:"flex", gap:10 }}>
-                <button onClick={() => setStatus("idle")}
-                  style={{ flex:1, padding:"14px", borderRadius:16, border:"none", cursor:"pointer", background:"rgba(45,45,58,0.06)", color:T.muted, fontWeight:700, fontSize:14, fontFamily:"'Noto Sans',sans-serif" }}>
-                  {lang==="lo"?"ຍົກເລີກ":lang==="th"?"ยกเลิก":"Cancel"}
-                </button>
-                <button onClick={confirmAdd}
-                  style={{ flex:2, padding:"14px", borderRadius:16, border:"none", cursor:"pointer", background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)", color:"#1A4020", fontWeight:800, fontSize:15, fontFamily:"'Noto Sans',sans-serif", boxShadow:"0 4px 16px rgba(172,225,175,0.4)" }}>
-                  {lang==="lo"?"ບັນທຶກ ✓":lang==="th"?"บันทึก ✓":"Save ✓"}
-                </button>
-              </div>
+        <Sheet open={true} onClose={() => setStatus("idle")} showCloseButton={false} maxHeight="85dvh" footer={
+          <div style={{ borderTop:"0.5px solid rgba(45,45,58,0.06)", paddingTop:12 }}>
+            <div style={{ display:"flex", gap:10 }}>
+              <button onClick={() => setStatus("idle")}
+                style={{ flex:1, padding:"14px", borderRadius:16, border:"none", cursor:"pointer", background:"rgba(45,45,58,0.06)", color:T.muted, fontWeight:700, fontSize:14, fontFamily:"'Noto Sans',sans-serif" }}>
+                {lang==="lo"?"ຍົກເລີກ":lang==="th"?"ยกเลิก":"Cancel"}
+              </button>
+              <button onClick={confirmAdd}
+                style={{ flex:2, padding:"14px", borderRadius:16, border:"none", cursor:"pointer", background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)", color:"#1A4020", fontWeight:800, fontSize:15, fontFamily:"'Noto Sans',sans-serif", boxShadow:"0 4px 16px rgba(172,225,175,0.4)" }}>
+                {lang==="lo"?"ບັນທຶກ ✓":lang==="th"?"บันทึก ✓":"Save ✓"}
+              </button>
             </div>
           </div>
-        </div>
+        }>
+          <div style={{ textAlign:"center", marginBottom:16, paddingTop:24 }}>
+            <div style={{ fontSize:14, color:T.muted, marginBottom:6, fontWeight:600 }}>
+              {lang==="lo"?"📷 ອ່ານໃບບິນໄດ້!":lang==="th"?"📷 อ่านใบเสร็จได้!":"📷 Receipt scanned!"}
+            </div>
+            <div style={{ display:"inline-block", padding:"2px 10px", borderRadius:8, fontSize:11, fontWeight:700,
+              background: result.confidence >= 0.8 ? "rgba(172,225,175,0.2)" : "rgba(255,179,167,0.2)",
+              color: result.confidence >= 0.8 ? "#1A5A30" : "#A03020" }}>
+              {result.confidence >= 0.8 ? "✓ High confidence" : "⚠ Please verify"}
+            </div>
+          </div>
+
+          {/* Transaction preview */}
+          <div style={{ background:T.bg, borderRadius:20, padding:"16px 18px", marginBottom:16 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:14 }}>
+              <div style={{ width:52, height:52, borderRadius:16, background:"rgba(255,179,167,0.2)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:26, flexShrink:0 }}>
+                {findCat(result.category || "other", profile?.customCategories || []).emoji}
+              </div>
+              <div style={{ flex:1 }}>
+                <div style={{ fontWeight:700, fontSize:16, color:T.dark, fontFamily:"'Noto Sans',sans-serif" }}>{result.description}</div>
+                <div style={{ fontSize:12, color:T.muted, marginTop:2 }}>
+                  {catLabel(findCat(result.category || "other", profile?.customCategories || []), lang)} · {result.currency}
+                </div>
+              </div>
+              <div style={{ fontWeight:800, fontSize:20, color:"#C0392B", fontFamily:"'Noto Sans',sans-serif" }}>
+                −{fmt(result.amount, result.currency || "LAK")}
+              </div>
+            </div>
+            {/* Item list if OCR extracted line items */}
+            {result.items && result.items.length > 0 && (
+              <div style={{ marginTop:12, borderTop:"0.5px solid rgba(45,45,58,0.07)", paddingTop:10 }}>
+                <div style={{ fontSize:10, fontWeight:700, color:T.muted, textTransform:"uppercase", letterSpacing:0.8, marginBottom:7 }}>
+                  {result.items.length} items detected
+                </div>
+                {result.items.map((item, i) => (
+                  <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"4px 0", borderBottom: i < result.items.length-1 ? "0.5px solid rgba(45,45,58,0.05)" : "none" }}>
+                    <span style={{ fontSize:12, color:T.dark }}>{item.name}</span>
+                    <span style={{ fontSize:12, fontWeight:700, color:T.muted }}>{fmt(item.amount, result.currency || "LAK")}</span>
+                  </div>
+                ))}
+                <div style={{ display:"flex", justifyContent:"space-between", marginTop:7, paddingTop:7, borderTop:"0.5px solid rgba(45,45,58,0.1)" }}>
+                  <span style={{ fontSize:12, fontWeight:800, color:T.dark }}>Total</span>
+                  <span style={{ fontSize:12, fontWeight:800, color:"#C0392B" }}>{fmt(result.amount, result.currency || "LAK")}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </Sheet>
       )}
     </>
   );
