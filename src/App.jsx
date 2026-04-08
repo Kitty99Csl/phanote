@@ -1518,8 +1518,8 @@ function QuickAddBar({lang,onAdd,customCategories=[],userId=null,onShowAdvisor=n
       local.type=mode;
       local.category=normalizeCategory(local.category,mode);
 
-      // High confidence → save instantly, AI corrects silently in background
-      if(local.confidence>=0.88){
+      // Confident local parse (≥0.60) → save instantly, AI corrects silently in background
+      if(local.confidence>=0.60){
         const catId=normalizeCategory(local.category,local.type);
         const cat=findCat(catId,customCategories);
         const txId="tx_"+Date.now()+"_"+Math.random().toString(36).slice(2);
@@ -1529,29 +1529,26 @@ function QuickAddBar({lang,onAdd,customCategories=[],userId=null,onShowAdvisor=n
         aiPromise.then(ai=>{
           if(ai&&ai.amount&&ai.category){
             const aiCat=normalizeCategory(ai.category,mode);
-            if(aiCat!==catId){onAdd({...tx,categoryId:aiCat,_update:true});}
+            if(aiCat!==catId&&(ai.confidence||0)>local.confidence){onAdd({...tx,categoryId:aiCat,confidence:ai.confidence||0.8,_update:true});}
             if(userId){dbSaveMemory(userId,text,ai.category,mode,ai.confidence||0.8).catch(()=>{});}
           }
         });
         return;
       }
 
-      // Lower confidence → show confirm with local result NOW,
-      // then update the card live while user is reading it
-      // Save immediately — AI corrects silently in background (instant UX, no confirm wait)
-      const catId2=normalizeCategory(local.category,local.type);
-      const cat2=findCat(catId2,customCategories);
-      const txId2="tx_"+Date.now()+"_"+Math.random().toString(36).slice(2);
-      const tx2={id:txId2,amount:local.amount,currency:local.currency,type:local.type,categoryId:cat2.id,description:local.description||text,note:"",date:new Date().toISOString().split("T")[0],confidence:local.confidence,createdAt:new Date().toISOString()};
-      onAdd(tx2);
+      // Low confidence (<0.60) → wait for AI up to 3s, pick best result, save once
+      const ai=await Promise.race([aiPromise,new Promise(r=>setTimeout(()=>r(null),3000))]);
+      const useAi=ai&&ai.amount>0&&(ai.confidence||0)>local.confidence;
+      const best=useAi
+        ?{amount:ai.amount,currency:ai.currency||local.currency,type:mode,category:normalizeCategory(ai.category,mode),description:ai.description||local.description||text,confidence:ai.confidence}
+        :{amount:local.amount,currency:local.currency,type:local.type,category:local.category,description:local.description||text,confidence:local.confidence};
+      const catId=normalizeCategory(best.category,best.type||mode);
+      const cat=findCat(catId,customCategories);
+      const txId="tx_"+Date.now()+"_"+Math.random().toString(36).slice(2);
+      const tx={id:txId,amount:best.amount,currency:best.currency,type:best.type||mode,categoryId:cat.id,description:best.description,note:"",date:new Date().toISOString().split("T")[0],confidence:best.confidence,createdAt:new Date().toISOString()};
+      onAdd(tx);
       setInput("");setStatus("idle");inputRef.current?.focus();
-      aiPromise.then(ai=>{
-        if(ai&&ai.amount&&ai.category){
-          const aiCat2=normalizeCategory(ai.category,mode);
-          if(aiCat2!==catId2){onAdd({...tx2,categoryId:aiCat2,_update:true});}
-          if(userId){dbSaveMemory(userId,text,ai.category,mode,ai.confidence||0.8).catch(()=>{});}
-        }
-      });
+      if(useAi&&userId){dbSaveMemory(userId,text,ai.category,mode,ai.confidence||0.8).catch(()=>{});}
       return;
     }
 
@@ -4115,7 +4112,9 @@ export default function App(){
       // Also update in DB if it's been saved (has a real UUID)
       if (tx.id && !tx.id.startsWith("tx_")) {
         const cat = findCat(tx.categoryId, profile?.customCategories || []);
-        try { await dbUpdateTransaction(tx.id, { category_name: cat.en, category_emoji: cat.emoji }); } catch {}
+        const updates = { category_name: cat.en, category_emoji: cat.emoji };
+        if (tx.confidence != null) updates.ai_confidence = tx.confidence;
+        try { await dbUpdateTransaction(tx.id, updates); } catch {}
       }
       return;
     }
