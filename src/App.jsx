@@ -438,14 +438,14 @@ const localParse = (text) => {
   const CAT_RULES = [
 
     // ══ INCOME ══════════════════════════════════════════════════
-    [/ເງິນເດືອນ|salary|wage|payroll|เงินเดือน/i,                                          'salary',        0.96],
+    [/ເງິນເດືອນ|salary|\bwage\b|payroll|เงินเดือน/i,                                       'salary',        0.96],
     [/ຂາຍ(?:ເຄື່ອງ|ຂອງ)?|ขาย|\bsell\b|\bsold\b|\bsale\b/i,                         'selling',       0.93],
     [/ຮັບຈ້າງ|ຄ່າຈ້າງ|freelance|commission|ฟรีแลนซ์/i,                                    'freelance',     0.93],
     [/ໂບນັດ|\bbonus\b|โบนัส/i,                                                           'bonus',         0.93],
     [/ລົງທຶນ|ຫຸ້ນ|\binvest|crypto|bitcoin|\bstock|หุ้น|ลงทุน/i,                          'investment',    0.90],
 
     // ══ TRANSFER (banks — very specific) ══════════════════════════
-    [/\b(bcel|jdb|ldb|bfl|onepay|apay|k\s*plus|promptpay|truemoney)\b/i,               'transfer',      0.92],
+    [/\b(bcel|jdb|ldb|bfl|onepay|apay|k\s*plus|promptpay|truemoney)\b(?!\s*(?:fee|fees|charge|charges|statement|statements))/i, 'transfer', 0.92],
     [/ໂອນ(?:ເງິນ)?(?!\s*ອອກ)|โอน(?:เงิน)?/i,                                            'transfer',      0.90],
 
     // ══ DONATION — ເຮັດບຸນ (very Lao — highest priority) ══════════
@@ -465,12 +465,13 @@ const localParse = (text) => {
     // ══ PHONE & INTERNET (before utilities) ══════════════════════
     [/ຄ່າໂທ|ຄ່າໂທລະສັບ|ຄ່າເນັດ|ເຕີມ(?:ເງິນ)?/i,                                       'phone_internet',0.97],
     [/\b(unitel|etl|ltc|beeline|ອູນີເທລ)\b/i,                                          'phone_internet',0.97],
-    [/\btopup\b|top[\s-]up|mobile\s*package|data\s*package/i,                       'phone_internet',0.93],
+    [/\btopup\b|top[\s-]?up(?:\s*phone)?|mobile\s*package|data\s*package|เติมเงิน/i, 'phone_internet',0.93],
     [/wifi\s*bill|phone\s*bill|internet\s*bill|ค่าเน็ต|ค่าโทร/i,                     'phone_internet',0.93],
 
     // ══ UTILITIES (ຄ່າໄຟ ຄ່ານ້ຳ) ════════════════════════════════
     [/ຄ່າໄຟ|ໄຟຟ້າ|\bedl\b|ຄ່ານ້ຳ|ນ້ຳປະປາ|\bnam\s*papa\b/i,                       'utilities',     0.98],
-    [/electricity|electric\s*bill|water\s*bill|ค่าไฟ|ค่าน้ำ|สาธารณูปโภค/i,           'utilities',     0.95],
+    [/electricity|electric\s*bill|water\s*bill|water\s*supply|ค่าไฟ|ค่าน้ำ|สาธารณูปโภค|ລັດວິສາຫະກິດນ້ຳປະປາ/i, 'utilities', 0.95],
+    [/trash|garbage|rubbish|waste\s*collect|ຂີ້ເຫຍື້ອ|ค่าขยะ/i,                    'utilities',     0.92],
 
     // ══ HOUSING (rent only) ════════════════════════════════════════
     [/ຄ່າເຊົ່າ|ເຊົ່າຫ້ອງ|ເຊົ່າບ້ານ|ค่าเช่า|เช่าบ้าน/i,                                  'rent',          0.97],
@@ -485,6 +486,7 @@ const localParse = (text) => {
     [/ຄ່າທຳນຽມ|ຄ່າ\s*atm|ຄ່າໂອນ|ຄ່າຝາກ|ໃບຂັບຂີ່|ຄ່າວີຊາ/i,                        'fees',          0.97],
     [/atm\s*fee|transfer\s*fee|bank\s*fee|service\s*fee|visa\s*fee/i,              'fees',          0.94],
     [/ຄ່າປັບ|police\s*ticket|ໃບສັ່ງ|ค่าปรับ|ค่าธรรมเนียม/i,                          'fees',          0.92],
+    [/bank\s*statement|bank\s*charge|monthly\s*fee|bcel\s*fee|annual\s*fee/i,       'fees',          0.93],
 
     // ══ FAMILY ════════════════════════════════════════════════════
     [/ໃຫ້ພໍ່|ໃຫ້ແມ່|ໃຫ້ພໍ່ແມ່|ສົ່ງໃຫ້ພໍ່|ສົ່ງໃຫ້ແມ່|ຄ່ານົມ|ຜ້າອ້ອມ|ລ້ຽງລູກ/i,      'family',        0.97],
@@ -534,7 +536,7 @@ const localParse = (text) => {
     [/ping\s*(?:kai|moo|pa|sin)|ປີ້ງ(?:ໄກ່|ໝູ|ປາ|ຊີ້ນ)/i,                          'food',          0.96],
     [/khao\s*piak|kao\s*piek|ເຂົ້າປຽກ|khao\s*poon|ເຂົ້າປຸ້ນ|khao\s*soi/i,       'food',          0.96],
     [/khao\s*niao|ເຂົ້າໜຽວ|sticky\s*rice|ເຂົ້າຈີ່ປາເຕ້|khao\s*jee/i,             'food',          0.95],
-    [/tom\s*yum|ຕົ້ມຍຳ|suki|ສຸກີ້|shabu|ຊາບູ|buffet|ບຸບເຟ້/i,                      'food',          0.95],
+    [/tom\s*yum|ຕົ້ມຍຳ|suki|ສຸກີ້|shabu|ຊາບູ|buffet|ບຸບເຟ້|wark|ແຊບ/i,             'food',          0.95],
     [/laap|larb|laab|ລາບ|khao\s*man|khao\s*na\s*ped|boat\s*noodle/i,              'food',          0.95],
     [/ເຂົ້າ|ອາຫານ|ກິນ|ຊີ້ນ|ໄກ່|ໄຂ່|ຜັກ|ປາ|ໝູ|ກຸ້ງ/i,                              'food',          0.95],
     [/ข้าว|อาหาร|หมูกระทะ|ส้มตำ|ลาบ|ผัดไทย|ก๋วยเตี๋ยว|ไก่|ไข่|เนื้อ|ผัก/i,       'food',          0.93],
@@ -552,7 +554,7 @@ const localParse = (text) => {
     [/\bapple\b|\bbanana\b|\bmango\b|watermelon|papaya|\bfruit\b/i,            'food',          0.92],
     [/sausage|\bham\b|\bbacon\b|meatball|\bsteak\b|ลูกชิ้น|ไส้อั่ว/i,           'food',          0.93],
     [/\bmilk\b|\bcheese\b|yogurt|\bbutter\b|tofu|ขนม|dessert|ของหวาน/i,         'food',          0.91],
-    [/jam|honey|sauce|ketchup|chocolate|\bsnack\b|chips|candy|ຂະໜົມ/i,             'food',          0.90],
+    [/\bjam\b|honey|sauce|ketchup|chocolate|\bsnack\b|chips|candy|ຂະໜົມ/i,          'food',          0.90],
     [/breakfast|lunch|dinner|\bfood\b|\beat\b|meal|restaurant|street\s*food/i,   'food',          0.90],
     [/oeuvre|takeaway|packed\s*lunch|ຫໍ່ກັບ|khao\s*kong|อาหารข้างทาง/i,            'food',          0.90],
 
@@ -564,7 +566,7 @@ const localParse = (text) => {
     [/ptt|laopec|petrolimex|petrotrade|star\s*oil|plus\s*gas|pv\s*oil|orl|lsfc/i,'transport',     0.96],
     // LCR train (Lao-China Railway)
     [/\blcr\b|lao\s*china\s*rail|lot\s*fai|ລົດໄຟ|high\s*speed\s*train/i,     'transport',     0.95],
-    [/\bgrab\b|\bfuel\b|petrol|diesel|gasoline|parking|ค่าน้ำมัน/i,              'transport',     0.93],
+    [/\bgrab\b|\bfuel\b|petrol|diesel|gasoline|parking|ค่าน้ำมัน|road\s*tax|vehicle\s*tax|ພາສີລົດ/i, 'transport', 0.93],
     [/speedboat|slow\s*boat|heua|ferry|ເຮືອ|boat\s*ticket|ปีเรือ/i,                'transport',     0.93],
     [/lao\s*airlines|wattay|airport|sanam\s*bin|สนามบิน|ตั๋วเครื่องบิน/i,          'transport',     0.93],
     [/motorbike\s*rental|sao\s*lot|car\s*rental|ເຊົ່າລົດ|เช่ารถ/i,               'transport',     0.92],
@@ -586,11 +588,13 @@ const localParse = (text) => {
     [/\bconcert\b|live\s*music|live\s*band|dj\s*party|edm|stage\s*show/i,      'entertainment', 0.93],
     [/\bparty\b|night\s*market|walking\s*street|water\s*park|amusement/i,        'entertainment', 0.91],
     [/petanque|ເປຕັງ|football\s*(?:match|game)|swimming\s*pool|สระว่ายน้ำ/i,       'entertainment', 0.91],
+    [/lottery|lotto|ຊື້ເລກ|ຫວຍ|หวย|ลอตเตอรี่|scratch\s*card|ຂູດ/i,               'entertainment', 0.95],
 
     // ══ SUBSCRIPTIONS ════════════════════════════════════════════
     [/netflix|spotify|youtube\s*premium|disney\s*\+?|icloud/i,                     'subscriptions', 0.98],
     [/google\s*one|apple\s*one|line\s*tv|wetv|\bviu\b|canva/i,                   'subscriptions', 0.97],
     [/ສະໝັກ(?:\s*ລາຍ)?|ຕໍ່ອາຍຸ|auto\s*renew|monthly\s*sub/i,                    'subscriptions', 0.93],
+    [/openai|chatgpt|anthropic|\bclaude\b|midjourney|github\s*copilot|\bapi\b.*subscr/i, 'subscriptions', 0.96],
 
     // ══ HOUSEHOLD ════════════════════════════════════════════════
     [/ຂອງໃຊ້ເຮືອນ|ຂອງໃຊ້|ນ້ຳຢາ|ຜ້າທຳຄວາມ/i,                                        'household',     0.95],
@@ -620,11 +624,12 @@ const localParse = (text) => {
 
     // ══ TRAVEL ════════════════════════════════════════════════════
     [/\bflight\b|\bhotel\b|ໂຮງແຮມ|ທ່ອງທ່ຽວ|wattay|lao\s*airlines/i,           'travel',        0.95],
-    [/resort|booking|vacation|tur|tour\s*package|เที่ยว|โรงแรม/i,                   'travel',        0.93],
+    [/resort|booking|vacation|\btur\b|tour\s*package|เที่ยว|โรงแรม/i,              'travel',        0.93],
 
     // ══ SHOPPING ════════════════════════════════════════════════
     [/icon\s*mall|vientiane\s*center|miniso|\bcaddi\b|talat\s*sao/i,            'shopping',      0.96],
-    [/ຊື້ເຄື່ອງ|shopee|lazada|clothes|shirt|bag|mall|electronics/i,                  'shopping',      0.93],
+    [/ຊື້ເຄື່ອງ|shopee|lazada|clothes|shirt|\bbag\b|\bmall\b|electronics/i,          'shopping',      0.93],
+    [/delivery|shipping|ຄ່າສົ່ງ|ຄ່າເຄື່ອງ|ค่าส่ง|ค่าจัดส่ง|grab\s*express|lalamove/i, 'shopping', 0.93],
 
     // ══ GAMING ════════════════════════════════════════════════════
     [/steam|playstation|\bps[45]\b|xbox|roblox|pubg|garena|free\s*fire/i,         'gaming',        0.97],
@@ -633,7 +638,7 @@ const localParse = (text) => {
 
     // ══ EDUCATION ════════════════════════════════════════════════
     [/ຄ່າຮຽນ|ໂຮງຮຽນ|\bຮຽນ\b|ค่าเรียน|เรียน|โรงเรียน/i,                            'education',     0.95],
-    [/school|university|college|course|tuition|workshop|\bbook\b/i,                'education',     0.93],
+    [/school|university|college|course|tuition|workshop|\bbook\b|ໜັງສື/i,          'education',     0.93],
   ];
 
   // ── Income/expense type detection ─────────────────────────
@@ -644,10 +649,61 @@ const localParse = (text) => {
     return 'expense';
   };
 
+  // ── Levenshtein distance (for Latin-script fuzzy matching) ──
+  const levenshtein = (a, b) => {
+    const m = a.length, n = b.length;
+    const dp = Array.from({length: m + 1}, (_, i) => i);
+    for (let j = 1; j <= n; j++) {
+      let prev = dp[0];
+      dp[0] = j;
+      for (let i = 1; i <= m; i++) {
+        const tmp = dp[i];
+        dp[i] = a[i-1] === b[j-1] ? prev : 1 + Math.min(prev, dp[i], dp[i-1]);
+        prev = tmp;
+      }
+    }
+    return dp[m];
+  };
+
+  // ── Fuzzy keyword dictionary (Latin-only, high-value words) ─
+  const FUZZY_WORDS = {
+    coffee:'coffee',cafe:'coffee',latte:'coffee',espresso:'coffee',cappuccino:'coffee',americano:'coffee',starbucks:'coffee',
+    beer:'drinks',whisky:'drinks',whiskey:'drinks',vodka:'drinks',cocktail:'drinks',soju:'drinks',
+    gas:'transport',fuel:'transport',taxi:'transport',parking:'transport',gasoline:'transport',diesel:'transport',petrol:'transport',
+    grocery:'groceries',groceries:'groceries',supermarket:'groceries',market:'groceries',
+    restaurant:'food',breakfast:'food',lunch:'food',dinner:'food',pizza:'food',burger:'food',sushi:'food',noodle:'food',chicken:'food',steak:'food',
+    hotel:'travel',flight:'travel',resort:'travel',vacation:'travel',booking:'travel',
+    shopping:'shopping',clothes:'shopping',electronics:'shopping',delivery:'shopping',shipping:'shopping',
+    netflix:'subscriptions',spotify:'subscriptions',subscription:'subscriptions',youtube:'subscriptions',
+    pharmacy:'health',hospital:'health',medicine:'health',clinic:'health',dental:'health',
+    salon:'beauty',haircut:'beauty',massage:'beauty',skincare:'beauty',
+    gym:'fitness',yoga:'fitness',badminton:'fitness',football:'fitness',
+    karaoke:'entertainment',cinema:'entertainment',movie:'entertainment',concert:'entertainment',bowling:'entertainment',lottery:'entertainment',
+    rent:'rent',apartment:'rent',
+    electricity:'utilities',water:'utilities',trash:'utilities',garbage:'utilities',
+    repair:'repair',mechanic:'repair',
+    school:'education',university:'education',tuition:'education',course:'education',
+  };
+
   // ── Category detection ─────────────────────────────────────
   const detectCategory = (line) => {
+    // Exact regex match (fast, high confidence)
     for (const [pattern, cat, conf] of CAT_RULES) {
       if (pattern.test(line)) return { category: cat, confidence: conf };
+    }
+    // Fuzzy fallback — Latin words only
+    const words = line.toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/).filter(w => w.length >= 3);
+    for (const word of words) {
+      if (word.length <= 5) {
+        // Exact match only for short words (too many near-neighbors for fuzzy)
+        if (FUZZY_WORDS[word]) return { category: FUZZY_WORDS[word], confidence: 0.65 };
+      } else {
+        // Fuzzy match (distance 1) for longer words
+        for (const [target, cat] of Object.entries(FUZZY_WORDS)) {
+          if (Math.abs(word.length - target.length) > 1) continue;
+          if (levenshtein(word, target) <= 1) return { category: cat, confidence: 0.65 };
+        }
+      }
     }
     return { category: 'other', confidence: 0.40 };
   };
