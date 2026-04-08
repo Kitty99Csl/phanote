@@ -1,8 +1,51 @@
 /**
- * PHANOTE — Main API Worker v2
+ * PHANOTE — Main API Worker v4.1
  * Domain: api.phanote.com
- * AI: Claude Haiku (fastest + cheapest)
+ *
+ * /parse  → Gemini 2.5 Flash (best Lao/Thai text understanding)
+ * /advise → Claude Haiku    (best conversational financial reasoning)
+ * /ocr    → Gemini 2.5 Flash Vision (best Lao script OCR)
+ *
+ * Session 4 changes:
+ * - Added per-IP rate limiting (in-memory, per worker instance)
  */
+
+// ─── RATE LIMITING (in-memory, per-IP) ───────────────────────────
+// Protects against abuse and runaway scripts.
+// Per-IP limits — real users won't ever hit these.
+const rateLimitCache = new Map();
+
+const RATE_LIMITS = {
+  "/parse":  120,  // 120 req/min per IP
+  "/advise":  20,  // 20 req/min per IP
+  "/ocr":     15,  // 15 req/min per IP
+};
+
+function checkRateLimit(ip, route) {
+  const limit = RATE_LIMITS[route];
+  if (!limit) return true; // unlisted routes not limited (e.g. /health)
+
+  const key = `${ip}:${route}`;
+  const now = Date.now();
+  const entry = rateLimitCache.get(key) || { count: 0, reset: now + 60000 };
+
+  if (now > entry.reset) {
+    entry.count = 0;
+    entry.reset = now + 60000;
+  }
+
+  entry.count++;
+  rateLimitCache.set(key, entry);
+
+  // Periodic cleanup to prevent memory bloat
+  if (rateLimitCache.size > 5000) {
+    for (const [k, v] of rateLimitCache.entries()) {
+      if (now > v.reset) rateLimitCache.delete(k);
+    }
+  }
+
+  return entry.count <= limit;
+}
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -10,86 +53,153 @@ const CORS = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
-const PARSE_SYSTEM = `You are a financial transaction parser for Phanote, a personal finance app used in Laos and Thailand.
-Users write in Lao, Thai, English, or mixed. Be smart about SEA context.
+// ─── PARSE SYSTEM — Gemini 2.5 Flash ────────────────────────────
+// Uses Gemini's superior Lao/Thai language understanding
+// Category names MUST match App.jsx normalizeCategory keys exactly
+const PARSE_SYSTEM = `You are a financial transaction parser for Phanote, a personal finance app based in Laos.
 
-CURRENCY: บาท/baht/THB=THB, ກີບ/kip/LAK=LAK, $/dollar/USD=USD. Default=LAK.
+PRIMARY MARKET: Laos (LAK, Lao script ພາສາລາວ)
+SECONDARY: Thailand (THB, Thai script) — Lao users sometimes shop in Thailand or use Thai terms
+ALSO SUPPORTED: English — used by the app owner and for merchant names
 
-TYPE — income keywords: salary/เงินเดือน/ເງິນເດືອນ, freelance, sell/ຂາຍ, received/ໄດ້ຮັບ, gift, bonus, dividend
-TYPE — everything else = expense
+USERS write in: Lao (primary), English, Thai, or mixed. Prioritize Lao context when ambiguous.
 
-CATEGORIES (pick ONE most specific):
-- food: meals, rice, noodle, ເຂົ້າ, ອາຫານ, restaurant, burger, pizza, kfc, sushi
-- drinks: beer, alcohol, wine, Beer Lao, lao lao, ດື່ມ, เบียร์
-- coffee: coffee, cafe, กาแฟ, ກາເຟ, starbucks, amazon cafe
-- transport: grab, taxi, tuk tuk, fuel, gas, bus, ລົດ, รถ
-- travel: flight, hotel, trip, vacation, ທ່ອງທ່ຽວ
-- shopping: clothes, bag, market, mall, caddi, ຊື້ເຄື່ອງ
-- rent: rent, electricity, water, internet, bill, ຄ່າ, phone bill
-- health: doctor, hospital, medicine, ໂຮງໝໍ, ຢາ
-- beauty: salon, haircut, spa, nail, ຕັດຜົມ
-- fitness: golf, gym, sport, exercise, ອອກກຳລັງ
-- entertainment: netflix, spotify, youtube, disney, icon, karaoke, movie, concert, morlam, mor lam, party, subscription
-- gaming: game, steam, playstation, xbox
-- education: school, book, course, ຮຽນ
-- salary: salary, wage, เงินเดือน, ເງິນເດືອນ
-- freelance: freelance, commission, ຄ່າຈ້າງ
-- selling: sell, sold, ຂາຍ, sale
-- gift: gift, present, ຂອງຂວັນ
-- bonus: bonus, ໂບນັດ
-- investment: stocks, crypto, interest, dividend
-- transfer: transfer, received money, ໂອນ
-- other: anything unclear
+CRITICAL — NUMBER SHORTHANDS (Lao-first):
+- ພັນ (Lao) / พัน (Thai) / "k" = × 1,000  →  50ພັນ or 50k = 50000
+- ແສນ (Lao) / แสน (Thai) = × 100,000  →  1.5ແສນ = 150000
+- ລ້ານ (Lao) / ล้าน (Thai) = × 1,000,000  →  2ລ້ານ = 2000000
+- Output "amount" as plain integer. Strip all commas and periods.
 
-IMPORTANT CONTEXT:
-- "icon" in Laos = Icon shopping (entertainment/shopping)
-- "mor lam" / "morlam" = Lao traditional music show (entertainment)
-- "lao lao" = Lao rice whisky (drinks)
-- "BCEL" = bank (transfer)
-- "true money" = payment service (transfer)
-- Golf in Laos is very common leisure activity (fitness)
+CURRENCY — DEFAULT IS LAK:
+- ₭, ກີບ, kip, LAK = LAK  ← PRIMARY (most transactions)
+- ฿, บาท, baht, THB = THB  ← used for Thai purchases
+- $, dollar, USD = USD      ← used by app owner
+- No currency stated + amount > 10,000 → LAK
+- No currency stated + amount < 5,000 and Thai context → THB
+- Otherwise → LAK
+
+TYPE:
+- income: ເງິນເດືອນ/salary, ຂາຍ/sell, ໄດ້ຮັບ/received, freelance, bonus, dividend
+- expense: everything else
+
+CATEGORIES — use these exact strings only:
+Expense: food | groceries | drinks | coffee | transport | travel | rent | utilities | phone_internet | household | shopping | health | beauty | fitness | entertainment | subscriptions | gaming | education | family | donation | debt_payment | fees | repair | other
+Income: salary | freelance | selling | bonus | investment | gift | transfer | other_inc
+
+KEY LAO DISAMBIGUATION (Lao is primary market):
+- groceries: ຊື້ຂອງກິນ ຊື້ຂອງ ຕະຫຼາດ Villa Market fresh market (buying ingredients for home) — NOT restaurant eating
+- food: ອາຫານ ເຂົ້າ ຕຳ ເຝີ ລາບ ໝູກະທະ restaurant meals street food
+- utilities: ຄ່າໄຟ ຄ່ານ້ຳ EDL Nam Papa electricity water garbage fee — NOT rent
+- phone_internet: ຄ່າໂທ ຄ່າເນັດ ເຕີມ Unitel ETL wifi bill — NOT utilities
+- rent: ຄ່າເຊົ່າ apartment room rent only — NOT bills
+- household: ຂອງໃຊ້ເຮືອນ detergent cleaning appliances furniture
+- subscriptions: netflix spotify icloud youtube premium disney+ Line TV — recurring apps
+- family: ໃຫ້ພໍ່ ໃຫ້ແມ່ ສົ່ງໃຫ້ childcare baby milk parents support
+- donation: ເຮັດບຸນ ໃສ່ບາດ ຖວາຍ ວັດ merit temple monk alms — very common in Laos
+- debt_payment: ຜ່ອນ ໜີ້ ກູ້ loan installment repayment
+- fees: ຄ່າທຳນຽມ ATM fee transfer fee visa fee bank charge
+- repair: ຊ່ອມ motorbike repair phone repair home fix
+- transfer: BCEL JDB LDB OnePay ໂອນ — if bank + item mentioned, use ITEM category, set payment_provider
+- entertainment: ມໍລຳ morlam karaoke concert movie party — events/shows only
+- subscriptions vs entertainment: netflix/spotify = subscriptions; concert ticket = entertainment
+
+MULTI-ITEM: If multiple lines/items detected, parse each and sum total. Pick best overall category.
 
 Return ONLY valid JSON:
-{"amount":number,"currency":"LAK"|"THB"|"USD","type":"expense"|"income","category":"food"|"drinks"|"coffee"|"transport"|"travel"|"shopping"|"rent"|"health"|"beauty"|"fitness"|"entertainment"|"gaming"|"education"|"salary"|"freelance"|"selling"|"gift"|"bonus"|"investment"|"transfer"|"other","description":"clean short English/Lao label","confidence":0.0-1.0}`;
+Single: {"amount":number,"currency":"LAK"|"THB"|"USD","type":"expense"|"income","category":"...","subcategory":"...","description":"Short Label","confidence":0.0-1.0,"payment_provider":"BCEL"|null}
+Multi:  {"amount":number,"currency":"LAK"|"THB"|"USD","type":"expense"|"income","category":"...","subcategory":"...","description":"Short Label","confidence":0.0-1.0,"payment_provider":"BCEL"|null,"items":[{"name":"...","amount":number}]}`;
+
+// ─────────────────────────────────────────────
+const callGemini = async (env, payload) => {
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${env.GEMINI_API_KEY}`,
+    { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }
+  );
+  return res.json();
+};
+
+// ─── AMOUNT SAFETY FIX ───────────────────────────────────────────
+// Lao receipts use . as thousands separator: 573.000 means 573000
+const fixAmount = (a, currency) => {
+  const n = Number(a);
+  if ((currency === "LAK" || !currency) && n > 0 && n < 1000) return n * 1000; // threshold: valid LAK is rarely under ₭1,000
+  return n;
+};
 
 export default {
   async fetch(request, env) {
-    if (request.method === "OPTIONS") {
-      return new Response(null, { headers: CORS });
-    }
+    if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
 
     const url = new URL(request.url);
 
-    // Health check
+    // ─── Rate limit check ───────────────────────────────────────
+    const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+    if (!checkRateLimit(ip, url.pathname)) {
+      return Response.json({
+        error: "rate_limited",
+        message: "Too many requests. Please wait a moment and try again.",
+      }, { status: 429, headers: { ...CORS, "Retry-After": "60" } });
+    }
+
     if (url.pathname === "/" || url.pathname === "/health") {
       return Response.json({
-        status: "ok", service: "Phanote API", version: "2.0.0",
-        ai: "claude-haiku-4-5",
-        routes: ["/parse", "/ocr (Phase 2)", "/voice (Phase 2)", "/line (Phase 3)"]
+        status: "ok", service: "Phanote API", version: "4.1.0",
+        parse: "gemini-2.5-flash", advise: "claude-haiku-4-5", ocr: "gemini-2.5-flash-vision",
+        routes: ["/parse", "/advise", "/ocr"],
+        features: ["rate_limiting"],
       }, { headers: CORS });
     }
 
-    if (request.method !== "POST") {
-      return new Response("Method not allowed", { status: 405, headers: CORS });
-    }
+    if (request.method !== "POST") return new Response("Method not allowed", { status: 405, headers: CORS });
 
-    // ─── POST /parse ─────────────────────────────────────────────
+    // ─── POST /parse — Gemini 2.5 Flash ─────────────────────────
     if (url.pathname === "/parse") {
-      let text = "", userId = null;
       try {
         const body = await request.json();
-        text = body.text || "";
-        userId = body.userId || null;
-      } catch {
-        return Response.json({ error: "Invalid JSON" }, { status: 400, headers: CORS });
-      }
+        const text = body.text || "";
+        if (!text.trim()) return Response.json({ error: "Empty input" }, { status: 400, headers: CORS });
 
-      if (!text.trim()) {
-        return Response.json({ error: "Empty input" }, { status: 400, headers: CORS });
-      }
+        const data = await callGemini(env, {
+          system_instruction: { parts: [{ text: PARSE_SYSTEM }] },
+          contents: [{ parts: [{ text }] }],
+          generationConfig: { response_mime_type: "application/json", temperature: 0.1, maxOutputTokens: 1024 },
+        });
 
+        const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+        const parsed = JSON.parse(raw);
+        return Response.json({ ...parsed, model: "gemini-2.5-flash" }, { headers: CORS });
+
+      } catch (e) {
+        return Response.json({ amount: 0, currency: "LAK", type: "expense", category: "other",
+          description: "", confidence: 0.3, model: "fallback" }, { headers: CORS });
+      }
+    }
+
+    // ─── POST /advise — Claude Haiku ────────────────────────────
+    // Keeping Claude for advise: superior conversational reasoning,
+    // warmer tone, better at nuanced financial context
+    if (url.pathname === "/advise") {
       try {
-        // Call Claude Haiku — fastest model
+        const body = await request.json();
+        const { question = "", lang = "en", summary = "" } = body;
+        if (!question.trim()) return Response.json({ error: "Empty question" }, { status: 400, headers: CORS });
+
+        const langInstruction = lang === "lo"
+          ? "Reply in Lao (ພາສາລາວ). Use Lao script."
+          : lang === "th" ? "Reply in Thai (ภาษาไทย)." : "Reply in English.";
+
+        const systemPrompt = `You are Phanote's warm, friendly AI financial advisor for users in Laos and Thailand managing LAK, THB, and USD.
+
+USER'S CURRENT FINANCIAL SNAPSHOT:
+${summary || "No financial data available yet."}
+
+INSTRUCTIONS:
+- ${langInstruction}
+- Be warm, specific, and encouraging. Never shame spending.
+- Reference their ACTUAL numbers when answering.
+- Keep response under 120 words — concise and actionable.
+- Use 1-2 emojis max. If data is insufficient, say so honestly.`;
+
         const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
           method: "POST",
           headers: {
@@ -99,47 +209,115 @@ export default {
           },
           body: JSON.stringify({
             model: "claude-haiku-4-5",
-            max_tokens: 150,
-            system: PARSE_SYSTEM,
-            messages: [{ role: "user", content: text }],
+            max_tokens: 1024,
+            system: systemPrompt,
+            messages: [{ role: "user", content: question }],
           }),
         });
 
         const data = await claudeRes.json();
-        const raw = data?.content?.[0]?.text || "{}";
+        if (data.error) return Response.json({ error: data.error.message }, { status: 500, headers: CORS });
+        const reply = data?.content?.[0]?.text || "I couldn't generate a response. Please try again.";
+        return Response.json({ reply }, { headers: CORS });
 
-        try {
-          const parsed = JSON.parse(raw.replace(/```json|```/g, "").trim());
-          return Response.json({ ...parsed, model: "haiku" }, { headers: CORS });
-        } catch {
-          return Response.json(
-            { amount: 0, currency: "LAK", type: "expense",
-              category: "other", description: text.slice(0, 40),
-              confidence: 0.3, model: "fallback" },
-            { headers: CORS }
-          );
-        }
       } catch (e) {
-        return Response.json(
-          { error: "Parse error", message: e.message },
-          { status: 500, headers: CORS }
-        );
+        return Response.json({ error: e.message }, { status: 500, headers: CORS });
       }
     }
 
-    // ─── POST /ocr — Phase 2 ──────────────────────────────────────
+    // ─── POST /ocr — Gemini 2.5 Flash Vision (Paid Tier 1) ────────
     if (url.pathname === "/ocr") {
-      return Response.json({ error: "Coming in Phase 2" }, { status: 501, headers: CORS });
-    }
+      try {
+        const body = await request.json();
+        let imageBase64 = (body.image || "").replace(/^data:image\/\w+;base64,/, "");
+        const mimeType = body.mimeType || "image/jpeg";
 
-    // ─── POST /voice — Phase 2 ────────────────────────────────────
-    if (url.pathname === "/voice") {
-      return Response.json({ error: "Coming in Phase 2" }, { status: 501, headers: CORS });
-    }
+        if (!imageBase64) return Response.json({ error: "No image provided" }, { status: 400, headers: CORS });
 
-    // ─── POST /line — Phase 3 ─────────────────────────────────────
-    if (url.pathname === "/line") {
-      return Response.json({ error: "Coming in Phase 3" }, { status: 501, headers: CORS });
+        const ocrPrompt = `You are reading a receipt from LAOS (ປະເທດລາວ). LAO SCRIPT (ພາສາລາວ).
+
+CRITICAL — LAO vs THAI SCRIPT:
+This receipt is from Laos. Output item names in LAO SCRIPT exactly as printed.
+Lao consonants: ກ ຂ ຄ ງ ຈ ສ ຊ ຍ ດ ຕ ຖ ທ ນ ບ ປ ຜ ຝ ພ ຟ ມ ຢ ຣ ລ ວ ຫ ອ ຮ
+Common Lao food: ເຂົ້າ(rice) ໝູ(pork) ໄກ່(chicken) ຕຳ(salad) ເຝີ(pho) ໄຂ່(egg) ຊີ້ນ(meat)
+Do NOT convert Lao to Thai script.
+
+CRITICAL — NUMBERS:
+Lao receipts use PERIOD (.) as thousands separator NOT decimal.
+₭573.000 = 573000. ₭89.000 = 89000. ₭9.000 = 9000.
+Output amounts as plain integers only.
+
+RECEIPT FORMAT — each item 2 lines:
+  Item name (Lao script)
+  N x ₭unit_price    ₭line_total ← use RIGHT column
+For N x price: multiply for line total.
+
+Return ONLY valid JSON, no markdown backticks:
+{"amount":NUMBER,"currency":"LAK","category":"food","description":"MERCHANT","confidence":0.9,"items":[{"name":"Lao name","amount":NUMBER}]}
+
+Rules:
+- amount = grand total plain integer
+- currency: ₭/ກີບ/LAK=LAK (default), ฿/baht=THB, $=USD
+- category: food, groceries, drinks, coffee, transport, travel, shopping, rent, utilities, phone_internet, household, health, beauty, fitness, entertainment, subscriptions, gaming, education, family, donation, debt_payment, fees, repair, other
+- description = merchant name max 30 chars
+- items = line items only, no subtotals/tax, max 12, amounts as integers`;
+
+        const data = await callGemini(env, {
+          contents: [{
+            parts: [
+              { inline_data: { mime_type: mimeType, data: imageBase64 } },
+              { text: ocrPrompt },
+            ],
+          }],
+          generationConfig: { temperature: 0, maxOutputTokens: 4096 },
+        });
+
+        if (data.error) return Response.json({ error: data.error.message || "Gemini error", detail: JSON.stringify(data.error) }, { status: 500, headers: CORS });
+        if (!data.candidates?.length) return Response.json({ error: "Could not read receipt", detail: JSON.stringify(data).slice(0,200) }, { status: 422, headers: CORS });
+
+        const raw = (data.candidates?.[0]?.content?.parts?.[0]?.text || "").trim();
+        if (!raw) {
+          const reason = data.candidates?.[0]?.finishReason || "empty";
+          return Response.json({ error: "Could not read receipt", detail: `finishReason: ${reason}` }, { status: 422, headers: CORS });
+        }
+
+        // Strip markdown fences
+        const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+
+        const jsonStart = cleaned.indexOf("{");
+        if (jsonStart === -1) return Response.json({ error: "Could not read receipt", detail: cleaned.slice(0,100) }, { status: 422, headers: CORS });
+        let depth = 0, jsonEnd = -1;
+        for (let i = jsonStart; i < cleaned.length; i++) {
+          if (cleaned[i] === "{") depth++;
+          else if (cleaned[i] === "}") { depth--; if (depth === 0) { jsonEnd = i; break; } }
+        }
+
+        if (jsonEnd === -1) {
+          // Regex fallback for truncated response
+          const am = cleaned.match(/"amount"\s*:\s*(\d+)/);
+          const cu = cleaned.match(/"currency"\s*:\s*"([^"]+)"/);
+          const ca = cleaned.match(/"category"\s*:\s*"([^"]+)"/);
+          const de = cleaned.match(/"description"\s*:\s*"([^"]+)"/);
+          if (am) return Response.json({ amount: fixAmount(Number(am[1]), cu?.[1]||"LAK"), currency: cu?.[1]||"LAK", category: ca?.[1]||"other", description: de?.[1]||"Receipt", confidence: 0.7, items: [], source: "gemini-2.5-flash" }, { headers: CORS });
+          return Response.json({ error: "Could not parse receipt", detail: cleaned.slice(0,200) }, { status: 422, headers: CORS });
+        }
+
+        let parsed;
+        try { parsed = JSON.parse(cleaned.slice(jsonStart, jsonEnd + 1)); }
+        catch(e) { return Response.json({ error: "Could not parse receipt", detail: e.message }, { status: 422, headers: CORS }); }
+
+        const amount = fixAmount(parsed.amount, parsed.currency);
+        if (!amount || amount <= 0) return Response.json({ error: "Could not find total amount" }, { status: 422, headers: CORS });
+
+        const items = Array.isArray(parsed.items)
+          ? parsed.items.map(it => ({ name: it.name || "", amount: fixAmount(it.amount, parsed.currency) }))
+          : [];
+
+        return Response.json({ amount, currency: parsed.currency||"LAK", category: parsed.category||"other", description: parsed.description||"Receipt", confidence: parsed.confidence||0.8, items, source: "gemini-2.5-flash" }, { headers: CORS });
+
+      } catch (e) {
+        return Response.json({ error: "OCR failed", detail: e.message }, { status: 500, headers: CORS });
+      }
     }
 
     return new Response("Not found", { status: 404, headers: CORS });
