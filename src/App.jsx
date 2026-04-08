@@ -56,7 +56,7 @@ const dbSaveMemory = async (userId, pattern, categoryName, type, confidence) => 
     .select("id, usage_count")
     .eq("user_id", userId)
     .eq("input_pattern", key)
-    .single();
+    .maybeSingle();
   if (existing) {
     await supabase.from("ai_memory")
       .update({ usage_count: existing.usage_count + 1, updated_at: new Date().toISOString() })
@@ -1345,8 +1345,14 @@ function OcrButton({ profile, onAdd, lang, compact=false }) {
 
       const data = await res.json();
       if (data.error || !data.amount) {
-        const detail = data.detail ? `\n\nDetail: ${data.detail}` : "";
-        setErrMsg((data.error || "Could not read the receipt. Try a clearer photo.") + detail);
+        // Friendly error messages by status code
+        const s = res.status;
+        const msg = s === 503 || s === 500 || /UNAVAILABLE|overloaded/i.test(data.error||"")
+          ? (lang==="lo"?"AI ຍັງນອນຢູ່ 😴 ກະລຸນາລອງໃໝ່ອີກຄັ້ງ":lang==="th"?"AI กำลังงีบอยู่ 😴 ลองใหม่อีกครั้งนะคะ":"Gemini is a bit sleepy right now 😴 Please try again in a minute.")
+          : s === 429
+          ? (lang==="lo"?"ຊ້ຳມື້ນີ້ແລ້ວ! ພັກຜ່ອນໜ້ອຍໜຶ່ງ 🌿":lang==="th"?"วันนี้ใช้เยอะแล้ว! พักสักครู่นะคะ 🌿":"You've used OCR a lot today! Take a short break 🌿")
+          : (lang==="lo"?"ອ່ານໃບບິນບໍ່ໄດ້ 😕 ລອງຖ່າຍຮູບໃໝ່":lang==="th"?"อ่านใบเสร็จไม่ได้ 😕 ลองถ่ายใหม่":"Couldn't read this receipt 😕 Try a clearer photo?");
+        setErrMsg(msg);
         setStatus("error");
         return;
       }
@@ -1354,7 +1360,7 @@ function OcrButton({ profile, onAdd, lang, compact=false }) {
       setStatus("confirm");
 
     } catch (e) {
-      setErrMsg("Connection error. Please try again.");
+      setErrMsg(lang==="lo"?"ເຊື່ອມຕໍ່ບໍ່ໄດ້ 😕 ລອງໃໝ່":lang==="th"?"เชื่อมต่อไม่ได้ 😕 ลองใหม่":"Connection error 😕 Please try again.");
       setStatus("error");
     }
   };
