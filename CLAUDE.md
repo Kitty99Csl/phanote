@@ -35,20 +35,58 @@ Phanote (ພາໂນດ / พาโนด) — multi-currency personal finance 
 10. Ask Kitty before architectural decisions. Don't guess.
 
 ## Known bugs to fix
-- StreakModal kbOffset crash: In src/App.jsx, the StreakModal component references `kbOffset` but never declares it with `useKeyboardOffset()`. Crashes when user taps streak badge. Fix: add `const kbOffset = useKeyboardOffset();` at top of StreakModal function body.
+- ~~StreakModal kbOffset crash~~ — FIXED in commit 4f8cd5e (Day 1)
 
-## Current session
-Session 4 in progress. Completed:
-- Rate limiting on worker (v4.1)
-- AI kill switch env vars (v4.2)
+## Current session: Session 4 + Session 5 refactor
 
-Remaining:
-- RLS on Supabase profiles and transactions
-- Shared Sheet component + modal refactor
-- Usage limits system (Free/Trial/Pro tiers)
-- Observability (Sentry + admin views)
-- Monthly Wrap feature
-- Foundation polish (paid_by column, legal pages, i18n)
+**Session 4 in progress** — see `docs/session-4/DAY-2-SUMMARY.md`:
+
+### Day 1 (April 8)
+- ✅ Part 1.2: Rate limiting on worker (v4.1.0)
+- ✅ Part 1.3: AI kill switch (v4.2.0, env vars)
+- ✅ Part 1.4: Sheet component + 2 modal migrations
+- ✅ Part 1.4.1: Sheet BottomNav overlap + iPhone SE maxHeight fixes
+- ✅ CLAUDE.md auto-loaded project context
+- ✅ StreakModal kbOffset crash fix
+
+### Day 2 (April 9) — Wife Feedback Sprint
+- ✅ Part 1.5: **Parse pipeline Tier 1** (confidence threshold + AI wait + save confidence)
+- ✅ Part 1.6: **Parse pipeline Tier 3** (fuzzy matching + 10 keyword patterns + 5 audit fixes)
+- ✅ Part 1.7: **Polish** (ai_memory 406 fix + friendly OCR errors + 0.47 SQL cleanup)
+
+### Day 3 (next session — planned)
+- ⏳ **Part 1.8: AI Advisor scope fix** (wife feedback Issue 2, 60-90 min, HIGH PRIORITY)
+- ⏳ Part 1.1: RLS on Supabase (profiles, transactions) — STILL BLOCKING public launch
+
+### Deferred to Session 5 or later
+- ⏳ Tier 2 category picker modal (when both local + AI < 0.60)
+- ⏳ Part 2: Usage limits system
+- ⏳ Part 3: Observability (Sentry, admin views)
+- ⏳ Part 4: Monthly Wrap feature
+- ⏳ Part 5: Foundation polish
+
+**Session 5 (planned)** — App.jsx refactor into multi-layer structure. 2 hours estimated.
+
+## Recent key learnings (from Session 4 Day 2)
+
+1. **SQL diagnostics beat code guessing** — Run queries against real data first
+2. **Audit patterns, not instances** — Finding one bug means there are likely more
+3. **Short-word fuzzy matching is dangerous** — Use exact match for ≤5 char words
+4. **Rule order matters in CAT_RULES** — First match wins, use negative lookahead to refine
+5. **Wife as QA > any synthetic test** — Real user inputs catch what tests miss
+6. **`.single()` → `.maybeSingle()` in Supabase** — 0 rows throws 406, remember forever
+
+## Parse pipeline architecture (locked 2026-04-09)
+
+Thresholds and design decisions:
+- Local confidence ≥ 0.60: save immediately, AI corrects in background (fast path)
+- Local confidence < 0.60: await AI up to 3 seconds, pick best result (slow path)
+- No local result: show ConfirmModal, wait for user (existing flow)
+- Fuzzy match confidence: 0.65 (above threshold → fast path)
+- Fuzzy rules: exact match only for 3-5 char words, edit distance 1 for 6+ chars
+- Lao/Thai: exact regex only (Levenshtein doesn't work on non-Latin)
+
+**Do not change these without testing with real Lao/Thai/English inputs.** The 3s AI timeout preserves the 5-second rule.
 
 ## Plan tiers
 - Free: local parser only, no AI, 100 tx/day cap
