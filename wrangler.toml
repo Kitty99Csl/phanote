@@ -5,3 +5,8 @@ compatibility_date = "2024-01-01"
 routes = [
   { pattern = "api.phanote.com/*", zone_name = "phanote.com" }
 ]
+
+[vars]
+AI_ENABLED = "true"
+ADVISOR_ENABLED = "true"
+OCR_ENABLED = "true"

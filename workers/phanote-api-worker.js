@@ -1,5 +1,5 @@
 /**
- * PHANOTE — Main API Worker v4.1
+ * PHANOTE — Main API Worker v4.2
  * Domain: api.phanote.com
  *
  * /parse  → Gemini 2.5 Flash (best Lao/Thai text understanding)
@@ -7,8 +7,17 @@
  * /ocr    → Gemini 2.5 Flash Vision (best Lao script OCR)
  *
  * Session 4 changes:
- * - Added per-IP rate limiting (in-memory, per worker instance)
+ * - v4.1: Added per-IP rate limiting (in-memory)
+ * - v4.2: Added AI kill switch (Option A — fail safe)
+ *         Env vars: AI_ENABLED, ADVISOR_ENABLED, OCR_ENABLED
+ *         Missing or any value !== "true" means DISABLED.
  */
+
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
 
 // ─── RATE LIMITING (in-memory, per-IP) ───────────────────────────
 // Protects against abuse and runaway scripts.
@@ -47,11 +56,36 @@ function checkRateLimit(ip, route) {
   return entry.count <= limit;
 }
 
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-};
+// ─── AI KILL SWITCH (Option A — fail safe) ───────────────────────
+// Reads Cloudflare env vars. Default state when missing is DISABLED.
+// To enable a feature: set variable to exactly "true" in Cloudflare dashboard.
+// Any other value (missing, "false", "TRUE", typo) = DISABLED.
+//
+// This is Phase 1 of the kill switch plan.
+// Phase 2 (Session 6+): move to Supabase-backed feature flags
+// readable/writable from admin.phanote.com admin panel.
+// Worker will check Supabase first, fall back to these env vars.
+function isFeatureEnabled(env, feature) {
+  const varName = {
+    parse: "AI_ENABLED",
+    advise: "ADVISOR_ENABLED",
+    ocr: "OCR_ENABLED",
+  }[feature];
+  return env[varName] === "true";
+}
+
+function disabledResponse(feature) {
+  const messages = {
+    parse: "AI parsing is temporarily unavailable. Please enter your transaction manually.",
+    advise: "AI advisor is temporarily unavailable. Please try again later.",
+    ocr: "Receipt scanning is temporarily unavailable. Please enter manually.",
+  };
+  return Response.json({
+    error: "feature_disabled",
+    feature,
+    message: messages[feature],
+  }, { status: 503, headers: CORS });
+}
 
 // ─── PARSE SYSTEM — Gemini 2.5 Flash ────────────────────────────
 // Uses Gemini's superior Lao/Thai language understanding
@@ -143,10 +177,15 @@ export default {
 
     if (url.pathname === "/" || url.pathname === "/health") {
       return Response.json({
-        status: "ok", service: "Phanote API", version: "4.1.0",
+        status: "ok", service: "Phanote API", version: "4.2.0",
         parse: "gemini-2.5-flash", advise: "claude-haiku-4-5", ocr: "gemini-2.5-flash-vision",
         routes: ["/parse", "/advise", "/ocr"],
-        features: ["rate_limiting"],
+        features: ["rate_limiting", "kill_switch"],
+        status_flags: {
+          ai_parse: isFeatureEnabled(env, "parse"),
+          advisor: isFeatureEnabled(env, "advise"),
+          ocr: isFeatureEnabled(env, "ocr"),
+        },
       }, { headers: CORS });
     }
 
@@ -154,6 +193,9 @@ export default {
 
     // ─── POST /parse — Gemini 2.5 Flash ─────────────────────────
     if (url.pathname === "/parse") {
+      // Kill switch check
+      if (!isFeatureEnabled(env, "parse")) return disabledResponse("parse");
+
       try {
         const body = await request.json();
         const text = body.text || "";
@@ -179,6 +221,9 @@ export default {
     // Keeping Claude for advise: superior conversational reasoning,
     // warmer tone, better at nuanced financial context
     if (url.pathname === "/advise") {
+      // Kill switch check
+      if (!isFeatureEnabled(env, "advise")) return disabledResponse("advise");
+
       try {
         const body = await request.json();
         const { question = "", lang = "en", summary = "" } = body;
@@ -227,6 +272,9 @@ INSTRUCTIONS:
 
     // ─── POST /ocr — Gemini 2.5 Flash Vision (Paid Tier 1) ────────
     if (url.pathname === "/ocr") {
+      // Kill switch check
+      if (!isFeatureEnabled(env, "ocr")) return disabledResponse("ocr");
+
       try {
         const body = await request.json();
         let imageBase64 = (body.image || "").replace(/^data:image\/\w+;base64,/, "");
