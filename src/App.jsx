@@ -2973,6 +2973,7 @@ function StreakBadge({ profile, onPress }) {
 
 // ═══ STREAK MODAL (tap badge → full card) ════════════════════
 function StreakModal({ profile, onClose }) {
+  const kbOffset = useKeyboardOffset();
   const { streakCount = 0, xp = 0, name = "" } = profile;
   const level    = getLevel(xp);
   const nextLevel = getNextLevel(xp);
