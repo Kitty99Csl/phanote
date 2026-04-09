@@ -1019,6 +1019,33 @@ const Flag=({code,size=32})=>{
 
 const S={title:{fontFamily:"'Noto Sans',sans-serif",fontSize:20,fontWeight:800,color:"#2D2D3A",marginBottom:6},sub:{fontSize:13,color:"#9B9BAD",marginBottom:16,lineHeight:1.5},label:{fontSize:13,fontWeight:700,color:"#2D2D3A",fontFamily:"'Noto Sans',sans-serif"}};
 
+// ═══ LOGO ═════════════════════════════════════════════════════
+// Renders the Phanote brand mark (transparent PNG, landscape aspect 823x433).
+// 5 resolution tiers — picks the smallest source >= display size for sharpness.
+// height: auto preserves natural aspect ratio (don't crop the capybora).
+const Logo = ({ size = 64, alt = "Phanote" }) => {
+  let src;
+  if (size <= 64) src = "/phanote-favicon-64.png";
+  else if (size <= 128) src = "/phanote-logo-128.png";
+  else if (size <= 256) src = "/phanote-logo-256.png";
+  else if (size <= 512) src = "/phanote-logo-512.png";
+  else src = "/phanote-logo-1024.png";
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      style={{
+        width: size,
+        height: "auto",
+        maxHeight: size,
+        objectFit: "contain",
+        display: "block",
+      }}
+    />
+  );
+};
+
 // ═══ ONBOARDING ═══════════════════════════════════════════════
 function OnboardingScreen({onComplete, onBack}){
   const[step,setStep]=useState(0);
@@ -1036,8 +1063,8 @@ function OnboardingScreen({onComplete, onBack}){
   return(
     <div style={{minHeight:"100dvh",background:T.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px 20px",position:"relative",overflow:"hidden"}}>
       <AnimalBg/>
-      <div style={{textAlign:"center",marginBottom:28,zIndex:1}}>
-        <div style={{fontSize:44,lineHeight:1}}>📒</div>
+      <div style={{textAlign:"center",marginBottom:28,zIndex:1,display:"flex",flexDirection:"column",alignItems:"center"}}>
+        <Logo size={120} />
         <div style={{fontFamily:"'Noto Sans',sans-serif",fontSize:30,fontWeight:800,color:T.dark,letterSpacing:-1,marginTop:6}}>Phanote</div>
         <div style={{fontSize:12,color:T.muted,marginTop:2}}>ພາໂນດ · พาโนด</div>
       </div>
@@ -1709,7 +1736,7 @@ function TransactionList({transactions,lang,onUpdateNote,onDeleteTx,onEditCatego
 
   if(transactions.length===0)return(
     <div style={{textAlign:"center",padding:"calc(env(safe-area-inset-top, 8px) + 8px) 24px",display:"flex",flexDirection:"column",alignItems:"center",gap:12}}>
-      <div style={{fontSize:52}}>📒</div>
+      <Logo size={140} />
       <div style={{fontWeight:700,fontSize:17,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"empty")}</div>
       <div style={{fontSize:13,color:T.muted,maxWidth:220,lineHeight:1.6}}>{t(lang,"empty_sub")}</div>
     </div>
@@ -2004,7 +2031,7 @@ function SettingsScreen({profile,transactions,onUpdateProfile,onReset,pinConfig=
       <div style={{fontSize:10,fontWeight:700,letterSpacing:1.4,color:T.muted,textTransform:"uppercase",marginBottom:10,fontFamily:"'Noto Sans',sans-serif"}}>Help</div>
       <div style={{background:T.surface,backdropFilter:"blur(20px)",borderRadius:20,boxShadow:T.shadow,marginBottom:20,overflow:"hidden"}}>
         <button onClick={()=>onShowGuide&&onShowGuide()} style={{width:"100%",padding:"16px 18px",border:"none",cursor:"pointer",background:"transparent",display:"flex",alignItems:"center",gap:12,textAlign:"left"}}>
-          <div style={{width:40,height:40,borderRadius:12,background:"rgba(26,64,32,0.1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>📒</div>
+          <div style={{width:40,height:40,borderRadius:12,background:"rgba(26,64,32,0.1)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><Logo size={36} /></div>
           <div style={{flex:1}}>
             <div style={{fontSize:14,fontWeight:600,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>Phanote guide</div>
             <div style={{fontSize:12,color:T.muted,marginTop:1}}>How every feature works</div>
@@ -3853,7 +3880,7 @@ function ProUpgradeScreen({ onClose }) {
       {/* Hero */}
       <div style={{background:"#1A4020",padding:"calc(env(safe-area-inset-top,0px) + 24px) 20px 22px"}}>
         <button onClick={onClose} style={{fontSize:13,color:"rgba(255,255,255,0.5)",background:"none",border:"none",cursor:"pointer",fontFamily:"'Noto Sans',sans-serif",padding:0,marginBottom:14}}>← Settings</button>
-        <div style={{fontSize:26,marginBottom:6}}>🐾</div>
+        <div style={{marginBottom:6}}><Logo size={96} /></div>
         <div style={{fontSize:21,fontWeight:800,color:"#fff",letterSpacing:-0.5,fontFamily:"'Noto Sans',sans-serif"}}>Phanote Pro</div>
         <div style={{fontSize:12,color:"rgba(255,255,255,0.55)",marginTop:5,lineHeight:1.6}}>Everything you need to track money across LAK, THB & USD — every day.</div>
       </div>
@@ -4176,7 +4203,7 @@ function PinLock({ pinConfig, pinInput, pinShake, onKey, isSetup, setupMode, set
     : "Enter your PIN to continue";
   return (
     <div style={{position:"fixed",inset:0,zIndex:9999,background:T.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:28}}>
-      <div style={{marginBottom:6,fontSize:38}}>🐾</div>
+      <div style={{marginBottom:6}}><Logo size={100} /></div>
       <div style={{fontSize:22,fontWeight:800,color:T.dark,letterSpacing:-0.5,fontFamily:"'Noto Sans',sans-serif"}}>Phanote</div>
       <div style={{fontSize:13,color:T.muted,marginTop:4,marginBottom:32,textAlign:"center",lineHeight:1.5,fontFamily:"'Noto Sans',sans-serif"}}>{subtitle}</div>
       <div style={{fontSize:17,fontWeight:700,color:T.dark,marginBottom:24,fontFamily:"'Noto Sans',sans-serif"}}>{title}</div>
@@ -4232,8 +4259,8 @@ function LoginScreen({ onLogin }) {
     <div style={{ minHeight:"100dvh", background:T.bg, display:"flex", flexDirection:"column",
       alignItems:"center", justifyContent:"center", padding:"24px 20px", position:"relative", overflow:"hidden" }}>
       <AnimalBg />
-      <div style={{ textAlign:"center", marginBottom:36, zIndex:1 }}>
-        <div style={{ fontSize:52 }}>📒</div>
+      <div style={{ textAlign:"center", marginBottom:36, zIndex:1, display:"flex", flexDirection:"column", alignItems:"center" }}>
+        <Logo size={180} />
         <div style={{ fontFamily:"'Noto Sans',sans-serif", fontSize:32, fontWeight:800, color:T.dark, letterSpacing:-1, marginTop:8 }}>Phanote</div>
         <div style={{ fontSize:12, color:T.muted, marginTop:4 }}>ພາໂນດ · พาโนด</div>
       </div>
@@ -4514,7 +4541,7 @@ export default function App(){
       <div style={{ width:300, background:"#ffffff", borderRadius:16, padding:"32px 24px",
         filter:"drop-shadow(2px 4px 14px rgba(40,90,40,0.2))", display:"flex", flexDirection:"column", alignItems:"center", gap:20 }}>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <div style={{ fontSize:32 }}>📒</div>
+          <Logo size={64} />
           <div>
             <div style={{ fontSize:20, fontWeight:800, color:"#1a2e1a", fontFamily:"'Noto Sans',sans-serif", letterSpacing:-0.5 }}>PHANOTE</div>
             <div style={{ fontSize:10, color:"#9B9BAD", fontFamily:"'Noto Sans',sans-serif", letterSpacing:1 }}>ພາໂນດ · พาโนด</div>
@@ -4532,7 +4559,7 @@ export default function App(){
 
   if (loadingProfile) return (
     <div style={{ minHeight:"100dvh", background:"#F7FCF5", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:16 }}>
-      <div style={{ fontSize:52 }}>📒</div>
+      <Logo size={140} />
       <div style={{ fontSize:14, color:"#9B9BAD", fontFamily:"'Noto Sans',sans-serif" }}>Loading your data…</div>
     </div>
   );
