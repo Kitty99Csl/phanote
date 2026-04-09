@@ -10,6 +10,7 @@
  */
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@supabase/supabase-js";
+import Sheet from "./components/Sheet";
 
 // ─── SUPABASE ─────────────────────────────────────────────────
 const supabase = createClient(
@@ -55,7 +56,7 @@ const dbSaveMemory = async (userId, pattern, categoryName, type, confidence) => 
     .select("id, usage_count")
     .eq("user_id", userId)
     .eq("input_pattern", key)
-    .single();
+    .maybeSingle();
   if (existing) {
     await supabase.from("ai_memory")
       .update({ usage_count: existing.usage_count + 1, updated_at: new Date().toISOString() })
@@ -437,14 +438,14 @@ const localParse = (text) => {
   const CAT_RULES = [
 
     // ══ INCOME ══════════════════════════════════════════════════
-    [/ເງິນເດືອນ|salary|wage|payroll|เงินเดือน/i,                                          'salary',        0.96],
+    [/ເງິນເດືອນ|salary|\bwage\b|payroll|เงินเดือน/i,                                       'salary',        0.96],
     [/ຂາຍ(?:ເຄື່ອງ|ຂອງ)?|ขาย|\bsell\b|\bsold\b|\bsale\b/i,                         'selling',       0.93],
     [/ຮັບຈ້າງ|ຄ່າຈ້າງ|freelance|commission|ฟรีแลนซ์/i,                                    'freelance',     0.93],
     [/ໂບນັດ|\bbonus\b|โบนัส/i,                                                           'bonus',         0.93],
     [/ລົງທຶນ|ຫຸ້ນ|\binvest|crypto|bitcoin|\bstock|หุ้น|ลงทุน/i,                          'investment',    0.90],
 
     // ══ TRANSFER (banks — very specific) ══════════════════════════
-    [/\b(bcel|jdb|ldb|bfl|onepay|apay|k\s*plus|promptpay|truemoney)\b/i,               'transfer',      0.92],
+    [/\b(bcel|jdb|ldb|bfl|onepay|apay|k\s*plus|promptpay|truemoney)\b(?!\s*(?:fee|fees|charge|charges|statement|statements))/i, 'transfer', 0.92],
     [/ໂອນ(?:ເງິນ)?(?!\s*ອອກ)|โอน(?:เงิน)?/i,                                            'transfer',      0.90],
 
     // ══ DONATION — ເຮັດບຸນ (very Lao — highest priority) ══════════
@@ -464,12 +465,13 @@ const localParse = (text) => {
     // ══ PHONE & INTERNET (before utilities) ══════════════════════
     [/ຄ່າໂທ|ຄ່າໂທລະສັບ|ຄ່າເນັດ|ເຕີມ(?:ເງິນ)?/i,                                       'phone_internet',0.97],
     [/\b(unitel|etl|ltc|beeline|ອູນີເທລ)\b/i,                                          'phone_internet',0.97],
-    [/\btopup\b|top[\s-]up|mobile\s*package|data\s*package/i,                       'phone_internet',0.93],
+    [/\btopup\b|top[\s-]?up(?:\s*phone)?|mobile\s*package|data\s*package|เติมเงิน/i, 'phone_internet',0.93],
     [/wifi\s*bill|phone\s*bill|internet\s*bill|ค่าเน็ต|ค่าโทร/i,                     'phone_internet',0.93],
 
     // ══ UTILITIES (ຄ່າໄຟ ຄ່ານ້ຳ) ════════════════════════════════
     [/ຄ່າໄຟ|ໄຟຟ້າ|\bedl\b|ຄ່ານ້ຳ|ນ້ຳປະປາ|\bnam\s*papa\b/i,                       'utilities',     0.98],
-    [/electricity|electric\s*bill|water\s*bill|ค่าไฟ|ค่าน้ำ|สาธารณูปโภค/i,           'utilities',     0.95],
+    [/electricity|electric\s*bill|water\s*bill|water\s*supply|ค่าไฟ|ค่าน้ำ|สาธารณูปโภค|ລັດວິສາຫະກິດນ້ຳປະປາ/i, 'utilities', 0.95],
+    [/trash|garbage|rubbish|waste\s*collect|ຂີ້ເຫຍື້ອ|ค่าขยะ/i,                    'utilities',     0.92],
 
     // ══ HOUSING (rent only) ════════════════════════════════════════
     [/ຄ່າເຊົ່າ|ເຊົ່າຫ້ອງ|ເຊົ່າບ້ານ|ค่าเช่า|เช่าบ้าน/i,                                  'rent',          0.97],
@@ -484,6 +486,7 @@ const localParse = (text) => {
     [/ຄ່າທຳນຽມ|ຄ່າ\s*atm|ຄ່າໂອນ|ຄ່າຝາກ|ໃບຂັບຂີ່|ຄ່າວີຊາ/i,                        'fees',          0.97],
     [/atm\s*fee|transfer\s*fee|bank\s*fee|service\s*fee|visa\s*fee/i,              'fees',          0.94],
     [/ຄ່າປັບ|police\s*ticket|ໃບສັ່ງ|ค่าปรับ|ค่าธรรมเนียม/i,                          'fees',          0.92],
+    [/bank\s*statement|bank\s*charge|monthly\s*fee|bcel\s*fee|annual\s*fee/i,       'fees',          0.93],
 
     // ══ FAMILY ════════════════════════════════════════════════════
     [/ໃຫ້ພໍ່|ໃຫ້ແມ່|ໃຫ້ພໍ່ແມ່|ສົ່ງໃຫ້ພໍ່|ສົ່ງໃຫ້ແມ່|ຄ່ານົມ|ຜ້າອ້ອມ|ລ້ຽງລູກ/i,      'family',        0.97],
@@ -533,7 +536,7 @@ const localParse = (text) => {
     [/ping\s*(?:kai|moo|pa|sin)|ປີ້ງ(?:ໄກ່|ໝູ|ປາ|ຊີ້ນ)/i,                          'food',          0.96],
     [/khao\s*piak|kao\s*piek|ເຂົ້າປຽກ|khao\s*poon|ເຂົ້າປຸ້ນ|khao\s*soi/i,       'food',          0.96],
     [/khao\s*niao|ເຂົ້າໜຽວ|sticky\s*rice|ເຂົ້າຈີ່ປາເຕ້|khao\s*jee/i,             'food',          0.95],
-    [/tom\s*yum|ຕົ້ມຍຳ|suki|ສຸກີ້|shabu|ຊາບູ|buffet|ບຸບເຟ້/i,                      'food',          0.95],
+    [/tom\s*yum|ຕົ້ມຍຳ|suki|ສຸກີ້|shabu|ຊາບູ|buffet|ບຸບເຟ້|wark|ແຊບ/i,             'food',          0.95],
     [/laap|larb|laab|ລາບ|khao\s*man|khao\s*na\s*ped|boat\s*noodle/i,              'food',          0.95],
     [/ເຂົ້າ|ອາຫານ|ກິນ|ຊີ້ນ|ໄກ່|ໄຂ່|ຜັກ|ປາ|ໝູ|ກຸ້ງ/i,                              'food',          0.95],
     [/ข้าว|อาหาร|หมูกระทะ|ส้มตำ|ลาบ|ผัดไทย|ก๋วยเตี๋ยว|ไก่|ไข่|เนื้อ|ผัก/i,       'food',          0.93],
@@ -551,7 +554,7 @@ const localParse = (text) => {
     [/\bapple\b|\bbanana\b|\bmango\b|watermelon|papaya|\bfruit\b/i,            'food',          0.92],
     [/sausage|\bham\b|\bbacon\b|meatball|\bsteak\b|ลูกชิ้น|ไส้อั่ว/i,           'food',          0.93],
     [/\bmilk\b|\bcheese\b|yogurt|\bbutter\b|tofu|ขนม|dessert|ของหวาน/i,         'food',          0.91],
-    [/jam|honey|sauce|ketchup|chocolate|\bsnack\b|chips|candy|ຂະໜົມ/i,             'food',          0.90],
+    [/\bjam\b|honey|sauce|ketchup|chocolate|\bsnack\b|chips|candy|ຂະໜົມ/i,          'food',          0.90],
     [/breakfast|lunch|dinner|\bfood\b|\beat\b|meal|restaurant|street\s*food/i,   'food',          0.90],
     [/oeuvre|takeaway|packed\s*lunch|ຫໍ່ກັບ|khao\s*kong|อาหารข้างทาง/i,            'food',          0.90],
 
@@ -563,7 +566,7 @@ const localParse = (text) => {
     [/ptt|laopec|petrolimex|petrotrade|star\s*oil|plus\s*gas|pv\s*oil|orl|lsfc/i,'transport',     0.96],
     // LCR train (Lao-China Railway)
     [/\blcr\b|lao\s*china\s*rail|lot\s*fai|ລົດໄຟ|high\s*speed\s*train/i,     'transport',     0.95],
-    [/\bgrab\b|\bfuel\b|petrol|diesel|gasoline|parking|ค่าน้ำมัน/i,              'transport',     0.93],
+    [/\bgrab\b|\bfuel\b|petrol|diesel|gasoline|parking|ค่าน้ำมัน|road\s*tax|vehicle\s*tax|ພາສີລົດ/i, 'transport', 0.93],
     [/speedboat|slow\s*boat|heua|ferry|ເຮືອ|boat\s*ticket|ปีเรือ/i,                'transport',     0.93],
     [/lao\s*airlines|wattay|airport|sanam\s*bin|สนามบิน|ตั๋วเครื่องบิน/i,          'transport',     0.93],
     [/motorbike\s*rental|sao\s*lot|car\s*rental|ເຊົ່າລົດ|เช่ารถ/i,               'transport',     0.92],
@@ -585,11 +588,13 @@ const localParse = (text) => {
     [/\bconcert\b|live\s*music|live\s*band|dj\s*party|edm|stage\s*show/i,      'entertainment', 0.93],
     [/\bparty\b|night\s*market|walking\s*street|water\s*park|amusement/i,        'entertainment', 0.91],
     [/petanque|ເປຕັງ|football\s*(?:match|game)|swimming\s*pool|สระว่ายน้ำ/i,       'entertainment', 0.91],
+    [/lottery|lotto|ຊື້ເລກ|ຫວຍ|หวย|ลอตเตอรี่|scratch\s*card|ຂູດ/i,               'entertainment', 0.95],
 
     // ══ SUBSCRIPTIONS ════════════════════════════════════════════
     [/netflix|spotify|youtube\s*premium|disney\s*\+?|icloud/i,                     'subscriptions', 0.98],
     [/google\s*one|apple\s*one|line\s*tv|wetv|\bviu\b|canva/i,                   'subscriptions', 0.97],
     [/ສະໝັກ(?:\s*ລາຍ)?|ຕໍ່ອາຍຸ|auto\s*renew|monthly\s*sub/i,                    'subscriptions', 0.93],
+    [/openai|chatgpt|anthropic|\bclaude\b|midjourney|github\s*copilot|\bapi\b.*subscr/i, 'subscriptions', 0.96],
 
     // ══ HOUSEHOLD ════════════════════════════════════════════════
     [/ຂອງໃຊ້ເຮືອນ|ຂອງໃຊ້|ນ້ຳຢາ|ຜ້າທຳຄວາມ/i,                                        'household',     0.95],
@@ -619,11 +624,12 @@ const localParse = (text) => {
 
     // ══ TRAVEL ════════════════════════════════════════════════════
     [/\bflight\b|\bhotel\b|ໂຮງແຮມ|ທ່ອງທ່ຽວ|wattay|lao\s*airlines/i,           'travel',        0.95],
-    [/resort|booking|vacation|tur|tour\s*package|เที่ยว|โรงแรม/i,                   'travel',        0.93],
+    [/resort|booking|vacation|\btur\b|tour\s*package|เที่ยว|โรงแรม/i,              'travel',        0.93],
 
     // ══ SHOPPING ════════════════════════════════════════════════
     [/icon\s*mall|vientiane\s*center|miniso|\bcaddi\b|talat\s*sao/i,            'shopping',      0.96],
-    [/ຊື້ເຄື່ອງ|shopee|lazada|clothes|shirt|bag|mall|electronics/i,                  'shopping',      0.93],
+    [/ຊື້ເຄື່ອງ|shopee|lazada|clothes|shirt|\bbag\b|\bmall\b|electronics/i,          'shopping',      0.93],
+    [/delivery|shipping|ຄ່າສົ່ງ|ຄ່າເຄື່ອງ|ค่าส่ง|ค่าจัดส่ง|grab\s*express|lalamove/i, 'shopping', 0.93],
 
     // ══ GAMING ════════════════════════════════════════════════════
     [/steam|playstation|\bps[45]\b|xbox|roblox|pubg|garena|free\s*fire/i,         'gaming',        0.97],
@@ -632,7 +638,7 @@ const localParse = (text) => {
 
     // ══ EDUCATION ════════════════════════════════════════════════
     [/ຄ່າຮຽນ|ໂຮງຮຽນ|\bຮຽນ\b|ค่าเรียน|เรียน|โรงเรียน/i,                            'education',     0.95],
-    [/school|university|college|course|tuition|workshop|\bbook\b/i,                'education',     0.93],
+    [/school|university|college|course|tuition|workshop|\bbook\b|ໜັງສື/i,          'education',     0.93],
   ];
 
   // ── Income/expense type detection ─────────────────────────
@@ -643,10 +649,61 @@ const localParse = (text) => {
     return 'expense';
   };
 
+  // ── Levenshtein distance (for Latin-script fuzzy matching) ──
+  const levenshtein = (a, b) => {
+    const m = a.length, n = b.length;
+    const dp = Array.from({length: m + 1}, (_, i) => i);
+    for (let j = 1; j <= n; j++) {
+      let prev = dp[0];
+      dp[0] = j;
+      for (let i = 1; i <= m; i++) {
+        const tmp = dp[i];
+        dp[i] = a[i-1] === b[j-1] ? prev : 1 + Math.min(prev, dp[i], dp[i-1]);
+        prev = tmp;
+      }
+    }
+    return dp[m];
+  };
+
+  // ── Fuzzy keyword dictionary (Latin-only, high-value words) ─
+  const FUZZY_WORDS = {
+    coffee:'coffee',cafe:'coffee',latte:'coffee',espresso:'coffee',cappuccino:'coffee',americano:'coffee',starbucks:'coffee',
+    beer:'drinks',whisky:'drinks',whiskey:'drinks',vodka:'drinks',cocktail:'drinks',soju:'drinks',
+    gas:'transport',fuel:'transport',taxi:'transport',parking:'transport',gasoline:'transport',diesel:'transport',petrol:'transport',
+    grocery:'groceries',groceries:'groceries',supermarket:'groceries',market:'groceries',
+    restaurant:'food',breakfast:'food',lunch:'food',dinner:'food',pizza:'food',burger:'food',sushi:'food',noodle:'food',chicken:'food',steak:'food',
+    hotel:'travel',flight:'travel',resort:'travel',vacation:'travel',booking:'travel',
+    shopping:'shopping',clothes:'shopping',electronics:'shopping',delivery:'shopping',shipping:'shopping',
+    netflix:'subscriptions',spotify:'subscriptions',subscription:'subscriptions',youtube:'subscriptions',
+    pharmacy:'health',hospital:'health',medicine:'health',clinic:'health',dental:'health',
+    salon:'beauty',haircut:'beauty',massage:'beauty',skincare:'beauty',
+    gym:'fitness',yoga:'fitness',badminton:'fitness',football:'fitness',
+    karaoke:'entertainment',cinema:'entertainment',movie:'entertainment',concert:'entertainment',bowling:'entertainment',lottery:'entertainment',
+    rent:'rent',apartment:'rent',
+    electricity:'utilities',water:'utilities',trash:'utilities',garbage:'utilities',
+    repair:'repair',mechanic:'repair',
+    school:'education',university:'education',tuition:'education',course:'education',
+  };
+
   // ── Category detection ─────────────────────────────────────
   const detectCategory = (line) => {
+    // Exact regex match (fast, high confidence)
     for (const [pattern, cat, conf] of CAT_RULES) {
       if (pattern.test(line)) return { category: cat, confidence: conf };
+    }
+    // Fuzzy fallback — Latin words only
+    const words = line.toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/).filter(w => w.length >= 3);
+    for (const word of words) {
+      if (word.length <= 5) {
+        // Exact match only for short words (too many near-neighbors for fuzzy)
+        if (FUZZY_WORDS[word]) return { category: FUZZY_WORDS[word], confidence: 0.65 };
+      } else {
+        // Fuzzy match (distance 1) for longer words
+        for (const [target, cat] of Object.entries(FUZZY_WORDS)) {
+          if (Math.abs(word.length - target.length) > 1) continue;
+          if (levenshtein(word, target) <= 1) return { category: cat, confidence: 0.65 };
+        }
+      }
     }
     return { category: 'other', confidence: 0.40 };
   };
@@ -807,6 +864,14 @@ const i18n={
     ask_placeholder:"Ask about your finances…",
     edit_tx:"Edit Transaction",name_label:"Name",amount_label:"Amount",category_label:"Category",
     add_to:"Add to",transactions_count:"transactions",
+    wrap_title:"Monthly Wrap",wrap_subtitle:"Your month in a story",
+    wrap_generating:"Writing your story…",wrap_error:"Couldn't generate your wrap — try again",
+    wrap_partial:"Your story is resting, but here are the numbers",
+    wrap_empty:"Nothing logged this month yet — start adding transactions to unlock your wrap!",
+    wrap_retry:"Try again",wrap_total_expense:"Total expenses",wrap_total_income:"Total income",
+    wrap_top_category:"Top category",wrap_biggest_day:"Biggest day",
+    wrap_active_days:"Active days",wrap_vs_last:"Vs last month",wrap_close:"Close",
+    months:["January","February","March","April","May","June","July","August","September","October","November","December"],
   },
   lo:{
     welcome:"ຍິນດີຕ້ອນຮັບ Phanote",tagline:"ພາໂນດ — ຕິດຕາມການເງິນຂອງທ່ານ",
@@ -855,6 +920,14 @@ const i18n={
     ask_placeholder:"ຖາມກ່ຽວກັບການເງິນຂອງທ່ານ…",
     edit_tx:"ແກ້ໄຂລາຍການ",name_label:"ຊື່",amount_label:"ຈຳນວນ",category_label:"ໝວດ",
     add_to:"ເພີ່ມໃສ່",transactions_count:"ລາຍການ",
+    wrap_title:"ສະຫຼຸບເດືອນ",wrap_subtitle:"ເດືອນຂອງເຈົ້າໃນເລື່ອງໜຶ່ງ",
+    wrap_generating:"ກຳລັງຂຽນເລື່ອງຂອງເຈົ້າ…",wrap_error:"ບໍ່ສາມາດສ້າງສະຫຼຸບໄດ້ — ລອງໃໝ່",
+    wrap_partial:"ເລື່ອງຂອງເຈົ້າພັກຜ່ອນຢູ່ ແຕ່ນີ້ຄືຕົວເລກ",
+    wrap_empty:"ຍັງບໍ່ມີລາຍການໃນເດືອນນີ້ — ເພີ່ມລາຍການເພື່ອເປີດສະຫຼຸບ!",
+    wrap_retry:"ລອງໃໝ່",wrap_total_expense:"ລວມລາຍຈ່າຍ",wrap_total_income:"ລວມລາຍຮັບ",
+    wrap_top_category:"ໝວດສູງສຸດ",wrap_biggest_day:"ວັນທີ່ໃຊ້ຈ່າຍຫຼາຍສຸດ",
+    wrap_active_days:"ມື້ທີ່ບັນທຶກ",wrap_vs_last:"ທຽບກັບເດືອນກ່ອນ",wrap_close:"ປິດ",
+    months:["ມັງກອນ","ກຸມພາ","ມີນາ","ເມສາ","ພຶດສະພາ","ມິຖຸນາ","ກໍລະກົດ","ສິງຫາ","ກັນຍາ","ຕຸລາ","ພະຈິກ","ທັນວາ"],
   },
   th:{
     welcome:"ยินดีต้อนรับสู่ Phanote",tagline:"พาโนด — ติดตามการเงินของคุณ",
@@ -903,6 +976,14 @@ const i18n={
     ask_placeholder:"ถามเรื่องการเงินของคุณ…",
     edit_tx:"แก้ไขรายการ",name_label:"ชื่อ",amount_label:"จำนวน",category_label:"หมวด",
     add_to:"เพิ่มใน",transactions_count:"รายการ",
+    wrap_title:"สรุปเดือน",wrap_subtitle:"เดือนของคุณในเรื่องเดียว",
+    wrap_generating:"กำลังเขียนเรื่องราวของคุณ…",wrap_error:"สร้างสรุปไม่ได้ — ลองอีกครั้ง",
+    wrap_partial:"เรื่องราวพักอยู่ แต่นี่คือตัวเลข",
+    wrap_empty:"ยังไม่มีรายการเดือนนี้ — เพิ่มรายการเพื่อปลดล็อคสรุป!",
+    wrap_retry:"ลองอีกครั้ง",wrap_total_expense:"ค่าใช้จ่ายรวม",wrap_total_income:"รายรับรวม",
+    wrap_top_category:"หมวดสูงสุด",wrap_biggest_day:"วันที่ใช้จ่ายมากสุด",
+    wrap_active_days:"วันที่บันทึก",wrap_vs_last:"เทียบกับเดือนก่อน",wrap_close:"ปิด",
+    months:["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"],
   },
 };
 const t=(lang,key)=>i18n[lang]?.[key]||i18n.en[key]||key;
@@ -1161,49 +1242,46 @@ function EditTransactionModal({tx,lang,onSave,onClose,customCategories=[]}){
 // ═══ CONFIRM MODAL ════════════════════════════════════════════
 function ConfirmModal({parsed,lang,onConfirm,onEdit}){
   const[note,setNote]=useState("");
-  const kbOffset=useKeyboardOffset();
   const cat=findCat(parsed.category||parsed.categoryId);
   const aiDone=parsed._aiDone;
   const aiUpdated=parsed._aiUpdated;
   return(
-    <div style={{position:"fixed",inset:0,zIndex:1000,background:"rgba(30,30,40,0.5)",backdropFilter:"blur(4px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
-      <div style={{background:"#fff",borderRadius:"28px 28px 0 0",padding:"20px 24px",paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 20px)",width:"100%",maxWidth:430,animation:"slideUp .35s cubic-bezier(.34,1.2,.64,1)",
-        transform:kbOffset>0?`translateY(-${kbOffset}px)`:undefined,transition:"transform .25s ease"}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
-          <div style={{fontSize:13,color:T.muted,fontWeight:600}}>{t(lang,"confirm_q")}</div>
-          {!aiDone&&(
-            <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"#2A7A40",fontWeight:700,background:"rgba(172,225,175,0.15)",padding:"3px 9px",borderRadius:9999}}>
-              <div style={{width:6,height:6,borderRadius:3,background:"#ACE1AF",animation:"pulse 1s infinite"}}/>
-              AI checking…
-            </div>
-          )}
-          {aiDone&&aiUpdated&&(
-            <div style={{fontSize:11,color:"#2A7A40",fontWeight:700,background:"rgba(172,225,175,0.15)",padding:"3px 9px",borderRadius:9999}}>
-              ✦ AI corrected
-            </div>
-          )}
-          {aiDone&&!aiUpdated&&(
-            <div style={{fontSize:11,color:T.muted,padding:"3px 9px"}}>✓ AI confirmed</div>
-          )}
-        </div>
-        <div style={{display:"flex",alignItems:"center",gap:14,background:T.bg,borderRadius:20,padding:"14px 16px",marginBottom:14}}>
-          <div style={{width:48,height:48,borderRadius:15,fontSize:24,background:parsed.type==="expense"?"rgba(255,179,167,0.25)":"rgba(172,225,175,0.25)",display:"flex",alignItems:"center",justifyContent:"center"}}>{cat.emoji}</div>
-          <div style={{flex:1}}>
-            <div style={{fontWeight:700,fontSize:15,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{parsed.description}</div>
-            <div style={{fontSize:12,color:T.muted,marginTop:2}}>{catLabel(cat,lang)} · {parsed.currency}</div>
-          </div>
-          <div style={{fontWeight:800,fontSize:18,fontFamily:"'Noto Sans',sans-serif",color:parsed.type==="expense"?"#C0392B":"#1A5A30"}}>{parsed.type==="expense"?"-":"+"}{fmt(parsed.amount,parsed.currency)}</div>
-        </div>
-        <input value={note} onChange={e=>setNote(e.target.value)} placeholder={t(lang,"note_placeholder")}
-          style={{width:"100%",padding:"11px 14px",borderRadius:14,border:"1.5px solid rgba(45,45,58,0.1)",outline:"none",fontSize:13,fontFamily:"'Noto Sans',sans-serif",color:T.dark,background:"rgba(172,225,175,0.06)",marginBottom:14,boxSizing:"border-box"}}
-          onFocus={e=>e.target.style.borderColor="#ACE1AF"} onBlur={e=>e.target.style.borderColor="rgba(45,45,58,0.1)"}/>
-        <div style={{display:"flex",gap:10}}>
-          <button onClick={onEdit} style={{flex:1,padding:"14px",borderRadius:16,border:"none",cursor:"pointer",background:"rgba(155,155,173,0.12)",color:T.muted,fontWeight:700,fontSize:14,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"confirm_edit")}</button>
-          <button onClick={()=>onConfirm({...parsed,note:note.trim()})} style={{flex:2,padding:"14px",borderRadius:16,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",color:"#1A4020",fontWeight:800,fontSize:14,fontFamily:"'Noto Sans',sans-serif",boxShadow:"0 4px 16px rgba(172,225,175,0.4)"}}>{t(lang,"confirm_yes")}</button>
-        </div>
+    <Sheet open={true} onClose={onEdit} showCloseButton={false} footer={
+      <div style={{display:"flex",gap:10}}>
+        <button onClick={onEdit} style={{flex:1,padding:"14px",borderRadius:16,border:"none",cursor:"pointer",background:"rgba(155,155,173,0.12)",color:T.muted,fontWeight:700,fontSize:14,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"confirm_edit")}</button>
+        <button onClick={()=>onConfirm({...parsed,note:note.trim()})} style={{flex:2,padding:"14px",borderRadius:16,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",color:"#1A4020",fontWeight:800,fontSize:14,fontFamily:"'Noto Sans',sans-serif",boxShadow:"0 4px 16px rgba(172,225,175,0.4)"}}>{t(lang,"confirm_yes")}</button>
       </div>
+    }>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14,paddingTop:20}}>
+        <div style={{fontSize:13,color:T.muted,fontWeight:600}}>{t(lang,"confirm_q")}</div>
+        {!aiDone&&(
+          <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"#2A7A40",fontWeight:700,background:"rgba(172,225,175,0.15)",padding:"3px 9px",borderRadius:9999}}>
+            <div style={{width:6,height:6,borderRadius:3,background:"#ACE1AF",animation:"pulse 1s infinite"}}/>
+            AI checking…
+          </div>
+        )}
+        {aiDone&&aiUpdated&&(
+          <div style={{fontSize:11,color:"#2A7A40",fontWeight:700,background:"rgba(172,225,175,0.15)",padding:"3px 9px",borderRadius:9999}}>
+            ✦ AI corrected
+          </div>
+        )}
+        {aiDone&&!aiUpdated&&(
+          <div style={{fontSize:11,color:T.muted,padding:"3px 9px"}}>✓ AI confirmed</div>
+        )}
+      </div>
+      <div style={{display:"flex",alignItems:"center",gap:14,background:T.bg,borderRadius:20,padding:"14px 16px",marginBottom:14}}>
+        <div style={{width:48,height:48,borderRadius:15,fontSize:24,background:parsed.type==="expense"?"rgba(255,179,167,0.25)":"rgba(172,225,175,0.25)",display:"flex",alignItems:"center",justifyContent:"center"}}>{cat.emoji}</div>
+        <div style={{flex:1}}>
+          <div style={{fontWeight:700,fontSize:15,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{parsed.description}</div>
+          <div style={{fontSize:12,color:T.muted,marginTop:2}}>{catLabel(cat,lang)} · {parsed.currency}</div>
+        </div>
+        <div style={{fontWeight:800,fontSize:18,fontFamily:"'Noto Sans',sans-serif",color:parsed.type==="expense"?"#C0392B":"#1A5A30"}}>{parsed.type==="expense"?"-":"+"}{fmt(parsed.amount,parsed.currency)}</div>
+      </div>
+      <input value={note} onChange={e=>setNote(e.target.value)} placeholder={t(lang,"note_placeholder")}
+        style={{width:"100%",padding:"11px 14px",borderRadius:14,border:"1.5px solid rgba(45,45,58,0.1)",outline:"none",fontSize:13,fontFamily:"'Noto Sans',sans-serif",color:T.dark,background:"rgba(172,225,175,0.06)",boxSizing:"border-box"}}
+        onFocus={e=>e.target.style.borderColor="#ACE1AF"} onBlur={e=>e.target.style.borderColor="rgba(45,45,58,0.1)"}/>
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}`}</style>
-    </div>
+    </Sheet>
   );
 }
 
@@ -1291,8 +1369,14 @@ function OcrButton({ profile, onAdd, lang, compact=false }) {
 
       const data = await res.json();
       if (data.error || !data.amount) {
-        const detail = data.detail ? `\n\nDetail: ${data.detail}` : "";
-        setErrMsg((data.error || "Could not read the receipt. Try a clearer photo.") + detail);
+        // Friendly error messages by status code
+        const s = res.status;
+        const msg = s === 503 || s === 500 || /UNAVAILABLE|overloaded/i.test(data.error||"")
+          ? (lang==="lo"?"AI ຍັງນອນຢູ່ 😴 ກະລຸນາລອງໃໝ່ອີກຄັ້ງ":lang==="th"?"AI กำลังงีบอยู่ 😴 ลองใหม่อีกครั้งนะคะ":"Gemini is a bit sleepy right now 😴 Please try again in a minute.")
+          : s === 429
+          ? (lang==="lo"?"ຊ້ຳມື້ນີ້ແລ້ວ! ພັກຜ່ອນໜ້ອຍໜຶ່ງ 🌿":lang==="th"?"วันนี้ใช้เยอะแล้ว! พักสักครู่นะคะ 🌿":"You've used OCR a lot today! Take a short break 🌿")
+          : (lang==="lo"?"ອ່ານໃບບິນບໍ່ໄດ້ 😕 ລອງຖ່າຍຮູບໃໝ່":lang==="th"?"อ่านใบเสร็จไม่ได้ 😕 ลองถ่ายใหม่":"Couldn't read this receipt 😕 Try a clearer photo?");
+        setErrMsg(msg);
         setStatus("error");
         return;
       }
@@ -1300,7 +1384,7 @@ function OcrButton({ profile, onAdd, lang, compact=false }) {
       setStatus("confirm");
 
     } catch (e) {
-      setErrMsg("Connection error. Please try again.");
+      setErrMsg(lang==="lo"?"ເຊື່ອມຕໍ່ບໍ່ໄດ້ 😕 ລອງໃໝ່":lang==="th"?"เชื่อมต่อไม่ได้ 😕 ลองใหม่":"Connection error 😕 Please try again.");
       setStatus("error");
     }
   };
@@ -1426,82 +1510,69 @@ function OcrButton({ profile, onAdd, lang, compact=false }) {
         </div>
       )}
 
-      {/* Confirm modal — layout: header + scrollable items + pinned save button */}
+      {/* Confirm modal — uses Sheet for pinned footer + scroll fix */}
       {status === "confirm" && result && (
-        <div style={{ position:"fixed", inset:0, zIndex:3000, background:"rgba(30,30,40,0.6)", backdropFilter:"blur(4px)", display:"flex", alignItems:"flex-end", justifyContent:"center" }}
-          onClick={e => { if (e.target === e.currentTarget) setStatus("idle"); }}>
-          <div style={{ background:"#fff", borderRadius:"28px 28px 0 0", width:"100%", maxWidth:430, animation:"slideUp .3s ease",
-            display:"flex", flexDirection:"column",
-            maxHeight:"85dvh", // never taller than 85% of screen
-            paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 0px)",
-          }}>
-            {/* Scrollable content area */}
-            <div style={{ overflowY:"auto", WebkitOverflowScrolling:"touch", flex:1, padding:"24px 24px 0" }}>
-            <div style={{ textAlign:"center", marginBottom:16 }}>
-              <div style={{ fontSize:14, color:T.muted, marginBottom:6, fontWeight:600 }}>
-                {lang==="lo"?"📷 ອ່ານໃບບິນໄດ້!":lang==="th"?"📷 อ่านใบเสร็จได้!":"📷 Receipt scanned!"}
-              </div>
-              <div style={{ display:"inline-block", padding:"2px 10px", borderRadius:8, fontSize:11, fontWeight:700,
-                background: result.confidence >= 0.8 ? "rgba(172,225,175,0.2)" : "rgba(255,179,167,0.2)",
-                color: result.confidence >= 0.8 ? "#1A5A30" : "#A03020" }}>
-                {result.confidence >= 0.8 ? "✓ High confidence" : "⚠ Please verify"}
-              </div>
-            </div>
-
-            {/* Transaction preview */}
-            <div style={{ background:T.bg, borderRadius:20, padding:"16px 18px", marginBottom:16 }}>
-              <div style={{ display:"flex", alignItems:"center", gap:14 }}>
-                <div style={{ width:52, height:52, borderRadius:16, background:"rgba(255,179,167,0.2)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:26, flexShrink:0 }}>
-                  {findCat(result.category || "other", profile?.customCategories || []).emoji}
-                </div>
-                <div style={{ flex:1 }}>
-                  <div style={{ fontWeight:700, fontSize:16, color:T.dark, fontFamily:"'Noto Sans',sans-serif" }}>{result.description}</div>
-                  <div style={{ fontSize:12, color:T.muted, marginTop:2 }}>
-                    {catLabel(findCat(result.category || "other", profile?.customCategories || []), lang)} · {result.currency}
-                  </div>
-                </div>
-                <div style={{ fontWeight:800, fontSize:20, color:"#C0392B", fontFamily:"'Noto Sans',sans-serif" }}>
-                  −{fmt(result.amount, result.currency || "LAK")}
-                </div>
-              </div>
-              {/* Item list if OCR extracted line items */}
-              {result.items && result.items.length > 0 && (
-                <div style={{ marginTop:12, borderTop:"0.5px solid rgba(45,45,58,0.07)", paddingTop:10 }}>
-                  <div style={{ fontSize:10, fontWeight:700, color:T.muted, textTransform:"uppercase", letterSpacing:0.8, marginBottom:7 }}>
-                    {result.items.length} items detected
-                  </div>
-                  {result.items.map((item, i) => (
-                    <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"4px 0", borderBottom: i < result.items.length-1 ? "0.5px solid rgba(45,45,58,0.05)" : "none" }}>
-                      <span style={{ fontSize:12, color:T.dark }}>{item.name}</span>
-                      <span style={{ fontSize:12, fontWeight:700, color:T.muted }}>{fmt(item.amount, result.currency || "LAK")}</span>
-                    </div>
-                  ))}
-                  <div style={{ display:"flex", justifyContent:"space-between", marginTop:7, paddingTop:7, borderTop:"0.5px solid rgba(45,45,58,0.1)" }}>
-                    <span style={{ fontSize:12, fontWeight:800, color:T.dark }}>Total</span>
-                    <span style={{ fontSize:12, fontWeight:800, color:"#C0392B" }}>{fmt(result.amount, result.currency || "LAK")}</span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            </div> {/* end scrollable content */}
-
-            {/* Pinned action buttons — always visible at bottom */}
-            <div style={{ padding:"12px 24px", paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 16px)",
-              borderTop:"0.5px solid rgba(45,45,58,0.06)", background:"#fff", flexShrink:0 }}>
-              <div style={{ display:"flex", gap:10 }}>
-                <button onClick={() => setStatus("idle")}
-                  style={{ flex:1, padding:"14px", borderRadius:16, border:"none", cursor:"pointer", background:"rgba(45,45,58,0.06)", color:T.muted, fontWeight:700, fontSize:14, fontFamily:"'Noto Sans',sans-serif" }}>
-                  {lang==="lo"?"ຍົກເລີກ":lang==="th"?"ยกเลิก":"Cancel"}
-                </button>
-                <button onClick={confirmAdd}
-                  style={{ flex:2, padding:"14px", borderRadius:16, border:"none", cursor:"pointer", background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)", color:"#1A4020", fontWeight:800, fontSize:15, fontFamily:"'Noto Sans',sans-serif", boxShadow:"0 4px 16px rgba(172,225,175,0.4)" }}>
-                  {lang==="lo"?"ບັນທຶກ ✓":lang==="th"?"บันทึก ✓":"Save ✓"}
-                </button>
-              </div>
+        <Sheet open={true} onClose={() => setStatus("idle")} showCloseButton={false} maxHeight="calc(85dvh - 90px)" footer={
+          <div style={{ borderTop:"0.5px solid rgba(45,45,58,0.06)", paddingTop:12 }}>
+            <div style={{ display:"flex", gap:10 }}>
+              <button onClick={() => setStatus("idle")}
+                style={{ flex:1, padding:"14px", borderRadius:16, border:"none", cursor:"pointer", background:"rgba(45,45,58,0.06)", color:T.muted, fontWeight:700, fontSize:14, fontFamily:"'Noto Sans',sans-serif" }}>
+                {lang==="lo"?"ຍົກເລີກ":lang==="th"?"ยกเลิก":"Cancel"}
+              </button>
+              <button onClick={confirmAdd}
+                style={{ flex:2, padding:"14px", borderRadius:16, border:"none", cursor:"pointer", background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)", color:"#1A4020", fontWeight:800, fontSize:15, fontFamily:"'Noto Sans',sans-serif", boxShadow:"0 4px 16px rgba(172,225,175,0.4)" }}>
+                {lang==="lo"?"ບັນທຶກ ✓":lang==="th"?"บันทึก ✓":"Save ✓"}
+              </button>
             </div>
           </div>
-        </div>
+        }>
+          <div style={{ textAlign:"center", marginBottom:16, paddingTop:24 }}>
+            <div style={{ fontSize:14, color:T.muted, marginBottom:6, fontWeight:600 }}>
+              {lang==="lo"?"📷 ອ່ານໃບບິນໄດ້!":lang==="th"?"📷 อ่านใบเสร็จได้!":"📷 Receipt scanned!"}
+            </div>
+            <div style={{ display:"inline-block", padding:"2px 10px", borderRadius:8, fontSize:11, fontWeight:700,
+              background: result.confidence >= 0.8 ? "rgba(172,225,175,0.2)" : "rgba(255,179,167,0.2)",
+              color: result.confidence >= 0.8 ? "#1A5A30" : "#A03020" }}>
+              {result.confidence >= 0.8 ? "✓ High confidence" : "⚠ Please verify"}
+            </div>
+          </div>
+
+          {/* Transaction preview */}
+          <div style={{ background:T.bg, borderRadius:20, padding:"16px 18px", marginBottom:16 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:14 }}>
+              <div style={{ width:52, height:52, borderRadius:16, background:"rgba(255,179,167,0.2)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:26, flexShrink:0 }}>
+                {findCat(result.category || "other", profile?.customCategories || []).emoji}
+              </div>
+              <div style={{ flex:1 }}>
+                <div style={{ fontWeight:700, fontSize:16, color:T.dark, fontFamily:"'Noto Sans',sans-serif" }}>{result.description}</div>
+                <div style={{ fontSize:12, color:T.muted, marginTop:2 }}>
+                  {catLabel(findCat(result.category || "other", profile?.customCategories || []), lang)} · {result.currency}
+                </div>
+              </div>
+              <div style={{ fontWeight:800, fontSize:20, color:"#C0392B", fontFamily:"'Noto Sans',sans-serif" }}>
+                −{fmt(result.amount, result.currency || "LAK")}
+              </div>
+            </div>
+            {/* Item list if OCR extracted line items */}
+            {result.items && result.items.length > 0 && (
+              <div style={{ marginTop:12, borderTop:"0.5px solid rgba(45,45,58,0.07)", paddingTop:10 }}>
+                <div style={{ fontSize:10, fontWeight:700, color:T.muted, textTransform:"uppercase", letterSpacing:0.8, marginBottom:7 }}>
+                  {result.items.length} items detected
+                </div>
+                {result.items.map((item, i) => (
+                  <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"4px 0", borderBottom: i < result.items.length-1 ? "0.5px solid rgba(45,45,58,0.05)" : "none" }}>
+                    <span style={{ fontSize:12, color:T.dark }}>{item.name}</span>
+                    <span style={{ fontSize:12, fontWeight:700, color:T.muted }}>{fmt(item.amount, result.currency || "LAK")}</span>
+                  </div>
+                ))}
+                <div style={{ display:"flex", justifyContent:"space-between", marginTop:7, paddingTop:7, borderTop:"0.5px solid rgba(45,45,58,0.1)" }}>
+                  <span style={{ fontSize:12, fontWeight:800, color:T.dark }}>Total</span>
+                  <span style={{ fontSize:12, fontWeight:800, color:"#C0392B" }}>{fmt(result.amount, result.currency || "LAK")}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </Sheet>
       )}
     </>
   );
@@ -1533,8 +1604,8 @@ function QuickAddBar({lang,onAdd,customCategories=[],userId=null,onShowAdvisor=n
       local.type=mode;
       local.category=normalizeCategory(local.category,mode);
 
-      // High confidence → save instantly, AI corrects silently in background
-      if(local.confidence>=0.88){
+      // Confident local parse (≥0.60) → save instantly, AI corrects silently in background
+      if(local.confidence>=0.60){
         const catId=normalizeCategory(local.category,local.type);
         const cat=findCat(catId,customCategories);
         const txId="tx_"+Date.now()+"_"+Math.random().toString(36).slice(2);
@@ -1544,29 +1615,26 @@ function QuickAddBar({lang,onAdd,customCategories=[],userId=null,onShowAdvisor=n
         aiPromise.then(ai=>{
           if(ai&&ai.amount&&ai.category){
             const aiCat=normalizeCategory(ai.category,mode);
-            if(aiCat!==catId){onAdd({...tx,categoryId:aiCat,_update:true});}
+            if(aiCat!==catId&&(ai.confidence||0)>local.confidence){onAdd({...tx,categoryId:aiCat,confidence:ai.confidence||0.8,_update:true});}
             if(userId){dbSaveMemory(userId,text,ai.category,mode,ai.confidence||0.8).catch(()=>{});}
           }
         });
         return;
       }
 
-      // Lower confidence → show confirm with local result NOW,
-      // then update the card live while user is reading it
-      // Save immediately — AI corrects silently in background (instant UX, no confirm wait)
-      const catId2=normalizeCategory(local.category,local.type);
-      const cat2=findCat(catId2,customCategories);
-      const txId2="tx_"+Date.now()+"_"+Math.random().toString(36).slice(2);
-      const tx2={id:txId2,amount:local.amount,currency:local.currency,type:local.type,categoryId:cat2.id,description:local.description||text,note:"",date:new Date().toISOString().split("T")[0],confidence:local.confidence,createdAt:new Date().toISOString()};
-      onAdd(tx2);
+      // Low confidence (<0.60) → wait for AI up to 3s, pick best result, save once
+      const ai=await Promise.race([aiPromise,new Promise(r=>setTimeout(()=>r(null),3000))]);
+      const useAi=ai&&ai.amount>0&&(ai.confidence||0)>local.confidence;
+      const best=useAi
+        ?{amount:ai.amount,currency:ai.currency||local.currency,type:mode,category:normalizeCategory(ai.category,mode),description:ai.description||local.description||text,confidence:ai.confidence}
+        :{amount:local.amount,currency:local.currency,type:local.type,category:local.category,description:local.description||text,confidence:local.confidence};
+      const catId=normalizeCategory(best.category,best.type||mode);
+      const cat=findCat(catId,customCategories);
+      const txId="tx_"+Date.now()+"_"+Math.random().toString(36).slice(2);
+      const tx={id:txId,amount:best.amount,currency:best.currency,type:best.type||mode,categoryId:cat.id,description:best.description,note:"",date:new Date().toISOString().split("T")[0],confidence:best.confidence,createdAt:new Date().toISOString()};
+      onAdd(tx);
       setInput("");setStatus("idle");inputRef.current?.focus();
-      aiPromise.then(ai=>{
-        if(ai&&ai.amount&&ai.category){
-          const aiCat2=normalizeCategory(ai.category,mode);
-          if(aiCat2!==catId2){onAdd({...tx2,categoryId:aiCat2,_update:true});}
-          if(userId){dbSaveMemory(userId,text,ai.category,mode,ai.confidence||0.8).catch(()=>{});}
-        }
-      });
+      if(useAi&&userId){dbSaveMemory(userId,text,ai.category,mode,ai.confidence||0.8).catch(()=>{});}
       return;
     }
 
@@ -2616,6 +2684,7 @@ function AnalyticsScreen({ profile, transactions }) {
   // period: "today" | "week" | "month" | "all"
   const [period, setPeriod] = useState("month");
   const [monthOffset, setMonthOffset] = useState(0);
+  const [showWrap, setShowWrap] = useState(false);
 
   const now = new Date();
 
@@ -2944,8 +3013,233 @@ function AnalyticsScreen({ profile, transactions }) {
           );
         })()}
 
+        {/* Monthly Wrap card — only in month view */}
+        {period === "month" && (
+          <div onClick={() => setShowWrap(true)} style={{
+            marginTop:20, background:"linear-gradient(135deg, rgba(172,225,175,0.25) 0%, rgba(233,255,219,0.4) 100%)",
+            border:"1px solid rgba(172,225,175,0.4)", borderRadius:22, padding:"16px 18px",
+            boxShadow:T.shadow, cursor:"pointer", display:"flex", alignItems:"center", gap:14,
+          }}>
+            <div style={{ width:42, height:42, borderRadius:14, background:"rgba(172,225,175,0.3)",
+              display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, flexShrink:0 }}>📖</div>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:14, fontWeight:800, color:T.dark, fontFamily:"'Noto Sans',sans-serif" }}>{t(lang,"wrap_title")}</div>
+              <div style={{ fontSize:12, color:T.muted, marginTop:2 }}>{t(lang,"wrap_subtitle")}</div>
+            </div>
+            <div style={{ fontSize:18, color:T.muted, flexShrink:0 }}>›</div>
+          </div>
+        )}
+
       </>)}
+
+      {showWrap && <MonthlyWrapModal open={showWrap} onClose={() => setShowWrap(false)} profile={profile} transactions={transactions} />}
     </div>
+  );
+}
+
+// ═══ MONTHLY WRAP MODAL ═══════════════════════════════════════
+const getMonthName = (month, lang) => {
+  const mo = parseInt(month.split("-")[1], 10) - 1;
+  return (i18n[lang]?.months || i18n.en.months)[mo];
+};
+
+const buildMonthlyWrapPayload = (transactions, month) =>
+  transactions
+    .filter(tx => tx.date.startsWith(month))
+    .map(tx => ({
+      d: tx.date,
+      t: tx.type === "income" ? "in" : "ex",
+      a: Math.round(tx.amount),
+      c: tx.currency,
+      cat: tx.categoryId || "other",
+      n: (tx.description || tx.categoryId || "").slice(0, 40),
+    }));
+
+const computePrevMonthExpense = (transactions, month) => {
+  const [y, m] = month.split("-").map(Number);
+  const pm = m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, "0")}`;
+  const exp = {};
+  transactions.forEach(tx => {
+    if (tx.date.startsWith(pm) && tx.type === "expense")
+      exp[tx.currency] = (exp[tx.currency] || 0) + tx.amount;
+  });
+  return exp;
+};
+
+function MonthlyWrapModal({ open, onClose, profile, transactions }) {
+  const { lang, userId } = profile;
+  const [narrative, setNarrative] = useState(null);
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const now = new Date();
+  const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const monthName = getMonthName(month, lang);
+
+  const generate = async () => {
+    setLoading(true);
+    setError(null);
+    setNarrative(null);
+    setStats(null);
+
+    try {
+      // Check cache first
+      const { data: cached } = await supabase.from("monthly_reports")
+        .select("*").eq("user_id", userId).eq("month", month).maybeSingle();
+
+      const langCol = `narrative_${lang}`;
+      if (cached && cached[langCol]) {
+        setNarrative(cached[langCol]);
+        setStats(cached.stats);
+        setLoading(false);
+        return;
+      }
+
+      // Build payload
+      const monthTxs = buildMonthlyWrapPayload(transactions, month);
+      if (!monthTxs.length) {
+        setError("empty");
+        setLoading(false);
+        return;
+      }
+
+      const prevExp = computePrevMonthExpense(transactions, month);
+
+      const res = await fetch("https://api.phanote.com/monthly-report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: userId, month, lang,
+          transactions: monthTxs,
+          prev_month_expense: Object.keys(prevExp).length ? prevExp : undefined,
+        }),
+      });
+      const data = await res.json();
+
+      if (data.narrative) {
+        setNarrative(data.narrative);
+        setStats(data.stats);
+        // Cache result (upsert handles both insert + update via unique constraint)
+        await supabase.from("monthly_reports").upsert({
+          user_id: userId, month,
+          [langCol]: data.narrative, stats: data.stats,
+          generated_at: new Date().toISOString(), generation_model: data.model,
+        }, { onConflict: "user_id,month" });
+      } else if (data.stats) {
+        setStats(data.stats);
+        setError("partial");
+      } else {
+        setError("failed");
+      }
+    } catch {
+      setError("failed");
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { if (open) generate(); }, [open]);
+
+  const modalTitle = lang === "lo" ? `ສະຫຼຸບ${monthName}` : lang === "th" ? `สรุป${monthName}` : `${monthName} Wrap`;
+
+  const StatCard = ({ label, value, sub }) => (
+    <div style={{ background:"rgba(45,45,58,0.04)", borderRadius:16, padding:"12px 14px" }}>
+      <div style={{ fontSize:10, fontWeight:700, color:T.muted, textTransform:"uppercase", letterSpacing:0.6 }}>{label}</div>
+      <div style={{ fontSize:15, fontWeight:800, color:T.dark, fontFamily:"'Noto Sans',sans-serif", marginTop:4 }}>{value}</div>
+      {sub && <div style={{ fontSize:11, color:T.muted, marginTop:2 }}>{sub}</div>}
+    </div>
+  );
+
+  return (
+    <Sheet open={open} onClose={onClose} title={`📖 ${modalTitle}`} footer={
+      <button onClick={onClose} style={{ width:"100%", padding:14, borderRadius:16, border:"none", cursor:"pointer",
+        background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)", color:"#1A4020", fontWeight:800, fontSize:14,
+        fontFamily:"'Noto Sans',sans-serif", boxShadow:"0 4px 16px rgba(172,225,175,0.4)" }}>
+        {t(lang,"wrap_close")}
+      </button>
+    }>
+      <div style={{ paddingBottom:16 }}>
+        {/* Loading */}
+        {loading && (
+          <div style={{ textAlign:"center", padding:"48px 16px" }}>
+            <div style={{ fontSize:14, color:T.muted, fontWeight:600, fontFamily:"'Noto Sans',sans-serif", marginBottom:12 }}>
+              {t(lang,"wrap_generating")}
+            </div>
+            <div style={{ display:"flex", gap:5, justifyContent:"center" }}>
+              {[0,1,2].map(i => <div key={i} style={{ width:7, height:7, borderRadius:"50%", background:T.muted, animation:`bounce .9s ease ${i*0.2}s infinite` }}/>)}
+            </div>
+          </div>
+        )}
+
+        {/* Empty month */}
+        {error === "empty" && (
+          <div style={{ textAlign:"center", padding:"48px 16px" }}>
+            <div style={{ fontSize:40, marginBottom:12 }}>📖</div>
+            <div style={{ fontSize:14, color:T.muted, fontFamily:"'Noto Sans',sans-serif", lineHeight:1.6 }}>
+              {t(lang,"wrap_empty")}
+            </div>
+          </div>
+        )}
+
+        {/* Error with retry */}
+        {error === "failed" && (
+          <div style={{ textAlign:"center", padding:"48px 16px" }}>
+            <div style={{ fontSize:14, color:T.muted, fontFamily:"'Noto Sans',sans-serif", marginBottom:16 }}>
+              {t(lang,"wrap_error")}
+            </div>
+            <button onClick={generate} style={{ padding:"10px 24px", borderRadius:14, border:"none", cursor:"pointer",
+              background:T.celadon, fontWeight:700, fontSize:13, color:"#1A4020", fontFamily:"'Noto Sans',sans-serif" }}>
+              {t(lang,"wrap_retry")}
+            </button>
+          </div>
+        )}
+
+        {/* Partial success — stats but no narrative */}
+        {error === "partial" && (
+          <div style={{ fontSize:13, color:T.muted, fontFamily:"'Noto Sans',sans-serif", textAlign:"center",
+            padding:"12px 16px", background:"rgba(172,225,175,0.1)", borderRadius:14, marginBottom:16 }}>
+            {t(lang,"wrap_partial")}
+          </div>
+        )}
+
+        {/* Narrative */}
+        {narrative && (
+          <div style={{ fontSize:14, lineHeight:1.7, color:T.dark, fontFamily:"'Noto Sans',sans-serif",
+            padding:"8px 0 20px", fontWeight:400 }}>
+            {narrative}
+          </div>
+        )}
+
+        {/* Stats grid */}
+        {stats && !loading && (
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+            <StatCard label={t(lang,"wrap_total_expense")}
+              value={Object.entries(stats.total_expense).map(([c,a]) => fmtCompact(a,c)).join(", ") || "—"} />
+            <StatCard label={t(lang,"wrap_total_income")}
+              value={Object.entries(stats.total_income).map(([c,a]) => fmtCompact(a,c)).join(", ") || "—"} />
+            {stats.top_category && (
+              <StatCard label={t(lang,"wrap_top_category")}
+                value={`${stats.top_category.name}`}
+                sub={fmt(stats.top_category.amount, stats.top_category.currency)} />
+            )}
+            {stats.biggest_day && (
+              <StatCard label={t(lang,"wrap_biggest_day")}
+                value={stats.biggest_day.date.slice(5)}
+                sub={fmt(stats.biggest_day.amount, stats.biggest_day.currency)} />
+            )}
+            <StatCard label={t(lang,"wrap_active_days")}
+              value={`${stats.active_days} / ${stats.days_in_month}`} />
+            {stats.vs_last_month && Object.keys(stats.vs_last_month).length > 0 && (
+              <StatCard label={t(lang,"wrap_vs_last")}
+                value={Object.entries(stats.vs_last_month).map(([c,pct]) =>
+                  `${pct > 0 ? "+" : ""}${pct}%`
+                ).join(", ")}
+                sub={Object.keys(stats.vs_last_month).join(", ")} />
+            )}
+          </div>
+        )}
+      </div>
+    </Sheet>
   );
 }
 
@@ -2973,6 +3267,7 @@ function StreakBadge({ profile, onPress }) {
 
 // ═══ STREAK MODAL (tap badge → full card) ════════════════════
 function StreakModal({ profile, onClose }) {
+  const kbOffset = useKeyboardOffset();
   const { streakCount = 0, xp = 0, name = "" } = profile;
   const level    = getLevel(xp);
   const nextLevel = getNextLevel(xp);
@@ -3162,6 +3457,24 @@ function AiAdvisorModal({ profile, transactions, onClose }) {
     return lines.join("\n");
   };
 
+  const buildRecentTransactions = () => {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 7);
+    cutoff.setHours(0, 0, 0, 0);
+    return transactions
+      .filter(tx => new Date(tx.date) >= cutoff)
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .slice(0, 50)
+      .map(tx => ({
+        d: tx.date,
+        t: tx.type === "income" ? "in" : "ex",
+        a: Math.round(tx.amount),
+        c: tx.currency,
+        cat: tx.categoryId || "other",
+        n: (tx.description || tx.categoryId || "").slice(0, 40),
+      }));
+  };
+
   const ask = async (question) => {
     if (!question.trim() || loading) return;
     const q = question.trim();
@@ -3172,7 +3485,7 @@ function AiAdvisorModal({ profile, transactions, onClose }) {
       const res = await fetch("https://api.phanote.com/advise", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: q, lang, summary: buildSummary() }),
+        body: JSON.stringify({ question: q, lang, summary: buildSummary(), recentTransactions: buildRecentTransactions() }),
       });
       const data = await res.json();
       const reply = data.reply || data.error || "Sorry, couldn't get a response. Try again!";
@@ -4129,7 +4442,9 @@ export default function App(){
       // Also update in DB if it's been saved (has a real UUID)
       if (tx.id && !tx.id.startsWith("tx_")) {
         const cat = findCat(tx.categoryId, profile?.customCategories || []);
-        try { await dbUpdateTransaction(tx.id, { category_name: cat.en, category_emoji: cat.emoji }); } catch {}
+        const updates = { category_name: cat.en, category_emoji: cat.emoji };
+        if (tx.confidence != null) updates.ai_confidence = tx.confidence;
+        try { await dbUpdateTransaction(tx.id, updates); } catch {}
       }
       return;
     }
