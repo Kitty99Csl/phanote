@@ -226,22 +226,35 @@ export default {
 
       try {
         const body = await request.json();
-        const { question = "", lang = "en", summary = "" } = body;
+        const { question = "", lang = "en", summary = "", recentTransactions = [] } = body;
         if (!question.trim()) return Response.json({ error: "Empty question" }, { status: 400, headers: CORS });
 
         const langInstruction = lang === "lo"
           ? "Reply in Lao (ພາສາລາວ). Use Lao script."
           : lang === "th" ? "Reply in Thai (ภาษาไทย)." : "Reply in English.";
 
+        const recentTxBlock = recentTransactions.length
+          ? JSON.stringify(recentTransactions)
+          : "No transactions in the last 7 days.";
+
         const systemPrompt = `You are Phanote's warm, friendly AI financial advisor for users in Laos and Thailand managing LAK, THB, and USD.
 
-USER'S CURRENT FINANCIAL SNAPSHOT:
+MONTHLY SUMMARY:
 ${summary || "No financial data available yet."}
+
+RECENT TRANSACTIONS (last 7 days, newest first):
+${recentTxBlock}
+
+KEY: d=date, t=type(in/ex), a=amount, c=currency, cat=category, n=description
 
 INSTRUCTIONS:
 - ${langInstruction}
 - Be warm, specific, and encouraging. Never shame spending.
 - Reference their ACTUAL numbers when answering.
+- You can now answer questions about specific days, categories, and individual transactions from the last 7 days.
+- If asked about dates or transactions OUTSIDE the 7-day window, say "I only have details for the last 7 days, but here's what I can see from your monthly summary."
+- NEVER invent or assume transactions that are not in the data above.
+- Amounts in different currencies are NOT interchangeable. ₭1,000 ≠ ฿1,000 ≠ $1,000. Always mention the currency when citing amounts. Never add amounts across currencies.
 - Keep response under 120 words — concise and actionable.
 - Use 1-2 emojis max. If data is insufficient, say so honestly.`;
 

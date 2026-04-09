@@ -3207,6 +3207,24 @@ function AiAdvisorModal({ profile, transactions, onClose }) {
     return lines.join("\n");
   };
 
+  const buildRecentTransactions = () => {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 7);
+    cutoff.setHours(0, 0, 0, 0);
+    return transactions
+      .filter(tx => new Date(tx.date) >= cutoff)
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .slice(0, 50)
+      .map(tx => ({
+        d: tx.date,
+        t: tx.type === "income" ? "in" : "ex",
+        a: Math.round(tx.amount),
+        c: tx.currency,
+        cat: tx.categoryId || "other",
+        n: (tx.description || tx.categoryId || "").slice(0, 40),
+      }));
+  };
+
   const ask = async (question) => {
     if (!question.trim() || loading) return;
     const q = question.trim();
@@ -3217,7 +3235,7 @@ function AiAdvisorModal({ profile, transactions, onClose }) {
       const res = await fetch("https://api.phanote.com/advise", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: q, lang, summary: buildSummary() }),
+        body: JSON.stringify({ question: q, lang, summary: buildSummary(), recentTransactions: buildRecentTransactions() }),
       });
       const data = await res.json();
       const reply = data.reply || data.error || "Sorry, couldn't get a response. Try again!";
