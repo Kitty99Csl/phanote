@@ -819,6 +819,7 @@ const parseWithAI=async(text,customCatIds=[],userId=null)=>{
 const i18n={
   en:{
     welcome:"Welcome to Phanote",tagline:"ພາໂນດ · พาโนด · Your money, your story",
+    slogan:"Where did your money go? Let Phanote tell you.",
     your_name:"Your name",pick_avatar:"Pick your companion",pick_lang:"Choose your language",
     pick_currency:"Your main currency",pick_expense_cats:"Select expense categories",
     pick_income_cats:"Select income categories",next:"Next →",start:"Start tracking! 🐾",
@@ -875,6 +876,7 @@ const i18n={
   },
   lo:{
     welcome:"ຍິນດີຕ້ອນຮັບ Phanote",tagline:"ພາໂນດ — ຕິດຕາມການເງິນຂອງທ່ານ",
+    slogan:"ເງິນເຈົ້າໄປໃສ? ດຽວພາໂນດບອກໃຫ້ຟັງ",
     your_name:"ຊື່ຂອງທ່ານ",pick_avatar:"ເລືອກໂຕລະຄອນ",pick_lang:"ເລືອກພາສາ",
     pick_currency:"ສະກຸນເງິນຫຼັກ",pick_expense_cats:"ເລືອກໝວດລາຍຈ່າຍ",
     pick_income_cats:"ເລືອກໝວດລາຍຮັບ",next:"ຕໍ່ໄປ →",start:"ເລີ່ມເລີຍ! 🐾",
@@ -931,6 +933,7 @@ const i18n={
   },
   th:{
     welcome:"ยินดีต้อนรับสู่ Phanote",tagline:"พาโนด — ติดตามการเงินของคุณ",
+    slogan:"เงินของคุณไปไหน? ให้ Phanote เล่าให้ฟัง",
     your_name:"ชื่อของคุณ",pick_avatar:"เลือกตัวละคร",pick_lang:"เลือกภาษา",
     pick_currency:"สกุลเงินหลัก",pick_expense_cats:"เลือกหมวดรายจ่าย",
     pick_income_cats:"เลือกหมวดรายรับ",next:"ถัดไป →",start:"เริ่มเลย! 🐾",
@@ -1058,15 +1061,15 @@ function OnboardingScreen({onComplete, onBack}){
   const toggleCat=(id,list,setList)=>{if(list.includes(id)){if(list.length>1)setList(list.filter(x=>x!==id));}else setList([...list,id]);};
   const canAdvance=()=>step===0?name.trim().length>0:true;
   const advance=()=>{if(!canAdvance())return;if(step<4){setStep(step+1);return;}onComplete({name:name.trim(),avatar,lang,baseCurrency,expCats,incCats,customCategories:[]});};
-  const LANGS=[{code:"lo",flag:"🇱🇦",label:"ລາວ"},{code:"th",flag:"🇹🇭",label:"ไทย"},{code:"en",flag:"🇬🇧",label:"English"}];
+  const LANGS=[{code:"lo",flag:"🇱🇦",label:"ລາວ"},{code:"en",flag:"🇬🇧",label:"English"}];
   const catBtnStyle=(on)=>({display:"flex",alignItems:"center",gap:7,padding:"9px 14px",borderRadius:14,border:"none",cursor:"pointer",background:on?"rgba(172,225,175,0.25)":"rgba(45,45,58,0.05)",fontWeight:on?700:500,fontSize:13,color:T.dark,fontFamily:"'Noto Sans',sans-serif",transition:"all .2s ease"});
   return(
     <div style={{minHeight:"100dvh",background:T.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px 20px",position:"relative",overflow:"hidden"}}>
       <AnimalBg/>
       <div style={{textAlign:"center",marginBottom:28,zIndex:1,display:"flex",flexDirection:"column",alignItems:"center"}}>
         <Logo size={120} />
-        <div style={{fontFamily:"'Noto Sans',sans-serif",fontSize:30,fontWeight:800,color:T.dark,letterSpacing:-1,marginTop:6}}>Phanote</div>
-        <div style={{fontSize:12,color:T.muted,marginTop:2}}>ພາໂນດ · พาโนด</div>
+        <div style={{fontFamily:"'Noto Sans',sans-serif",fontSize:26,fontWeight:800,color:T.dark,letterSpacing:-1,marginTop:6}}>Phanote · ພາໂນດ</div>
+        <div style={{fontSize:12,color:T.muted,marginTop:6,textAlign:"center",maxWidth:300,lineHeight:1.5,fontFamily:"'Noto Sans',sans-serif",fontWeight:400}}>{t(lang,"slogan")}</div>
       </div>
       <div style={{display:"flex",gap:5,marginBottom:24,zIndex:1}}>
         {[0,1,2,3,4].map(i=><div key={i} style={{height:5,width:i===step?26:6,borderRadius:3,background:i<=step?T.celadon:"rgba(172,225,175,0.25)",transition:"all .35s cubic-bezier(.34,1.56,.64,1)"}}/>)}
@@ -4231,6 +4234,8 @@ function PinLock({ pinConfig, pinInput, pinShake, onKey, isSetup, setupMode, set
 }
 
 function LoginScreen({ onLogin }) {
+  // Public-facing screen — default to Lao per OQ-012 Lao-first positioning
+  const lang = "lo";
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("+856");
   const kbOffset = useKeyboardOffset();
@@ -4261,8 +4266,8 @@ function LoginScreen({ onLogin }) {
       <AnimalBg />
       <div style={{ textAlign:"center", marginBottom:36, zIndex:1, display:"flex", flexDirection:"column", alignItems:"center" }}>
         <Logo size={180} />
-        <div style={{ fontFamily:"'Noto Sans',sans-serif", fontSize:32, fontWeight:800, color:T.dark, letterSpacing:-1, marginTop:8 }}>Phanote</div>
-        <div style={{ fontSize:12, color:T.muted, marginTop:4 }}>ພາໂນດ · พาโนด</div>
+        <div style={{ fontFamily:"'Noto Sans',sans-serif", fontSize:28, fontWeight:800, color:T.dark, letterSpacing:-1, marginTop:8 }}>Phanote · ພາໂນດ</div>
+        <div style={{ fontSize:13, color:T.muted, marginTop:6, textAlign:"center", maxWidth:320, lineHeight:1.5, fontFamily:"'Noto Sans',sans-serif", fontWeight:400 }}>{t(lang,"slogan")}</div>
       </div>
       <div style={{ background:T.surface, backdropFilter:"blur(20px)", borderRadius:28,
         padding:"28px 24px", width:"100%", maxWidth:380, boxShadow:T.shadowLg, zIndex:1,
