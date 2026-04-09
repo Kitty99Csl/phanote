@@ -376,6 +376,21 @@ OCR, AI Advisor, Analytics, Goals, Streaks/XP, Safe-to-Spend, PIN security. **DO
 - `"💼 ເງິນເດືອນ — +₭4,500,000 · Money in! Let's track it well together."`
 - `"🙏 ເຮັດບຸນ — -₭100,000 · Good karma and good accounting. 🌿"`
 
+### Brand Voice (locked Session 5 Day 1)
+
+- **Slogan:** ເງິນເຈົ້າໄປໃສ? ດຽວພາໂນດບອກໃຫ້ຟັງ / Where did your
+  money go? Let Phanote tell you.
+- **Mascot:** Pha the capybora (hugs notebook, pink cheeks, keeps
+  your notes safe)
+- **Font for Lao:** Noto Sans Lao Looped (rounded, warm, storytelling)
+- **Animals rule updated:** Pha is the face of Phanote. Other animals
+  remain as ambient background pattern at 4-6% opacity — this is the
+  one exception to the "no mascot" rule.
+- **Positioning:** Lao-first publicly (landing + login), Thai still
+  accessible via Settings for existing users.
+- **Validated April 11, 2026:** First real user (wife) confirmed the
+  Lao slogan reads naturally and would pay yearly subscription.
+
 ---
 
 ## 15. RISK REGISTER

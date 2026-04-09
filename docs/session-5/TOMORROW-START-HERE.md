@@ -3,12 +3,12 @@
 
 ---
 
-## 🎉 UPDATE: Wife reaction captured
+## 🎉 UPDATE: Wife reaction captured (April 11)
 
 See docs/session-5/WIFE-REACTION.md — she loved it, would pay yearly.
 Core product validated. Session 6 focus shifts to growth + polish.
 
-## 🎯 Session 6 Priorities (from Kitty, post-wife-reaction)
+## 🎯 Session 6 Priorities
 
 ### Priority 1 — Landing page polish (60-90 min)
 - Real Monthly Wrap narrative demo card on phanote.com

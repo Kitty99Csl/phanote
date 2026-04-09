@@ -8,6 +8,31 @@ Phanote (ພາໂນດ / พาโนด) — multi-currency personal finance 
 - Working branch: session-4
 - Live: app.phanote.com, api.phanote.com, phanote.com
 
+## Brand Identity
+
+**Slogan (locked, Session 5 Day 1):**
+- Lao (primary): ເງິນເຈົ້າໄປໃສ? ດຽວພາໂນດບອກໃຫ້ຟັງ
+- English: Where did your money go? Let Phanote tell you.
+- Uses "ດຽວ" (diew) particle for conversational Lao friend-voice
+- Connects to Monthly Wrap feature (storytelling theme)
+
+**Logo:** Capybora hugging celadon green spiral notebook with
+"phanote" on left page and "ພາໂນດ" on right page. Warm brown line art
+with pink blush cheeks. Landscape aspect (823×433). Transparent PNG
+at 6 resolution tiers (32-1024px).
+
+**Positioning:** Lao-first publicly (landing + login), Thai still
+accessible via Settings for existing users.
+
+**Typography:**
+- Headlines / Lao display: Noto Sans Lao Looped (warm, rounded)
+- Body English: DM Sans
+- Display English: DM Serif Display
+- Colors: Celadon green #ACE1AF, warm brown line art, pink blush
+
+**Voice:** Warm, conversational, never judgmental. Like a friend
+telling you about your money over coffee, not a bank dashboard.
+
 ## Tech stack
 - Frontend: React + Vite, src/App.jsx is 3,381 lines (needs refactor into multi-layer structure)
 - DB: Supabase (Singapore)

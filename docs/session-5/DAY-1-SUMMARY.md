@@ -60,4 +60,63 @@ Phase 1B — Monthly Wrap frontend UI (~60-90 min)
 
 ---
 
-*"Phanote · ພາໂນດ · พาโนด — Lead your notes. Know your money."* 🐾🌿
+## Phase 1.5 — Logo transparent + resized (committed 2213d08)
+
+Fixed two visual issues found during Phase 1 verification:
+- Original logos had white background (clashed with page backgrounds)
+- Original sizes were too small (text inside logo illegible)
+
+Changes:
+- Replaced all public/ logo PNGs with transparent versions
+- Added 5 resolution tiers (64/128/256/512/1024)
+- Logo component uses height:auto (landscape aspect preserved)
+- Bumped all 8 Logo component size values for readability
+- LoginScreen hero: 80 → 180px
+- PinLock: 56 → 100px
+- Updated index.html with 5 favicon link tags
+
+## Phase 2 — Thai removal + slogan (committed de8e176)
+
+- Removed Thai from OnboardingScreen language picker
+- Kept Thai in SettingsScreen picker (existing users preserved)
+- Merged "Phanote · ພາໂນດ" into single line header
+- Removed Thai subtitle from LoginScreen + OnboardingScreen
+- Added language-aware slogan below title
+- Added slogan i18n keys in all 3 languages (en/lo/th)
+- LoginScreen hardcoded lang="lo" for Lao-first public face
+
+## Phase 3 — Landing page refresh (committed 3fc39a3)
+
+Complete landing/index.html refresh:
+- Added 5 favicon + 9 OG + 4 Twitter Card meta tags
+- Added Noto Sans Lao Looped font (warmer Lao letterforms)
+- Nav: capybora image logo + LA/EN language switcher
+- Hero: 512px capybora + slogan as headline (replaces old copy)
+- Stats: "3 Languages" → "2 Languages: Lao · English"
+- Features: added Monthly Wrap flagship card, dropped Thai tags
+- Languages section: removed Thai pill
+- Pricing: "Monthly AI report" → "📖 Monthly Wrap"
+- CTA watermark: emoji → capybora background image
+- Footer: image logo, removed Thai link
+- JavaScript: LA/EN switcher with localStorage persistence
+- 18 Thai content locations removed across 7 sections
+- 6 logo PNGs copied to landing/
+
+## Phase 4 — Wife validation (April 11)
+
+First real user test. See docs/session-5/WIFE-REACTION.md.
+Result: Would pay yearly. Core product validated.
+
+## Session 5 Day 1 scorecard
+
+- 12 commits
+- 1 major feature shipped (Monthly Wrap)
+- Full brand identity created (logo, slogan, positioning, font)
+- Capybora logo live on 8 app screens + landing page
+- Thai scope reduced to settings-only (18 landing locations removed)
+- Both app.phanote.com and phanote.com serving new brand
+- Wife would pay yearly (PMF at N=1)
+
+---
+
+*"Phanote · ພາໂນດ — Where did your money go? Let Phanote tell you."* 🐾🌿

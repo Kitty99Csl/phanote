@@ -88,7 +88,7 @@ on wife's feedback from Monthly Wrap testing.
 
 ### OQ-012 — Lao-first positioning + official slogan locked
 
-**Status:** Decision made, execution planned for Session 6
+**Status:** ✅ RESOLVED (Session 5 Day 1, April 11, 2026)
 **Priority:** 🟢 Brand/marketing foundation
 **Captured:** Session 5 Day 1, April 10 2026
 
@@ -257,5 +257,15 @@ How we'll know this worked:
 ## 🏷 Related OQs
 - OQ-011 — OCR bank statement scanning (should also be Lao-first when shipped)
 - Monthly Wrap (Phase 1A/1B shipped) — already Lao-capable, aligns with positioning
+
+### Resolution
+
+Implemented Lao-first positioning across app and landing page during
+Session 5 Day 1. Wife reaction confirmed the positioning works
+naturally. No Thai translation review needed per user. Locked in.
+
+Implementation commits:
+- `de8e176`: Thai removal from onboarding + slogan integration (app)
+- `3fc39a3`: Landing page refresh (phanote.com)
 
 ---
