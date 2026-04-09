@@ -3,10 +3,37 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Phanote · ພາໂນດ · พาโนด — Money made simple for life in Laos</title>
-<meta name="description" content="Track LAK, THB and USD in one cozy app. Log expenses in Lao, Thai or English. Built for everyday life in Laos.">
+<title>Phanote · ພາໂນດ — Where did your money go? Let Phanote tell you.</title>
+<meta name="description" content="Phanote — Multi-currency personal finance for life in Laos. Hold LAK, THB, and USD in one cozy app. AI-powered logging, smart categories, Monthly Wrap narratives, and a warm AI advisor. Free forever." />
+
+<!-- Favicon -->
+<link rel="icon" type="image/png" sizes="32x32" href="/phanote-favicon-32.png" />
+<link rel="icon" type="image/png" sizes="64x64" href="/phanote-favicon-64.png" />
+<link rel="icon" type="image/png" sizes="128x128" href="/phanote-logo-128.png" />
+<link rel="apple-touch-icon" sizes="256x256" href="/phanote-logo-256.png" />
+<link rel="apple-touch-icon" sizes="512x512" href="/phanote-logo-512.png" />
+<meta name="theme-color" content="#ACE1AF" />
+
+<!-- Open Graph / Social -->
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://phanote.com" />
+<meta property="og:title" content="Phanote — ເງິນເຈົ້າໄປໃສ? ດຽວພາໂນດບອກໃຫ້ຟັງ" />
+<meta property="og:description" content="Where did your money go? Let Phanote tell you. Multi-currency personal finance for life in Laos." />
+<meta property="og:image" content="https://phanote.com/phanote-logo-1024.png" />
+<meta property="og:image:width" content="1024" />
+<meta property="og:image:height" content="1024" />
+<meta property="og:locale" content="lo_LA" />
+<meta property="og:locale:alternate" content="en_US" />
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Phanote — Where did your money go?" />
+<meta name="twitter:description" content="Let Phanote tell you. Multi-currency personal finance for Laos." />
+<meta name="twitter:image" content="https://phanote.com/phanote-logo-1024.png" />
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=Noto+Sans+Lao:wght@400;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=Noto+Sans+Lao:wght@400;700&family=Noto+Sans+Lao+Looped:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root {
   --green-dark:  #1A4020;
@@ -103,7 +130,7 @@ nav{
   margin-bottom:40px;max-width:480px;font-weight:400;
 }
 .hero-lao{
-  font-family:'Noto Sans Lao',sans-serif;
+  font-family:'Noto Sans Lao Looped','Noto Sans Lao',sans-serif;
   font-size:14px;color:var(--green-mid);margin-bottom:8px;font-weight:700;
   letter-spacing:0.5px;
 }
@@ -277,7 +304,7 @@ section{padding:100px 40px;position:relative;z-index:1;}
 .why-title{font-size:19px;font-weight:700;color:var(--green-dark);margin-bottom:10px;}
 .why-desc{font-size:14px;line-height:1.7;color:var(--muted);}
 .why-lao{
-  font-family:'Noto Sans Lao',sans-serif;
+  font-family:'Noto Sans Lao Looped','Noto Sans Lao',sans-serif;
   font-size:12px;color:var(--green-mid);margin-top:12px;font-weight:600;
 }
 
@@ -431,10 +458,13 @@ section{padding:100px 40px;position:relative;z-index:1;}
   position:relative;overflow:hidden;
 }
 .cta-section::before{
-  content:'📒';
-  position:absolute;font-size:300px;opacity:0.03;
+  content:'';
+  position:absolute;
+  background:url('/phanote-logo-1024.png') no-repeat center;
+  background-size:contain;
+  width:400px;height:400px;
   top:50%;left:50%;transform:translate(-50%,-50%);
-  pointer-events:none;
+  opacity:0.06;pointer-events:none;
 }
 .cta-title{
   font-family:'DM Serif Display',serif;
@@ -509,6 +539,77 @@ footer{
   .stats-bar{padding:40px 20px;}
   .quote-section,.cta-section{padding:60px 20px;}
 }
+
+/* ── Logo image (replaces 📒 emoji) ── */
+.nav-logo img{
+  width:32px;height:auto;max-height:32px;
+  object-fit:contain;display:inline-block;
+  vertical-align:middle;margin-right:8px;
+}
+.hero-logo{
+  display:block;margin:0 auto 24px;
+  width:280px;max-width:60%;height:auto;
+}
+.footer-brand img{
+  width:28px;height:auto;
+  vertical-align:middle;margin-right:6px;
+}
+
+/* ── Language switcher ── */
+.lang-switch{
+  display:flex;align-items:center;gap:4px;
+  background:rgba(26,64,32,0.05);
+  border:1px solid rgba(172,225,175,0.3);
+  border-radius:999px;padding:4px;margin-right:16px;
+}
+.lang-switch button{
+  background:transparent;border:none;
+  color:var(--muted);
+  padding:6px 14px;font-size:12px;font-weight:600;
+  border-radius:999px;cursor:pointer;
+  transition:all .2s;font-family:inherit;
+}
+.lang-switch button:hover{color:var(--green-dark);}
+.lang-switch button.active{
+  background:var(--green-brand);color:#0a1a0a;
+}
+
+/* ── Language-aware content (default = Lao) ── */
+.lang-en{display:none;}
+body.lang-english .lang-lo{display:none;}
+body.lang-english .lang-en{display:initial;}
+body.lang-english h1.lang-en,
+body.lang-english p.lang-en,
+body.lang-english div.lang-en{display:block;}
+
+/* ── Slogan hero styling ── */
+.hero-slogan-lo{
+  font-family:'Noto Sans Lao Looped','Noto Sans Lao','DM Serif Display',serif;
+  font-size:48px;font-weight:700;line-height:1.3;
+  color:var(--dark);margin:0 0 16px;
+}
+.hero-slogan-en{
+  font-family:'DM Serif Display',serif;
+  font-size:48px;font-weight:400;line-height:1.15;
+  color:var(--dark);margin:0 0 16px;
+}
+.hero-slogan-sub{
+  font-size:17px;color:var(--muted);
+  margin-bottom:32px;font-weight:400;line-height:1.6;
+  max-width:540px;
+}
+@media(max-width:768px){
+  .hero-slogan-lo,.hero-slogan-en{font-size:32px;}
+  .hero-logo{width:200px;}
+}
+
+/* Lao text universally prefers Looped variant for warmth */
+.lang-lo,
+.hero-lao,
+.nav-logo-sub,
+.why-lao{
+  font-family:'Noto Sans Lao Looped','Noto Sans Lao','Noto Sans',sans-serif;
+}
 </style>
 </head>
 <body>
@@ -516,14 +617,19 @@ footer{
 <!-- NAV -->
 <nav>
   <a href="/" class="nav-logo">
-    📒 Phanote
-    <span class="nav-logo-sub">ພາໂນດ · พาโนด</span>
+    <img src="/phanote-logo-128.png" alt="Phanote" />
+    Phanote
+    <span class="nav-logo-sub">ພາໂນດ</span>
   </a>
   <div class="nav-links">
     <a href="#features">Features</a>
     <a href="#how">How it works</a>
     <a href="#pricing">Pricing</a>
     <a href="#languages">Languages</a>
+  </div>
+  <div class="lang-switch">
+    <button class="active" data-lang="lo">LA</button>
+    <button data-lang="en">EN</button>
   </div>
   <a href="https://app.phanote.com" class="nav-cta">Open App →</a>
 </nav>
@@ -533,20 +639,43 @@ footer{
   <div class="hero-bg"></div>
   <div class="hero-content">
     <div>
-      <div class="hero-lao">ພາໂນດ · พาโนด · Phanote</div>
-      <div class="hero-tag">🇱🇦 Built for life in Laos</div>
-      <h1>Money tracking,<br><em>finally easy</em><br>in Laos.</h1>
-      <p class="hero-sub">Hold LAK, THB, and USD in one cozy app. Log expenses in Lao, Thai, or English. Your money, your language.</p>
+      <img src="/phanote-logo-512.png" alt="Phanote" class="hero-logo" />
+
+      <div class="hero-tag">
+        <span class="lang-lo">🇱🇦 ສ້າງສຳລັບຊີວິດໃນລາວ</span>
+        <span class="lang-en">🇱🇦 Built for life in Laos</span>
+      </div>
+
+      <h1 class="hero-slogan-lo lang-lo">
+        ເງິນເຈົ້າໄປໃສ?<br>
+        ດຽວພາໂນດບອກໃຫ້ຟັງ
+      </h1>
+      <h1 class="hero-slogan-en lang-en">
+        Where did your money go?<br>
+        <em>Let Phanote tell you.</em>
+      </h1>
+
+      <p class="hero-slogan-sub lang-lo">
+        ບັນທຶກການເງິນຂອງເຈົ້າແບບງ່າຍໆ ໃນ LAK, THB, ແລະ USD — Phanote ເລົ່າເລື່ອງເງິນຂອງເຈົ້າໃຫ້ຟັງແບບເພື່ອນ.
+      </p>
+      <p class="hero-slogan-sub lang-en">
+        Multi-currency personal finance for life in Laos. Hold LAK, THB, and USD in one cozy app — and Phanote tells your money's story like a friend.
+      </p>
+
       <div class="hero-actions">
         <a href="https://app.phanote.com" class="btn-primary">
-          Start free — it takes 30 seconds
+          <span class="lang-lo">ເລີ່ມໃຊ້ຟຣີ → 30 ວິນາທີ</span>
+          <span class="lang-en">Start free — it takes 30 seconds</span>
         </a>
-        <a href="#how" class="btn-secondary">See how it works</a>
+        <a href="#how" class="btn-secondary">
+          <span class="lang-lo">ເບິ່ງວ່າມັນເຮັດວຽກແນວໃດ</span>
+          <span class="lang-en">See how it works</span>
+        </a>
       </div>
       <div class="hero-trust">
-        <span>✓ Free forever</span>
-        <span>✓ No credit card</span>
-        <span>✓ Lao, Thai & English</span>
+        <span>✓ <span class="lang-lo">ຟຣີຕະຫຼອດ</span><span class="lang-en">Free forever</span></span>
+        <span>✓ <span class="lang-lo">ບໍ່ຕ້ອງໃຊ້ບັດເຄຣດິດ</span><span class="lang-en">No credit card</span></span>
+        <span>✓ <span class="lang-lo">ລາວ ແລະ ອັງກິດ</span><span class="lang-en">Lao &amp; English</span></span>
       </div>
     </div>
     <div class="phone-wrap">
@@ -638,8 +767,8 @@ footer{
       <div class="stat-label">Currencies: LAK · THB · USD</div>
     </div>
     <div class="reveal">
-      <div class="stat-num">3</div>
-      <div class="stat-label">Languages: Lao · Thai · English</div>
+      <div class="stat-num">2</div>
+      <div class="stat-label">Languages: Lao · English</div>
     </div>
     <div class="reveal">
       <div class="stat-num">5s</div>
@@ -670,7 +799,7 @@ footer{
       <div class="why-card reveal">
         <div class="why-icon">🤖</div>
         <div class="why-title">Type anything, AI understands</div>
-        <div class="why-desc">Type "ຕຳໝາກຫຸ່ງ 25k" or "grab 89 baht" or "coffee $4". Our AI instantly recognises the amount, currency, and category — in Lao, Thai, or English, or all three mixed.</div>
+        <div class="why-desc">Type "ຕຳໝາກຫຸ່ງ 25k" or "grab 89 baht" or "coffee $4". Our AI instantly recognises the amount, currency, and category — in Lao or English, or both mixed in the same sentence.</div>
         <div class="why-lao">ພິມຫຍັງກໍໄດ້ · AI ຮູ້ຄວາມໝາຍ</div>
       </div>
       <div class="why-card reveal">
@@ -717,7 +846,6 @@ footer{
         <div class="feature-tags">
           <span class="feature-tag">Lao script</span>
           <span class="feature-tag">Romanized Lao</span>
-          <span class="feature-tag">Thai</span>
           <span class="feature-tag">English</span>
         </div>
       </div>
@@ -753,9 +881,27 @@ footer{
         </div>
       </div>
       <div class="feature-card wide reveal">
-        <div class="feature-num">05 · PRO</div>
+        <div class="feature-num">05 · PRO · NEW 📖</div>
+        <div class="feature-title">
+          <span class="lang-lo">ສະຫຼຸບເດືອນຂອງເຈົ້າ — ເລົ່າເປັນເລື່ອງ</span>
+          <span class="lang-en">Monthly Wrap — Your month, told as a story</span>
+        </div>
+        <div class="feature-desc">
+          <span class="lang-lo">ຫຼັງຈາກທຸກໆເດືອນ Phanote ຂຽນເລື່ອງອັນອົບອຸ່ນກ່ຽວກັບເງິນຂອງເຈົ້າໃຫ້ຟັງ. ບໍ່ມີການຕັດສິນ — ພຽງແຕ່ແບ່ງປັນການມອງເຫັນ, ຈຸດພິເສດ, ແລະກຳລັງໃຈ. ບັນທຶກຈິງຂອງເຈົ້າ, ເດືອນຂອງເຈົ້າ, ເລື່ອງຂອງເຈົ້າ.</span>
+          <span class="lang-en">Every month, Phanote writes you a warm story about your money. No judgment — just observations, highlights, and encouragement. Your real transactions, your month, your story. Built on Claude Haiku AI.</span>
+        </div>
+        <div class="feature-tags">
+          <span class="feature-tag">Claude Haiku</span>
+          <span class="feature-tag">Warm narrative</span>
+          <span class="feature-tag">Multi-currency stats</span>
+          <span class="feature-tag">Lao &amp; English</span>
+          <span class="feature-tag">Pro feature</span>
+        </div>
+      </div>
+      <div class="feature-card wide reveal">
+        <div class="feature-num">06 · PRO</div>
         <div class="feature-title">Receipt scanning with Lao OCR</div>
-        <div class="feature-desc">Take a photo of any receipt — Gemini Vision reads the merchant, total, and line items in Lao script. Saves the full itemised receipt with each transaction. Works on Lao, Thai, and English receipts.</div>
+        <div class="feature-desc">Take a photo of any receipt — Gemini Vision reads the merchant, total, and line items in Lao script. Saves the full itemised receipt with each transaction. Works on Lao and English receipts.</div>
         <div class="feature-tags">
           <span class="feature-tag">Gemini Vision</span>
           <span class="feature-tag">Lao script OCR</span>
@@ -765,17 +911,17 @@ footer{
         </div>
       </div>
       <div class="feature-card reveal">
-        <div class="feature-num">06 · PRO</div>
+        <div class="feature-num">07 · PRO</div>
         <div class="feature-title">AI financial advisor</div>
-        <div class="feature-desc">Ask anything about your finances in Lao, Thai, or English. Claude AI analyzes your real spending data and gives warm, specific advice.</div>
+        <div class="feature-desc">Ask anything about your finances in Lao or English. Cites your real transactions from the last 7 days. Powered by Claude Haiku.</div>
         <div class="feature-tags">
-          <span class="feature-tag">Claude AI</span>
+          <span class="feature-tag">Claude Haiku</span>
           <span class="feature-tag">Your real data</span>
-          <span class="feature-tag">3 languages</span>
+          <span class="feature-tag">Cites transactions</span>
         </div>
       </div>
       <div class="feature-card reveal">
-        <div class="feature-num">07 · PRO</div>
+        <div class="feature-num">08 · PRO</div>
         <div class="feature-title">AI Memory that learns you</div>
         <div class="feature-desc">The more you use Phanote, the smarter it gets. Patterns are saved and recognised instantly next time — no API call needed, zero latency.</div>
         <div class="feature-tags">
@@ -825,12 +971,11 @@ footer{
     <div class="reveal">
       <div class="section-tag" style="background:rgba(172,225,175,0.12);border-color:rgba(172,225,175,0.2);color:rgba(172,225,175,0.7);">Languages</div>
       <h2 class="section-title" style="color:var(--green-brand);">Type in any language.<br>Even mix them.</h2>
-      <p class="section-sub" style="color:rgba(255,255,255,0.5);">Phanote understands Lao script, romanized Lao, Thai, and English — even in the same sentence.</p>
+      <p class="section-sub" style="color:rgba(255,255,255,0.5);">Phanote understands Lao script, romanized Lao, and English — even in the same sentence.</p>
     </div>
     <div class="lang-row reveal">
       <div class="lang-pill" style="background:rgba(255,255,255,0.06);border-color:rgba(172,225,175,0.15);color:rgba(255,255,255,0.7);">🇱🇦 ພາສາລາວ · Lao script</div>
       <div class="lang-pill" style="background:rgba(255,255,255,0.06);border-color:rgba(172,225,175,0.15);color:rgba(255,255,255,0.7);">🔤 Romanized Lao</div>
-      <div class="lang-pill" style="background:rgba(255,255,255,0.06);border-color:rgba(172,225,175,0.15);color:rgba(255,255,255,0.7);">🇹🇭 ภาษาไทย · Thai</div>
       <div class="lang-pill" style="background:rgba(255,255,255,0.06);border-color:rgba(172,225,175,0.15);color:rgba(255,255,255,0.7);">🇬🇧 English</div>
       <div class="lang-pill" style="background:rgba(172,225,175,0.12);border-color:rgba(172,225,175,0.25);color:var(--green-brand);">✨ Mixed — all at once</div>
     </div>
@@ -890,7 +1035,7 @@ footer{
           <li>Analytics & charts</li>
           <li>Savings goals</li>
           <li>10-level streak system</li>
-          <li>Lao, Thai & English UI</li>
+          <li>Lao &amp; English UI</li>
         </ul>
         <a href="https://app.phanote.com" class="price-btn price-btn-free">Get started free</a>
       </div>
@@ -903,11 +1048,11 @@ footer{
         <div class="price-multi">฿100 / month · ₭70,000 / month</div>
         <ul class="price-features">
           <li>Everything in Free</li>
-          <li>Receipt OCR (Lao & Thai)</li>
+          <li>📖 Monthly Wrap — Your month as a story</li>
+          <li>Receipt OCR (Lao &amp; English)</li>
           <li>AI Financial Advisor</li>
           <li>AI Memory — learns your patterns</li>
           <li>Export CSV / Excel</li>
-          <li>Monthly AI report</li>
           <li>Priority support</li>
         </ul>
         <a href="https://app.phanote.com" class="price-btn price-btn-pro">Upgrade to Pro</a>
@@ -931,9 +1076,9 @@ footer{
   <div class="footer-inner">
     <div class="footer-top">
       <div>
-        <div class="footer-brand">📒 Phanote</div>
-        <p class="footer-desc">A cozy multi-currency personal finance tracker built for daily life in Laos. Track LAK, THB, and USD — in Lao, Thai, or English.</p>
-        <p style="margin-top:16px;font-size:12px;color:rgba(255,255,255,0.2);font-family:'Noto Sans Lao',sans-serif;">ພາໂນດ · พาโนด</p>
+        <div class="footer-brand"><img src="/phanote-logo-128.png" alt="" />Phanote</div>
+        <p class="footer-desc">A cozy multi-currency personal finance tracker built for daily life in Laos. Track LAK, THB, and USD — in Lao or English.</p>
+        <p style="margin-top:16px;font-size:12px;color:rgba(255,255,255,0.2);font-family:'Noto Sans Lao Looped','Noto Sans Lao',sans-serif;">ພາໂນດ</p>
       </div>
       <div class="footer-col">
         <div class="footer-col-title">Product</div>
@@ -945,7 +1090,6 @@ footer{
       <div class="footer-col">
         <div class="footer-col-title">Languages</div>
         <a href="#">ພາສາລາວ</a>
-        <a href="#">ภาษาไทย</a>
         <a href="#">English</a>
       </div>
       <div class="footer-col">
@@ -985,6 +1129,26 @@ document.querySelectorAll('a[href^="#"]').forEach(a => {
     if(el) el.scrollIntoView({ behavior:'smooth', block:'start' });
   });
 });
+
+// Language switcher (Lao default per OQ-012)
+(function() {
+  const savedLang = localStorage.getItem('phanote-lang') || 'lo';
+  document.body.classList.toggle('lang-english', savedLang === 'en');
+
+  document.querySelectorAll('.lang-switch button').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.lang === savedLang);
+
+    btn.addEventListener('click', () => {
+      const newLang = btn.dataset.lang;
+      localStorage.setItem('phanote-lang', newLang);
+      document.body.classList.toggle('lang-english', newLang === 'en');
+
+      document.querySelectorAll('.lang-switch button').forEach(b => {
+        b.classList.toggle('active', b.dataset.lang === newLang);
+      });
+    });
+  });
+})();
 </script>
 </body>
 </html>
