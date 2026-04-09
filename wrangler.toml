@@ -10,3 +10,4 @@ routes = [
 AI_ENABLED = "true"
 ADVISOR_ENABLED = "true"
 OCR_ENABLED = "true"
+MONTHLY_WRAP_ENABLED = "true"

@@ -28,6 +28,7 @@ const RATE_LIMITS = {
   "/parse":  120,  // 120 req/min per IP
   "/advise":  20,  // 20 req/min per IP
   "/ocr":     15,  // 15 req/min per IP
+  "/monthly-report": 10,  // 10 req/min per IP (monthly feature)
 };
 
 function checkRateLimit(ip, route) {
@@ -70,6 +71,7 @@ function isFeatureEnabled(env, feature) {
     parse: "AI_ENABLED",
     advise: "ADVISOR_ENABLED",
     ocr: "OCR_ENABLED",
+    monthly_report: "MONTHLY_WRAP_ENABLED",
   }[feature];
   return env[varName] === "true";
 }
@@ -79,6 +81,7 @@ function disabledResponse(feature) {
     parse: "AI parsing is temporarily unavailable. Please enter your transaction manually.",
     advise: "AI advisor is temporarily unavailable. Please try again later.",
     ocr: "Receipt scanning is temporarily unavailable. Please enter manually.",
+    monthly_report: "Monthly wrap is temporarily unavailable. Please try again later.",
   };
   return Response.json({
     error: "feature_disabled",
@@ -160,6 +163,97 @@ const fixAmount = (a, currency) => {
   return n;
 };
 
+// ─── MONTHLY WRAP — Stats computation ────────────────────────────
+// Computes all stats from the transactions array + formats strings for prompt.
+// Returns { raw: {...}, formatted: {...} }
+function computeWrapStats(transactions, prevMonthExpense, month) {
+  const sym = c => c === "LAK" ? "₭" : c === "THB" ? "฿" : "$";
+  const fmtNum = n => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  const fmt = (n, c) => `${sym(c)}${fmtNum(n)}`;
+
+  const expByCur = {}, incByCur = {}, curCounts = {};
+  const catExp = {}, dayExp = {}, dayTxs = {};
+  const activeDays = new Set();
+
+  // First pass: totals + determine primary currency
+  for (const tx of transactions) {
+    activeDays.add(tx.d);
+    curCounts[tx.c] = (curCounts[tx.c] || 0) + 1;
+    if (tx.t === "ex") expByCur[tx.c] = (expByCur[tx.c] || 0) + tx.a;
+    else incByCur[tx.c] = (incByCur[tx.c] || 0) + tx.a;
+  }
+
+  const primaryCur = Object.entries(curCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || "LAK";
+
+  // Second pass: category + day breakdowns (primary currency)
+  for (const tx of transactions) {
+    if (tx.t !== "ex" || tx.c !== primaryCur) continue;
+    catExp[tx.cat] = (catExp[tx.cat] || 0) + tx.a;
+    dayExp[tx.d] = (dayExp[tx.d] || 0) + tx.a;
+    if (!dayTxs[tx.d]) dayTxs[tx.d] = [];
+    dayTxs[tx.d].push(tx);
+  }
+
+  const sortedCats = Object.entries(catExp).sort((a, b) => b[1] - a[1]);
+  const topCat = sortedCats[0] || null;
+  const top3 = sortedCats.slice(0, 3);
+
+  const sortedDays = Object.entries(dayExp).sort((a, b) => b[1] - a[1]);
+  const bigDay = sortedDays[0] || null;
+  const bigDayTopTx = bigDay
+    ? (dayTxs[bigDay[0]] || []).sort((a, b) => b.a - a.a).slice(0, 3)
+    : [];
+
+  const [yr, mo] = month.split("-").map(Number);
+  const daysInMonth = new Date(yr, mo, 0).getDate();
+
+  // vs last month
+  let vsLastMonth = null;
+  if (prevMonthExpense && Object.keys(prevMonthExpense).length) {
+    vsLastMonth = {};
+    for (const [cur, prev] of Object.entries(prevMonthExpense)) {
+      if (prev > 0) vsLastMonth[cur] = Math.round(((expByCur[cur] || 0) - prev) / prev * 1000) / 10;
+    }
+    if (!Object.keys(vsLastMonth).length) vsLastMonth = null;
+  }
+
+  const fmtObj = obj => Object.entries(obj).map(([c, a]) => fmt(a, c)).join(", ") || "none";
+
+  return {
+    raw: {
+      total_expense: expByCur,
+      total_income: incByCur,
+      top_category: topCat ? { name: topCat[0], amount: topCat[1], currency: primaryCur } : null,
+      biggest_day: bigDay ? {
+        date: bigDay[0], amount: bigDay[1], currency: primaryCur,
+        top_transactions: bigDayTopTx.map(tx => ({ cat: tx.cat, amount: tx.a, n: tx.n })),
+      } : null,
+      active_days: activeDays.size,
+      days_in_month: daysInMonth,
+      transaction_count: transactions.length,
+      vs_last_month: vsLastMonth,
+      top_3_categories: top3.map(([name, amount]) => ({ name, amount, currency: primaryCur })),
+    },
+    formatted: {
+      total_expense_by_currency: fmtObj(expByCur),
+      total_income_by_currency: fmtObj(incByCur),
+      top_category: topCat?.[0] || "none",
+      top_category_amount: topCat ? fmt(topCat[1], primaryCur) : "none",
+      biggest_day: bigDay?.[0] || "none",
+      biggest_day_amount: bigDay ? fmt(bigDay[1], primaryCur) : "none",
+      biggest_day_items: bigDayTopTx.map(tx => `${tx.n || tx.cat} (${fmt(tx.a, primaryCur)})`).join(", "),
+      active_days: activeDays.size,
+      days_in_month: daysInMonth,
+      top_3_categories: top3.length
+        ? top3.map((c, i) => `${i + 1}. ${c[0]}: ${fmt(c[1], primaryCur)}`).join("\n")
+        : "No categories yet.",
+      vs_last_month: vsLastMonth
+        ? Object.entries(vsLastMonth).map(([c, pct]) => `${sym(c)} spending ${pct > 0 ? "up" : "down"} ${Math.abs(pct)}%`).join(", ")
+        : null,
+    },
+  };
+}
+
 export default {
   async fetch(request, env) {
     if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
@@ -177,14 +271,15 @@ export default {
 
     if (url.pathname === "/" || url.pathname === "/health") {
       return Response.json({
-        status: "ok", service: "Phanote API", version: "4.2.0",
-        parse: "gemini-2.5-flash", advise: "claude-haiku-4-5", ocr: "gemini-2.5-flash-vision",
-        routes: ["/parse", "/advise", "/ocr"],
+        status: "ok", service: "Phanote API", version: "4.3.0",
+        parse: "gemini-2.5-flash", advise: "claude-haiku-4-5", ocr: "gemini-2.5-flash-vision", monthly_report: "claude-haiku-4-5",
+        routes: ["/parse", "/advise", "/ocr", "/monthly-report"],
         features: ["rate_limiting", "kill_switch"],
         status_flags: {
           ai_parse: isFeatureEnabled(env, "parse"),
           advisor: isFeatureEnabled(env, "advise"),
           ocr: isFeatureEnabled(env, "ocr"),
+          monthly_wrap: isFeatureEnabled(env, "monthly_report"),
         },
       }, { headers: CORS });
     }
@@ -378,6 +473,112 @@ Rules:
 
       } catch (e) {
         return Response.json({ error: "OCR failed", detail: e.message }, { status: 500, headers: CORS });
+      }
+    }
+
+    // ─── POST /monthly-report — Claude Haiku ──────────────────────
+    // Monthly Wrap: warm narrative + computed stats for a given month.
+    // Frontend sends transactions; worker computes stats + generates narrative.
+    if (url.pathname === "/monthly-report") {
+      if (!isFeatureEnabled(env, "monthly_report")) return disabledResponse("monthly_report");
+
+      try {
+        const body = await request.json();
+        const { user_id, month, lang = "en", transactions = [], prev_month_expense } = body;
+
+        if (!month || !/^\d{4}-\d{2}$/.test(month))
+          return Response.json({ error: "Invalid or missing month (expected YYYY-MM)" }, { status: 400, headers: CORS });
+        if (!transactions.length)
+          return Response.json({ error: "No transactions for this month" }, { status: 400, headers: CORS });
+
+        const { raw: stats, formatted: f } = computeWrapStats(transactions, prev_month_expense, month);
+
+        const langInstruction = lang === "lo"
+          ? "Reply in Lao (ພາສາລາວ). Use Lao script."
+          : lang === "th" ? "Reply in Thai (ภาษาไทย)." : "Reply in English.";
+
+        const systemPrompt = `You are Phanote's warm, end-of-month financial storyteller for users in Laos and Thailand managing LAK, THB, and USD.
+
+Your job: Write a warm, specific, non-judgmental narrative summarizing the user's month. Think of it like a friend reflecting on their month over coffee.
+
+=== THE MONTH ===
+Month: ${month}
+Language: ${lang}
+
+=== THE NUMBERS (use only these — never invent) ===
+Total expenses: ${f.total_expense_by_currency}
+Total income: ${f.total_income_by_currency}
+Top spending category: ${f.top_category} (${f.top_category_amount})
+Biggest single day: ${f.biggest_day} (${f.biggest_day_amount})${f.biggest_day_items ? `\n  That day's highlights: ${f.biggest_day_items}` : ""}
+Active logging days: ${f.active_days} of ${f.days_in_month}
+${f.vs_last_month ? `Vs last month: ${f.vs_last_month}` : ""}
+
+Top 3 categories:
+${f.top_3_categories}
+
+=== INSTRUCTIONS ===
+- ${langInstruction} (write ONLY in ${lang})
+- NEVER invent numbers not shown above.
+- ALWAYS mention the currency explicitly (₭, ฿, $).
+- NEVER add amounts across different currencies.
+- Structure your narrative in this order:
+  1. Opening — warm greeting to the month (1 sentence)
+  2. Big picture — the key stat (top category or biggest day)
+  3. Comparison — vs last month if available, otherwise a neutral observation
+  4. Forward-looking — a gentle encouragement for next month (1 sentence)
+- Keep under 120 words total.
+- Use exactly 2-3 emojis (match the tone: 🌿 ☕ 🍜 🚗 💚 📊 🏡)
+- Warm, never judgmental. If spending was high, say "you lived fully" not "you overspent".
+- If spending decreased vs last month, say "nice awareness" not "good discipline".
+- If data is thin (few transactions), acknowledge gently: "A quiet month of tracking — that's okay!"
+
+=== TONE EXAMPLES ===
+
+Good (en):
+"April was a flavorful month ☕ You spent ₭3.2M, with food leading at ₭1.2M — that coffee habit is real and I love it for you! Your biggest day was April 8th (₭640k — dinner at MK and some Beer Lao). You're spending 8% more than March, but logging 25 days vs 18 — you're really paying attention. Let's see what May brings! 🌿"
+
+Good (lo):
+"ເດືອນເມສາຜ່ານໄປແບບມີລົດຊາດ ☕ ເຈົ້າໃຊ້ຈ່າຍ ₭3.2M, ກິນມາເປັນອັນດັບ 1 ທີ່ ₭1.2M — ນັ້ນແມ່ນກາເຟຊີວິດ! 🌿..."
+
+Good (thin month):
+"A quiet month of tracking — that's okay! 🌿 You logged 8 transactions totaling ₭420k, mostly groceries. When you're ready to track more, I'll be here 💚"
+
+Bad (never do this):
+"You spent WAY too much on food. Try to cut back in May."
+
+=== OUTPUT ===
+Return ONLY the narrative text. No JSON, no markdown, no headers.`;
+
+        const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": env.ANTHROPIC_API_KEY,
+            "anthropic-version": "2023-06-01",
+          },
+          body: JSON.stringify({
+            model: "claude-haiku-4-5",
+            max_tokens: 1024,
+            system: systemPrompt,
+            messages: [{ role: "user", content: `Generate the monthly wrap narrative for ${month}.` }],
+          }),
+        });
+
+        const data = await claudeRes.json();
+        if (data.error) {
+          // Partial success: return stats even if narrative fails
+          return Response.json({ narrative: null, error: "narrative_failed", detail: data.error.message, stats, cached: false }, { status: 200, headers: CORS });
+        }
+
+        const narrative = data?.content?.[0]?.text || null;
+        if (!narrative) {
+          return Response.json({ narrative: null, error: "empty_narrative", stats, cached: false }, { status: 200, headers: CORS });
+        }
+
+        return Response.json({ narrative, stats, cached: false, model: "claude-haiku-4-5" }, { headers: CORS });
+
+      } catch (e) {
+        return Response.json({ error: e.message }, { status: 500, headers: CORS });
       }
     }
 
