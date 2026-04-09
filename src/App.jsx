@@ -3859,7 +3859,7 @@ function ProUpgradeScreen({ onClose }) {
 
   const price    = isAnnual ? "$29.99" : "$2.99";
   const period   = isAnnual ? "/ year" : "/ month";
-  const alts     = isAnnual ? "฿999 / year  ·  ₭6,999,000 / year" : "฿100 / month  ·  ₭70,000 / month";
+  const alts     = isAnnual ? "฿999 / year  ·  ₭699,000 / year" : "฿99 / month  ·  ₭69,000 / month";
   const ctaLabel = isAnnual ? "Start Pro — $29.99 / year" : "Start Pro — $2.99 / month";
 
   const FeatRow = ({emoji, title, desc, free, pro, coming})=>(
