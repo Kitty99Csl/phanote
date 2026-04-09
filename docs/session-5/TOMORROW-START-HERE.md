@@ -3,6 +3,38 @@
 
 ---
 
+## 🎉 UPDATE: Wife reaction captured
+
+See docs/session-5/WIFE-REACTION.md — she loved it, would pay yearly.
+Core product validated. Session 6 focus shifts to growth + polish.
+
+## 🎯 Session 6 Priorities (from Kitty, post-wife-reaction)
+
+### Priority 1 — Landing page polish (60-90 min)
+- Real Monthly Wrap narrative demo card on phanote.com
+- Real AI Advisor chat demo card on phanote.com
+- Pricing section visual polish
+- Test on actual mobile device
+- Generate simple 32px favicon (capybora-only, no text)
+
+### Priority 2 — OCR bank statement scanning (OQ-011) (2-4 hours)
+- BCEL One screenshot parsing
+- Gemini Vision worker endpoint
+- Frontend upload + review flow
+- Multi-transaction import
+
+### Priority 3 — Documentation catch-up (30 min)
+- Close OQ-012 as DONE (not PENDING)
+- Update CLAUDE.md with brand identity section
+- Update project_codex.md with slogan + logo + Looped font
+- Update DAY-1-SUMMARY.md with Phase 1.5, 2, 3
+
+### NOT priority
+- Monthly Wrap iteration (wife said later)
+- Thai slogan review (wife said not needed)
+
+---
+
 ## Current status
 
 - Session 4: CLOSED (all wife feedback issues resolved)
