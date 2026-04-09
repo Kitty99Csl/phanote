@@ -864,6 +864,14 @@ const i18n={
     ask_placeholder:"Ask about your finances…",
     edit_tx:"Edit Transaction",name_label:"Name",amount_label:"Amount",category_label:"Category",
     add_to:"Add to",transactions_count:"transactions",
+    wrap_title:"Monthly Wrap",wrap_subtitle:"Your month in a story",
+    wrap_generating:"Writing your story…",wrap_error:"Couldn't generate your wrap — try again",
+    wrap_partial:"Your story is resting, but here are the numbers",
+    wrap_empty:"Nothing logged this month yet — start adding transactions to unlock your wrap!",
+    wrap_retry:"Try again",wrap_total_expense:"Total expenses",wrap_total_income:"Total income",
+    wrap_top_category:"Top category",wrap_biggest_day:"Biggest day",
+    wrap_active_days:"Active days",wrap_vs_last:"Vs last month",wrap_close:"Close",
+    months:["January","February","March","April","May","June","July","August","September","October","November","December"],
   },
   lo:{
     welcome:"ຍິນດີຕ້ອນຮັບ Phanote",tagline:"ພາໂນດ — ຕິດຕາມການເງິນຂອງທ່ານ",
@@ -912,6 +920,14 @@ const i18n={
     ask_placeholder:"ຖາມກ່ຽວກັບການເງິນຂອງທ່ານ…",
     edit_tx:"ແກ້ໄຂລາຍການ",name_label:"ຊື່",amount_label:"ຈຳນວນ",category_label:"ໝວດ",
     add_to:"ເພີ່ມໃສ່",transactions_count:"ລາຍການ",
+    wrap_title:"ສະຫຼຸບເດືອນ",wrap_subtitle:"ເດືອນຂອງເຈົ້າໃນເລື່ອງໜຶ່ງ",
+    wrap_generating:"ກຳລັງຂຽນເລື່ອງຂອງເຈົ້າ…",wrap_error:"ບໍ່ສາມາດສ້າງສະຫຼຸບໄດ້ — ລອງໃໝ່",
+    wrap_partial:"ເລື່ອງຂອງເຈົ້າພັກຜ່ອນຢູ່ ແຕ່ນີ້ຄືຕົວເລກ",
+    wrap_empty:"ຍັງບໍ່ມີລາຍການໃນເດືອນນີ້ — ເພີ່ມລາຍການເພື່ອເປີດສະຫຼຸບ!",
+    wrap_retry:"ລອງໃໝ່",wrap_total_expense:"ລວມລາຍຈ່າຍ",wrap_total_income:"ລວມລາຍຮັບ",
+    wrap_top_category:"ໝວດສູງສຸດ",wrap_biggest_day:"ວັນທີ່ໃຊ້ຈ່າຍຫຼາຍສຸດ",
+    wrap_active_days:"ມື້ທີ່ບັນທຶກ",wrap_vs_last:"ທຽບກັບເດືອນກ່ອນ",wrap_close:"ປິດ",
+    months:["ມັງກອນ","ກຸມພາ","ມີນາ","ເມສາ","ພຶດສະພາ","ມິຖຸນາ","ກໍລະກົດ","ສິງຫາ","ກັນຍາ","ຕຸລາ","ພະຈິກ","ທັນວາ"],
   },
   th:{
     welcome:"ยินดีต้อนรับสู่ Phanote",tagline:"พาโนด — ติดตามการเงินของคุณ",
@@ -960,6 +976,14 @@ const i18n={
     ask_placeholder:"ถามเรื่องการเงินของคุณ…",
     edit_tx:"แก้ไขรายการ",name_label:"ชื่อ",amount_label:"จำนวน",category_label:"หมวด",
     add_to:"เพิ่มใน",transactions_count:"รายการ",
+    wrap_title:"สรุปเดือน",wrap_subtitle:"เดือนของคุณในเรื่องเดียว",
+    wrap_generating:"กำลังเขียนเรื่องราวของคุณ…",wrap_error:"สร้างสรุปไม่ได้ — ลองอีกครั้ง",
+    wrap_partial:"เรื่องราวพักอยู่ แต่นี่คือตัวเลข",
+    wrap_empty:"ยังไม่มีรายการเดือนนี้ — เพิ่มรายการเพื่อปลดล็อคสรุป!",
+    wrap_retry:"ลองอีกครั้ง",wrap_total_expense:"ค่าใช้จ่ายรวม",wrap_total_income:"รายรับรวม",
+    wrap_top_category:"หมวดสูงสุด",wrap_biggest_day:"วันที่ใช้จ่ายมากสุด",
+    wrap_active_days:"วันที่บันทึก",wrap_vs_last:"เทียบกับเดือนก่อน",wrap_close:"ปิด",
+    months:["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"],
   },
 };
 const t=(lang,key)=>i18n[lang]?.[key]||i18n.en[key]||key;
@@ -2660,6 +2684,7 @@ function AnalyticsScreen({ profile, transactions }) {
   // period: "today" | "week" | "month" | "all"
   const [period, setPeriod] = useState("month");
   const [monthOffset, setMonthOffset] = useState(0);
+  const [showWrap, setShowWrap] = useState(false);
 
   const now = new Date();
 
@@ -2988,8 +3013,233 @@ function AnalyticsScreen({ profile, transactions }) {
           );
         })()}
 
+        {/* Monthly Wrap card — only in month view */}
+        {period === "month" && (
+          <div onClick={() => setShowWrap(true)} style={{
+            marginTop:20, background:"linear-gradient(135deg, rgba(172,225,175,0.25) 0%, rgba(233,255,219,0.4) 100%)",
+            border:"1px solid rgba(172,225,175,0.4)", borderRadius:22, padding:"16px 18px",
+            boxShadow:T.shadow, cursor:"pointer", display:"flex", alignItems:"center", gap:14,
+          }}>
+            <div style={{ width:42, height:42, borderRadius:14, background:"rgba(172,225,175,0.3)",
+              display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, flexShrink:0 }}>📖</div>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:14, fontWeight:800, color:T.dark, fontFamily:"'Noto Sans',sans-serif" }}>{t(lang,"wrap_title")}</div>
+              <div style={{ fontSize:12, color:T.muted, marginTop:2 }}>{t(lang,"wrap_subtitle")}</div>
+            </div>
+            <div style={{ fontSize:18, color:T.muted, flexShrink:0 }}>›</div>
+          </div>
+        )}
+
       </>)}
+
+      {showWrap && <MonthlyWrapModal open={showWrap} onClose={() => setShowWrap(false)} profile={profile} transactions={transactions} />}
     </div>
+  );
+}
+
+// ═══ MONTHLY WRAP MODAL ═══════════════════════════════════════
+const getMonthName = (month, lang) => {
+  const mo = parseInt(month.split("-")[1], 10) - 1;
+  return (i18n[lang]?.months || i18n.en.months)[mo];
+};
+
+const buildMonthlyWrapPayload = (transactions, month) =>
+  transactions
+    .filter(tx => tx.date.startsWith(month))
+    .map(tx => ({
+      d: tx.date,
+      t: tx.type === "income" ? "in" : "ex",
+      a: Math.round(tx.amount),
+      c: tx.currency,
+      cat: tx.categoryId || "other",
+      n: (tx.description || tx.categoryId || "").slice(0, 40),
+    }));
+
+const computePrevMonthExpense = (transactions, month) => {
+  const [y, m] = month.split("-").map(Number);
+  const pm = m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, "0")}`;
+  const exp = {};
+  transactions.forEach(tx => {
+    if (tx.date.startsWith(pm) && tx.type === "expense")
+      exp[tx.currency] = (exp[tx.currency] || 0) + tx.amount;
+  });
+  return exp;
+};
+
+function MonthlyWrapModal({ open, onClose, profile, transactions }) {
+  const { lang, userId } = profile;
+  const [narrative, setNarrative] = useState(null);
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const now = new Date();
+  const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const monthName = getMonthName(month, lang);
+
+  const generate = async () => {
+    setLoading(true);
+    setError(null);
+    setNarrative(null);
+    setStats(null);
+
+    try {
+      // Check cache first
+      const { data: cached } = await supabase.from("monthly_reports")
+        .select("*").eq("user_id", userId).eq("month", month).maybeSingle();
+
+      const langCol = `narrative_${lang}`;
+      if (cached && cached[langCol]) {
+        setNarrative(cached[langCol]);
+        setStats(cached.stats);
+        setLoading(false);
+        return;
+      }
+
+      // Build payload
+      const monthTxs = buildMonthlyWrapPayload(transactions, month);
+      if (!monthTxs.length) {
+        setError("empty");
+        setLoading(false);
+        return;
+      }
+
+      const prevExp = computePrevMonthExpense(transactions, month);
+
+      const res = await fetch("https://api.phanote.com/monthly-report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: userId, month, lang,
+          transactions: monthTxs,
+          prev_month_expense: Object.keys(prevExp).length ? prevExp : undefined,
+        }),
+      });
+      const data = await res.json();
+
+      if (data.narrative) {
+        setNarrative(data.narrative);
+        setStats(data.stats);
+        // Cache result (upsert handles both insert + update via unique constraint)
+        await supabase.from("monthly_reports").upsert({
+          user_id: userId, month,
+          [langCol]: data.narrative, stats: data.stats,
+          generated_at: new Date().toISOString(), generation_model: data.model,
+        }, { onConflict: "user_id,month" });
+      } else if (data.stats) {
+        setStats(data.stats);
+        setError("partial");
+      } else {
+        setError("failed");
+      }
+    } catch {
+      setError("failed");
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { if (open) generate(); }, [open]);
+
+  const modalTitle = lang === "lo" ? `ສະຫຼຸບ${monthName}` : lang === "th" ? `สรุป${monthName}` : `${monthName} Wrap`;
+
+  const StatCard = ({ label, value, sub }) => (
+    <div style={{ background:"rgba(45,45,58,0.04)", borderRadius:16, padding:"12px 14px" }}>
+      <div style={{ fontSize:10, fontWeight:700, color:T.muted, textTransform:"uppercase", letterSpacing:0.6 }}>{label}</div>
+      <div style={{ fontSize:15, fontWeight:800, color:T.dark, fontFamily:"'Noto Sans',sans-serif", marginTop:4 }}>{value}</div>
+      {sub && <div style={{ fontSize:11, color:T.muted, marginTop:2 }}>{sub}</div>}
+    </div>
+  );
+
+  return (
+    <Sheet open={open} onClose={onClose} title={`📖 ${modalTitle}`} footer={
+      <button onClick={onClose} style={{ width:"100%", padding:14, borderRadius:16, border:"none", cursor:"pointer",
+        background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)", color:"#1A4020", fontWeight:800, fontSize:14,
+        fontFamily:"'Noto Sans',sans-serif", boxShadow:"0 4px 16px rgba(172,225,175,0.4)" }}>
+        {t(lang,"wrap_close")}
+      </button>
+    }>
+      <div style={{ paddingBottom:16 }}>
+        {/* Loading */}
+        {loading && (
+          <div style={{ textAlign:"center", padding:"48px 16px" }}>
+            <div style={{ fontSize:14, color:T.muted, fontWeight:600, fontFamily:"'Noto Sans',sans-serif", marginBottom:12 }}>
+              {t(lang,"wrap_generating")}
+            </div>
+            <div style={{ display:"flex", gap:5, justifyContent:"center" }}>
+              {[0,1,2].map(i => <div key={i} style={{ width:7, height:7, borderRadius:"50%", background:T.muted, animation:`bounce .9s ease ${i*0.2}s infinite` }}/>)}
+            </div>
+          </div>
+        )}
+
+        {/* Empty month */}
+        {error === "empty" && (
+          <div style={{ textAlign:"center", padding:"48px 16px" }}>
+            <div style={{ fontSize:40, marginBottom:12 }}>📖</div>
+            <div style={{ fontSize:14, color:T.muted, fontFamily:"'Noto Sans',sans-serif", lineHeight:1.6 }}>
+              {t(lang,"wrap_empty")}
+            </div>
+          </div>
+        )}
+
+        {/* Error with retry */}
+        {error === "failed" && (
+          <div style={{ textAlign:"center", padding:"48px 16px" }}>
+            <div style={{ fontSize:14, color:T.muted, fontFamily:"'Noto Sans',sans-serif", marginBottom:16 }}>
+              {t(lang,"wrap_error")}
+            </div>
+            <button onClick={generate} style={{ padding:"10px 24px", borderRadius:14, border:"none", cursor:"pointer",
+              background:T.celadon, fontWeight:700, fontSize:13, color:"#1A4020", fontFamily:"'Noto Sans',sans-serif" }}>
+              {t(lang,"wrap_retry")}
+            </button>
+          </div>
+        )}
+
+        {/* Partial success — stats but no narrative */}
+        {error === "partial" && (
+          <div style={{ fontSize:13, color:T.muted, fontFamily:"'Noto Sans',sans-serif", textAlign:"center",
+            padding:"12px 16px", background:"rgba(172,225,175,0.1)", borderRadius:14, marginBottom:16 }}>
+            {t(lang,"wrap_partial")}
+          </div>
+        )}
+
+        {/* Narrative */}
+        {narrative && (
+          <div style={{ fontSize:14, lineHeight:1.7, color:T.dark, fontFamily:"'Noto Sans',sans-serif",
+            padding:"8px 0 20px", fontWeight:400 }}>
+            {narrative}
+          </div>
+        )}
+
+        {/* Stats grid */}
+        {stats && !loading && (
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+            <StatCard label={t(lang,"wrap_total_expense")}
+              value={Object.entries(stats.total_expense).map(([c,a]) => fmtCompact(a,c)).join(", ") || "—"} />
+            <StatCard label={t(lang,"wrap_total_income")}
+              value={Object.entries(stats.total_income).map(([c,a]) => fmtCompact(a,c)).join(", ") || "—"} />
+            {stats.top_category && (
+              <StatCard label={t(lang,"wrap_top_category")}
+                value={`${stats.top_category.name}`}
+                sub={fmt(stats.top_category.amount, stats.top_category.currency)} />
+            )}
+            {stats.biggest_day && (
+              <StatCard label={t(lang,"wrap_biggest_day")}
+                value={stats.biggest_day.date.slice(5)}
+                sub={fmt(stats.biggest_day.amount, stats.biggest_day.currency)} />
+            )}
+            <StatCard label={t(lang,"wrap_active_days")}
+              value={`${stats.active_days} / ${stats.days_in_month}`} />
+            {stats.vs_last_month && Object.keys(stats.vs_last_month).length > 0 && (
+              <StatCard label={t(lang,"wrap_vs_last")}
+                value={Object.entries(stats.vs_last_month).map(([c,pct]) =>
+                  `${pct > 0 ? "+" : ""}${pct}%`
+                ).join(", ")}
+                sub={Object.keys(stats.vs_last_month).join(", ")} />
+            )}
+          </div>
+        )}
+      </div>
+    </Sheet>
   );
 }
 
