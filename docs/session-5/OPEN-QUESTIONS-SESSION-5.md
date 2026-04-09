@@ -85,3 +85,177 @@ primary Laos use case.
 on wife's feedback from Monthly Wrap testing.
 
 ---
+
+### OQ-012 — Lao-first positioning + official slogan locked
+
+**Status:** Decision made, execution planned for Session 6
+**Priority:** 🟢 Brand/marketing foundation
+**Captured:** Session 5 Day 1, April 10 2026
+
+**Decision summary:**
+Phanote repositions as a Lao-first product publicly while maintaining
+Thai as a supported language in the app. This clarifies our market
+position (Laos = main market), leans into our differentiator vs Parnuan
+(Thai-only), and establishes a clear brand voice rooted in Lao-native
+warmth rather than translated marketing-speak.
+
+---
+
+## 🏆 OFFICIAL SLOGAN (LOCKED)
+
+### Lao (primary, native, poetic):
+**ເງິນເຈົ້າໄປໃສ? ດຽວພາໂນດບອກໃຫ້ຟັງ**
+
+### English (support, conversational):
+**Where did your money go? Let Phanote tell you.**
+
+### Why this slogan works:
+- Uses "ດຽວ" (diew) — a natural Lao conversational particle meaning
+  "hold on, let me...", giving it friend-voice rather than app-voice
+- "ບອກໃຫ້ຟັງ" literally means "tell you to listen" — how Lao people
+  talk over coffee, not how banks talk
+- English uses "Let Phanote tell you" (humble, invitational) instead of
+  "Phanote tells you" (transactional)
+- Question → friendly answer rhythm creates satisfying resolution
+- Non-judgmental: reflective (where IT WENT) not controlling (where it goes)
+- Connects naturally to Monthly Wrap feature (the "storytelling" feature)
+- Originates in Lao first, not translated from English marketing-speak
+- Differentiates clearly from any other finance app tone
+
+### Where this slogan goes:
+- Landing page hero (phanote.com)
+- App splash screen (optional)
+- App store listing
+- Social media bios
+- README / GitHub description
+- Marketing materials
+
+---
+
+## 🎯 LAO-FIRST POSITIONING STRATEGY
+
+### Public-facing (what the world sees)
+- **Primary language:** Lao
+- **Secondary language:** English
+- **Market positioning:** "The Lao finance app" — clearly native to Laos
+- **Differentiator:** Where Parnuan is Thai-only, Phanote is Lao-first
+- **Visual identity:** Already Lao-appropriate (celadon green, Lao typography)
+
+### App-facing (what users see in the product)
+- **Default language for new users:** Lao (change from current default)
+- **Supported languages in-app:** Lao, English, Thai (all 3 remain)
+- **Language picker:** Shows all 3 during onboarding and in settings
+- **Existing users:** Keep their current language preference (no force-switch)
+
+### Data/parser-facing (what the system accepts)
+- **Transaction input:** Still accepts Lao, Thai, and English text
+- **OCR receipts:** Still handles Thai text on receipts (common — Thai
+  products sold in Laos, border region shopping)
+- **Parser rules:** Keep all existing Thai keyword patterns (wife + Lao
+  users type Thai words via Thai keyboards)
+- **ai_memory:** No changes — learns from whatever user types
+
+### Why we keep Thai in the app but remove it from marketing
+1. Many Lao users also type Thai (common keyboard, cultural overlap)
+2. Bills/receipts in Laos often have Thai text (imported goods)
+3. Removing Thai UI would punish existing users (wife included)
+4. Marketing as "Lao-first" doesn't require removing Thai functionality
+5. Grab model: positions as "Southeast Asia" app, supports 15 languages
+   under the hood
+
+---
+
+## 📋 EXECUTION PLAN (Session 6)
+
+### Phase A — Landing page refresh (30-45 min)
+- Edit landing/index.html
+- Update hero section with new slogan (Lao primary, English support)
+- Remove Thai hero copy and feature description translations
+- Update meta tags (og:description, twitter:description) to Lao + English
+- Update og:image alt text
+- Test on phone viewport
+- Deploy via git push → Cloudflare Pages auto-deploys phanote.com
+- Verify live
+
+### Phase B — App default language change (15-20 min)
+- Find where default language is set for new users in src/App.jsx
+- Change default from current value to "lo" (Lao)
+- ONLY affects new users (existing users keep their preference)
+- Test onboarding flow with a fresh account
+- Commit + push
+
+### Phase C — Marketing copy alignment (10 min)
+- Update CLAUDE.md to note the positioning change
+- Update project_codex.md § Brand Voice to include the official slogan
+- Update README if it exists
+- Commit docs update
+
+### Phase D — Verify nothing broke (15 min)
+- Open app in Lao — does it feel right?
+- Open app in English — still fully translated?
+- Open app in Thai — still works? (regression check)
+- Try logging a Thai transaction — still parses?
+- Try OCR on a Thai receipt — still works?
+
+**Total Session 6 estimated time: 70-90 min**
+
+---
+
+## ⚠️ What we are NOT doing
+
+To prevent scope creep:
+- ❌ NOT removing Thai i18n strings from src/App.jsx
+- ❌ NOT removing Thai from the language switcher
+- ❌ NOT changing existing user language preferences
+- ❌ NOT removing Thai keyword parser rules
+- ❌ NOT removing Thai OCR support
+- ❌ NOT touching the monthly_reports table schema (has all 3 languages)
+- ❌ NOT breaking any existing Thai-language wife workflows
+
+Only affected:
+- ✅ Landing page (public marketing)
+- ✅ New user default language
+- ✅ Brand positioning docs
+
+---
+
+## 🎨 Slogan usage guidelines
+
+### When to use the full slogan (both languages)
+- Landing page hero
+- App store listing
+- Pitch deck cover slide
+
+### When to use just the Lao version
+- Social media posts targeted at Lao users
+- Inside the app (if we add a marketing banner)
+- Physical materials (stickers, cards if we print)
+
+### When to use just the English version
+- International press
+- GitHub README
+- English-language social media
+
+### When to shorten to micro-slogan
+- App icon caption, tagline fields with character limits
+- Shortened form: "Where did your money go?" (English) or
+  "ເງິນເຈົ້າໄປໃສ?" (Lao)
+
+---
+
+## 📊 Decision metrics
+
+How we'll know this worked:
+- Wife prefers the Lao UI (she stays on Lao after trying English)
+- New users consistently choose Lao during onboarding (vs picking something else)
+- Landing page conversion rate (visitor → signup) stays same or improves
+- No regression in Thai user experience
+- Social/community engagement in Lao-speaking groups increases
+
+---
+
+## 🏷 Related OQs
+- OQ-011 — OCR bank statement scanning (should also be Lao-first when shipped)
+- Monthly Wrap (Phase 1A/1B shipped) — already Lao-capable, aligns with positioning
+
+---
