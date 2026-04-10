@@ -792,7 +792,7 @@ const parseWithAI=async(text,customCatIds=[],userId=null)=>{
   try{
     const controller=new AbortController();
     const timeout=setTimeout(()=>controller.abort(),10000);
-    const res=await fetch("https://api.phanote.com/parse",{
+    const res=await fetch("https://api.phajot.com/parse",{
       method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({text,userId}),signal:controller.signal,
     });
@@ -1386,7 +1386,7 @@ function OcrButton({ profile, onAdd, lang, compact=false }) {
         reader.readAsDataURL(file);
       });
 
-      const res = await fetch("https://api.phanote.com/ocr", {
+      const res = await fetch("https://api.phajot.com/ocr", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1621,7 +1621,7 @@ function QuickAddBar({lang,onAdd,customCategories=[],userId=null,onShowAdvisor=n
     setStatus("parsing");
 
     // Start AI in background immediately — don't wait
-    const aiPromise=fetch("https://api.phanote.com/parse",{
+    const aiPromise=fetch("https://api.phajot.com/parse",{
       method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({text,userId})
     }).then(r=>r.json()).catch(()=>null);
@@ -3135,7 +3135,7 @@ function MonthlyWrapModal({ open, onClose, profile, transactions }) {
 
       const prevExp = computePrevMonthExpense(transactions, month);
 
-      const res = await fetch("https://api.phanote.com/monthly-report", {
+      const res = await fetch("https://api.phajot.com/monthly-report", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -3511,7 +3511,7 @@ function AiAdvisorModal({ profile, transactions, onClose }) {
     setMessages(prev => [...prev, { role:"user", text: q }]);
     setLoading(true);
     try {
-      const res = await fetch("https://api.phanote.com/advise", {
+      const res = await fetch("https://api.phajot.com/advise", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: q, lang, summary: buildSummary(), recentTransactions: buildRecentTransactions() }),
