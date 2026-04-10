@@ -46,8 +46,8 @@ telling you about your money over coffee, not a bank dashboard.
 
 ## Required reading before editing
 1. project_codex.md (the bible — design rules, UX, architecture)
-2. PHANOTE-PROJECT.md (feature scope)
-3. PHANOTE-ACTION-PLAN.md (screen-by-screen plan)
+2. PHAJOT-PROJECT.md (feature scope)
+3. PHAJOT-ACTION-PLAN.md (screen-by-screen plan)
 
 ## Non-negotiable rules
 1. Never edit worker in Cloudflare web editor — always local + wrangler deploy

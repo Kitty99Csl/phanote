@@ -1,4 +1,4 @@
-# 📒 PHANOTE — PROJECT CODEX
+# 📒 PHAJOT — PROJECT CODEX
 ### The Single Source of Truth · Version 1.4
 > **Rule:** Before writing any complex code, review this document. Before closing any major phase, update this document. This codex is a living contract between the developer and the project.
 
@@ -6,9 +6,9 @@
 
 ## 0. THE NORTH STAR
 
-> *"Phanote (ພາໂນດ / พาโนด) — from 'Pha' (ພາ), meaning to lead or guide, and 'Note'. An app that gently leads you toward financial clarity. Built because every month, a husband and wife in Laos would ask each other: 'Wait… what did we spend this month?' Phanote is the answer — easy, fun, and fulfilling to use. It solves the most common household headache without feeling like a chore."*
+> *"Phajot (ພາຈົດ) — from 'Pha' (ພາ), meaning to lead or guide, and 'Jot' (ຈົດ), meaning to jot or write. An app that gently leads you toward financial clarity. Built because every month, a husband and wife in Laos would ask each other: 'Wait… what did we spend this month?' Phajot is the answer — easy, fun, and fulfilling to use. It solves the most common household headache without feeling like a chore."*
 
-**One-line pitch:** Phanote is a cozy, multi-currency personal finance tracker built for life in Laos — where you hold LAK, THB, and USD at the same time — designed to make recording money feel as easy and satisfying as chatting with a friend.
+**One-line pitch:** Phajot is a cozy, multi-currency personal finance tracker built for life in Laos — where you hold LAK, THB, and USD at the same time — designed to make recording money feel as easy and satisfying as chatting with a friend.
 
 ---
 
@@ -16,17 +16,16 @@
 
 | Field | Value |
 |---|---|
-| **App Name** | Phanote |
-| **Brand Name (Lao)** | ພາໂນດ |
-| **Brand Name (Thai)** | พาโนด |
-| **Brand Pronunciation** | pha-nōd |
-| **Primary Domain (PWA)** | `app.phanote.com` |
-| **Marketing Domain** | `phanote.com` ✅ LIVE (Session 4) |
+| **App Name** | Phajot |
+| **Brand Name (Lao)** | ພາຈົດ |
+| **Brand Pronunciation** | pha-jot |
+| **Primary Domain (PWA)** | `app.phajot.com` |
+| **Marketing Domain** | `phajot.com` ✅ LIVE |
 | **Current Version** | v0.4.0 — Phase 2 Stable |
 | **Status** | 🟡 Family Testing |
 | **Last Codex Update** | April 7, 2026 · Session 4 |
 
-> **Updated [2026-04-07]:** Marketing domain `phanote.com` is now live. Version bumped to v0.4.0. Status changed from "In Development" to "Family Testing".
+> **Updated [2026-04-10]:** Renamed Phanote → Phajot (trademark conflict). All domains migrated: phajot.com, app.phajot.com, api.phajot.com. Legacy phanote.com 301-redirects to phajot.com.
 
 ---
 
@@ -171,15 +170,15 @@ The app should respond to the user the way a warm, witty, financially-savvy frie
 | Layer | Technology | Notes |
 |---|---|---|
 | Frontend | React + Vite → `src/App.jsx` | 4,272 lines — single file |
-| Hosting (App) | Cloudflare Pages | Auto-deploy → `app.phanote.com` |
-| Hosting (Landing) | Cloudflare Pages (separate project) | `phanote-com` → `phanote.com` |
+| Hosting (App) | Cloudflare Pages | Auto-deploy → `app.phajot.com` |
+| Hosting (Landing) | Cloudflare Pages (separate project) | `phanote-com` → `phajot.com` |
 | Database | Supabase (PostgreSQL, Singapore) | 6 tables live, 1 designed |
 | Auth | Phone → silent email/password | `{phone}@phanote.app` |
 | AI — Parse | **Gemini 2.5 Flash** | `/parse` — best Lao/Thai NLP |
 | AI — Advisor | **Claude Haiku 4.5** | `/advise` — best conversational |
 | AI — OCR | **Gemini 2.5 Flash Vision** | `/ocr` — best Lao script OCR |
 | AI — Monthly Wrap | Gemini 2.5 Flash | `/monthly-report` — planned |
-| Worker | Cloudflare Workers | `api.phanote.com` v4.0.0 |
+| Worker | Cloudflare Workers | `api.phajot.com` v4.4.0 |
 | Dev environment | GitHub Codespaces | `super-duper-capybara` |
 
 ### 7.2 AI Architecture — Definitive
@@ -202,9 +201,9 @@ The app should respond to the user the way a warm, witty, financially-savvy frie
 ### 7.3 Domain Architecture (Current)
 
 ```
-phanote.com          → Cloudflare Pages (landing/index.html) ✅ LIVE
-app.phanote.com      → Cloudflare Pages (Vite build) ✅ LIVE
-api.phanote.com      → Cloudflare Workers ✅ LIVE
+phajot.com           → Cloudflare Pages (landing/index.html) ✅ LIVE
+app.phajot.com       → Cloudflare Pages (Vite build) ✅ LIVE
+api.phajot.com       → Cloudflare Workers ✅ LIVE
 ```
 
 ---
@@ -378,12 +377,12 @@ OCR, AI Advisor, Analytics, Goals, Streaks/XP, Safe-to-Spend, PIN security. **DO
 
 ### Brand Voice (locked Session 5 Day 1)
 
-- **Slogan:** ເງິນເຈົ້າໄປໃສ? ດຽວພາໂນດບອກໃຫ້ຟັງ / Where did your
-  money go? Let Phanote tell you.
+- **Slogan:** ເງິນເຈົ້າໄປໃສ? ດຽວພາຈົດບອກໃຫ້ຟັງ / Where did your
+  money go? Let Phajot tell you.
 - **Mascot:** Pha the capybora (hugs notebook, pink cheeks, keeps
   your notes safe)
 - **Font for Lao:** Noto Sans Lao Looped (rounded, warm, storytelling)
-- **Animals rule updated:** Pha is the face of Phanote. Other animals
+- **Animals rule updated:** Pha is the face of Phajot. Other animals
   remain as ambient background pattern at 4-6% opacity — this is the
   one exception to the "no mascot" rule.
 - **Positioning:** Lao-first publicly (landing + login), Thai still
@@ -410,7 +409,7 @@ OCR, AI Advisor, Analytics, Goals, Streaks/XP, Safe-to-Spend, PIN security. **DO
 
 ---
 
-## 16. DEVELOPMENT RULES (The Phanote Code Contract)
+## 16. DEVELOPMENT RULES (The Phajot Code Contract)
 
 1. **Codex first.** Before writing complex code, re-read the relevant section.
 2. **5-second rule.** Every UX decision is evaluated against the 5-second logging target.
@@ -450,4 +449,4 @@ OCR, AI Advisor, Analytics, Goals, Streaks/XP, Safe-to-Spend, PIN security. **DO
 
 ---
 
-*"Phanote · ພາໂນດ · พาโนด — Lead your notes. Know your money. Live without the headache."* 🐾
+*"Phajot · ພາຈົດ — Lead your jots. Know your money. Live without the headache."* 🐾

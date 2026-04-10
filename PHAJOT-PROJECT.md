@@ -1,4 +1,4 @@
-# 📒 PHANOTE — MASTER PROJECT DOCUMENT
+# 📒 PHAJOT — MASTER PROJECT DOCUMENT
 ### Aligned with Project Codex v1.0 · Enriched with Competitor Analysis
 ### Last Updated: April 2, 2026
 
@@ -8,9 +8,9 @@
 
 ## 0. NORTH STAR (from Codex)
 
-> *"Phanote (ພາໂນດ / พาโนด) — from 'Pha' (ພາ), meaning to lead or guide, and 'Note'. An app that gently leads you toward financial clarity."*
+> *"Phajot (ພາຈົດ) — from 'Pha' (ພາ), meaning to lead or guide, and 'Jot' (ຈົດ), meaning to jot or write. An app that gently leads you toward financial clarity."*
 
-**One-line pitch:** Phanote is a cozy, multi-currency personal finance tracker built for life in Laos — where you hold LAK, THB, and USD at the same time — designed to make recording money feel as easy and satisfying as chatting with a friend.
+**One-line pitch:** Phajot is a cozy, multi-currency personal finance tracker built for life in Laos — where you hold LAK, THB, and USD at the same time — designed to make recording money feel as easy and satisfying as chatting with a friend.
 
 **The 5-Second Rule (Codex §4.2):**
 > A user must be able to log a transaction in under 5 seconds from app open.
@@ -61,7 +61,7 @@ This is the single most important UX metric. Every decision in this document mus
 - Gift: "Buy as Gift" option
 - Pro badges throughout free UI as upsell
 
-### 1.5 Phanote advantages over Parnuan
+### 1.5 Phajot advantages over Parnuan
 | Advantage | Detail |
 |---|---|
 | Multi-currency | THB + LAK + USD (Parnuan: THB only) |
@@ -74,7 +74,7 @@ This is the single most important UX metric. Every decision in this document mus
 
 ## 2. EXPANDED FEATURE SCOPE
 
-### 2.1 Free tier (all Parnuan free features + Phanote originals)
+### 2.1 Free tier (all Parnuan free features + Phajot originals)
 
 | # | Feature | Source | Codex Ref |
 |---|---------|--------|-----------|
@@ -98,7 +98,7 @@ This is the single most important UX metric. Every decision in this document mus
 | F18 | BCEL-style wallet card (3 currencies visible) | Codex §6.2 | ✓ |
 | F19 | Manual entry via "+" button | From Parnuan | New |
 
-### 2.2 Pro tier (matching Parnuan Pro + Phanote extras)
+### 2.2 Pro tier (matching Parnuan Pro + Phajot extras)
 
 | # | Feature | Source | Codex Ref |
 |---|---------|--------|-----------|
@@ -153,7 +153,7 @@ This is the single most important UX metric. Every decision in this document mus
 | --color-expense | Soft coral #e8857a | Expense indicators |
 | --color-income | Green #3da873 | Income indicators |
 
-> **Color change (April 2026):** Switched from lavender to celadon/nyanza green palette. The green says "finance/nature" more naturally and matches the Phanote brand values of calm clarity.
+> **Color change (April 2026):** Switched from lavender to celadon/nyanza green palette. The green says "finance/nature" more naturally and matches the Phajot brand values of calm clarity.
 
 ### 3.2 Typography (Codex §5.2 + prototype evolution)
 - **Codex specifies:** Inter or Noto Sans (Lao + Thai + Latin support)
@@ -404,4 +404,4 @@ Toast examples:
 
 *This document is subordinate to the Project Codex. When in conflict, the Codex wins.*
 
-*"Phanote · ພາໂນດ · พาโนด — Lead your notes. Know your money. Live without the headache."* 🐾
+*"Phajot · ພາຈົດ — Lead your jots. Know your money. Live without the headache."* 🐾

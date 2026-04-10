@@ -1,4 +1,4 @@
-# Phanote — Pre-Development Checklist & Stitch Prompt
+# Phajot — Pre-Development Checklist & Stitch Prompt
 
 ## YOUR ACTION ITEMS (before we start coding)
 
@@ -60,10 +60,10 @@ I'll match the code to your preferred designs.
 Copy this entire block into Stitch:
 
 ```
-# Phanote — Multi-Currency Expense Tracker
+# Phajot — Multi-Currency Expense Tracker
 
 ## App Overview
-Phanote (ພາໂນດ / พาโนด) is a cozy, multi-currency personal finance tracker for Southeast Asia. Users in Laos hold LAK, THB, and USD simultaneously. The app supports Thai, Lao, and English input. It's a PWA at app.phanote.com.
+Phajot (ພາຈົດ / ພາຈົດ) is a cozy, multi-currency personal finance tracker for Southeast Asia. Users in Laos hold LAK, THB, and USD simultaneously. The app supports Thai, Lao, and English input. It's a PWA at app.phajot.com.
 
 ## Design Direction: "Calm Financial Garden"
 Professional-cute hybrid. Not a banking dashboard, not a children's app. Think: competent adults who enjoy cozy things. Like a premium stationery brand meets a friendly finance app.
@@ -101,7 +101,7 @@ Professional-cute hybrid. Not a banking dashboard, not a children's app. Think: 
 ## Screens to Generate
 
 ### Screen 1: Home (main screen)
-- Header: "Phanote" title + user avatar (top)
+- Header: "Phajot" title + user avatar (top)
 - BCEL-style wallet card showing ALL 3 currencies (LAK, THB, USD) with balances, tap to expand income/expense per currency
 - Each currency row: flag icon + currency name + balance amount
 - "Today" section with recent transactions grouped by date
