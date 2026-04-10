@@ -29,6 +29,7 @@ const RATE_LIMITS = {
   "/advise":  20,  // 20 req/min per IP
   "/ocr":     15,  // 15 req/min per IP
   "/monthly-report": 10,  // 10 req/min per IP (monthly feature)
+  "/parse-statement": 10,  // 10 req/min per IP (expensive multi-image call)
 };
 
 function checkRateLimit(ip, route) {
@@ -72,6 +73,7 @@ function isFeatureEnabled(env, feature) {
     advise: "ADVISOR_ENABLED",
     ocr: "OCR_ENABLED",
     monthly_report: "MONTHLY_WRAP_ENABLED",
+    parse_statement: "STATEMENT_ENABLED",
   }[feature];
   return env[varName] === "true";
 }
@@ -82,6 +84,7 @@ function disabledResponse(feature) {
     advise: "AI advisor is temporarily unavailable. Please try again later.",
     ocr: "Receipt scanning is temporarily unavailable. Please enter manually.",
     monthly_report: "Monthly wrap is temporarily unavailable. Please try again later.",
+    parse_statement: "Bank statement scanning is temporarily unavailable.",
   };
   return Response.json({
     error: "feature_disabled",
@@ -146,6 +149,94 @@ Return ONLY valid JSON:
 Single: {"amount":number,"currency":"LAK"|"THB"|"USD","type":"expense"|"income","category":"...","subcategory":"...","description":"Short Label","confidence":0.0-1.0,"payment_provider":"BCEL"|null}
 Multi:  {"amount":number,"currency":"LAK"|"THB"|"USD","type":"expense"|"income","category":"...","subcategory":"...","description":"Short Label","confidence":0.0-1.0,"payment_provider":"BCEL"|null,"items":[{"name":"...","amount":number}]}`;
 
+// ─── STATEMENT SYSTEM — Gemini 2.5 Flash Vision ─────────────────
+// Multi-image bank statement extractor for LDB, JDB, BCEL One.
+// Handles all 3 banks in one prompt. Output: structured transaction list
+// with categorization and bank/currency auto-detection.
+const STATEMENT_PROMPT = `You are extracting transactions from bank statement screenshots from Lao banks. Multiple screenshots may be from the same scrolling session of one statement.
+
+SUPPORTED BANKS (auto-detect from screenshot):
+1. LDB — Card-style list. Red ▲ with minus sign = OUT (expense). Green ▼ no sign = IN (income). Header shows account number and currency (LAK/USD/THB). Each row has merchant/name, ref number (FT...), memo, datetime, amount.
+2. JDB — Dark theme. Title says "Statement". Header shows Account Type, Account No, Available Balance with currency. Red minus = OUT. Green no sign = IN. Month group headers ("April 2026"). Rows have type label (MOBILE TRANSFER, FEE ATM, LAPNET OUTGOING TRANSFER, etc), date+time, amount.
+3. BCEL One — Colored badge circles: ONP (OnePay), ACC, LMP, TRI (transfer in), TRO (transfer out), SAL, FEE. Header shows account number with currency. Red amount = OUT, green amount = IN. Rows have type, reference, merchant, account, datetime, amount.
+
+EXTRACTION RULES:
+
+Sign convention (CRITICAL):
+- Red color OR minus sign = OUT (expense) — output positive amount with type:"expense"
+- Green color OR no sign = IN (income) — output positive amount with type:"income"
+- NEVER output negative amounts. Use type field instead.
+
+Currency:
+- Read from account header at top of screenshot (LAK / USD / THB)
+- If header shows multiple currencies or unclear, check inline amount text
+- Default to LAK if truly unknown
+
+Amount cleaning:
+- Strip commas: "1,000.00" → 1000
+- LAK uses no decimals typically: "5,000" → 5000
+- USD/THB use 2 decimals: "21.32" → 21.32
+
+Date/time:
+- Parse to ISO format YYYY-MM-DD for date
+- Parse time to HH:MM:SS (24h) if available, else null
+- Use month group headers ("April 2026") to disambiguate dates without year
+
+Description:
+- For LDB: use the merchant/name + memo if memo is meaningful
+- For JDB: use the type label (MOBILE TRANSFER) + any details
+- For BCEL: use the merchant name primarily, fall back to type if no merchant
+- Keep Lao script as-is, do not translate
+- Strip refs/codes from description (put in ref_number field instead)
+
+Reference number (optional):
+- LDB: FT260274CKD0 style
+- BCEL: VO7MIFC0ERWW or 8JSQBO6RNF87 style
+- JDB: 001MBAP780165329276 style
+- Set to null if not visible
+
+Categorization (use these IDs only):
+EXPENSES: food, groceries, drinks, coffee, transport, travel, rent, utilities, phone_internet, household, shopping, health, beauty, fitness, entertainment, subscriptions, gaming, education, family, donation, debt_payment, fees, repair, other
+INCOME: salary, freelance, selling, bonus, investment, gift, transfer, other_inc
+
+Special rules:
+- Bank fees / ATM fees / FEE badge / transfer fees → category: "fees" (expense)
+- Bank interest / "Interest" / ດອກເບ້ຍ → category: "investment" (income)
+- Internal transfers between user's own accounts → category: "transfer"
+- BCEL ONP merchant "ປ້ຳນ້ຳມັນ" → "transport"
+- BCEL "LAZY B COFFEE" → "coffee"
+- Coffee shops → "coffee", restaurants/food → "food"
+- Unknown merchant → "other"
+
+Payment provider:
+- Always set payment_provider to "LDB", "JDB", or "BCEL" based on the bank detected
+
+Partial rows:
+- If a row at the top or bottom of a screenshot is cut off, SKIP it silently
+- Do not invent missing data
+
+OUTPUT FORMAT (JSON only, no markdown):
+{
+  "bank": "LDB" | "JDB" | "BCEL",
+  "currency": "LAK" | "USD" | "THB",
+  "account_hint": "0302****3168" or null,
+  "transactions": [
+    {
+      "date": "2026-03-31",
+      "time": "23:25:00" or null,
+      "type": "expense" | "income",
+      "amount": 1.07,
+      "currency": "USD",
+      "description": "Interest",
+      "category": "investment",
+      "payment_provider": "LDB",
+      "ref_number": "030200141XXXXXXX-20260331" or null
+    }
+  ]
+}
+
+Return ONLY valid JSON. No markdown fences. No commentary.`;
+
 // ─────────────────────────────────────────────
 const callGemini = async (env, payload) => {
   const res = await fetch(
@@ -162,6 +253,28 @@ const fixAmount = (a, currency) => {
   if ((currency === "LAK" || !currency) && n > 0 && n < 1000) return n * 1000; // threshold: valid LAK is rarely under ₭1,000
   return n;
 };
+
+// ─── STATEMENT DEDUP HELPERS ─────────────────────────────────────
+// Hash a transaction on date|time|amount|description for dedup across
+// overlapping screenshots of the same bank statement scroll.
+async function hashTx(tx) {
+  const key = `${tx.date}|${tx.time || ""}|${tx.amount}|${(tx.description || "").toLowerCase().trim()}`;
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(key));
+  return Array.from(new Uint8Array(buf)).slice(0, 8).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function dedupeTransactions(txs) {
+  const seen = new Set();
+  const unique = [];
+  let removed = 0;
+  for (const tx of txs) {
+    const h = await hashTx(tx);
+    if (seen.has(h)) { removed++; continue; }
+    seen.add(h);
+    unique.push({ ...tx, _hash: h });
+  }
+  return { unique, duplicates_removed: removed };
+}
 
 // ─── MONTHLY WRAP — Stats computation ────────────────────────────
 // Computes all stats from the transactions array + formats strings for prompt.
@@ -271,15 +384,16 @@ export default {
 
     if (url.pathname === "/" || url.pathname === "/health") {
       return Response.json({
-        status: "ok", service: "Phanote API", version: "4.3.0",
-        parse: "gemini-2.5-flash", advise: "claude-haiku-4-5", ocr: "gemini-2.5-flash-vision", monthly_report: "claude-haiku-4-5",
-        routes: ["/parse", "/advise", "/ocr", "/monthly-report"],
+        status: "ok", service: "Phanote API", version: "4.4.0",
+        parse: "gemini-2.5-flash", advise: "claude-haiku-4-5", ocr: "gemini-2.5-flash-vision", monthly_report: "claude-haiku-4-5", parse_statement: "gemini-2.5-flash-vision",
+        routes: ["/parse", "/advise", "/ocr", "/monthly-report", "/parse-statement"],
         features: ["rate_limiting", "kill_switch"],
         status_flags: {
           ai_parse: isFeatureEnabled(env, "parse"),
           advisor: isFeatureEnabled(env, "advise"),
           ocr: isFeatureEnabled(env, "ocr"),
           monthly_wrap: isFeatureEnabled(env, "monthly_report"),
+          statement: isFeatureEnabled(env, "parse_statement"),
         },
       }, { headers: CORS });
     }
@@ -473,6 +587,92 @@ Rules:
 
       } catch (e) {
         return Response.json({ error: "OCR failed", detail: e.message }, { status: 500, headers: CORS });
+      }
+    }
+
+    // ─── POST /parse-statement — Gemini 2.5 Flash Vision (multi-image) ──
+    // Bank statement OCR: LDB / JDB / BCEL One. Accepts up to 10
+    // screenshots in one call, extracts + categorizes transactions,
+    // dedupes across overlapping scrolls via hashTx.
+    if (url.pathname === "/parse-statement") {
+      if (!isFeatureEnabled(env, "parse_statement")) return disabledResponse("parse_statement");
+
+      try {
+        const body = await request.json();
+        const images = body.images || [];
+
+        if (!Array.isArray(images) || images.length === 0) {
+          return Response.json({ error: "At least 1 image required" }, { status: 400, headers: CORS });
+        }
+        if (images.length > 10) {
+          return Response.json({ error: "Maximum 10 images per request" }, { status: 400, headers: CORS });
+        }
+
+        // Build multi-image Gemini call — each image becomes an inline_data part
+        const imageParts = images.map(img => {
+          const cleaned = (img.data || img).replace(/^data:image\/\w+;base64,/, "");
+          const mime = img.mimeType || "image/png";
+          return { inline_data: { mime_type: mime, data: cleaned } };
+        });
+
+        const data = await callGemini(env, {
+          contents: [{
+            parts: [
+              ...imageParts,
+              { text: STATEMENT_PROMPT },
+            ],
+          }],
+          generationConfig: {
+            temperature: 0,
+            maxOutputTokens: 8192,
+            response_mime_type: "application/json",
+          },
+        });
+
+        // Extract response text
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+        if (!text) {
+          return Response.json({ error: "Empty Gemini response", debug: data }, { status: 502, headers: CORS });
+        }
+
+        // Parse JSON (strip fences if present)
+        let parsed;
+        try {
+          const cleaned = text.replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
+          parsed = JSON.parse(cleaned);
+        } catch (e) {
+          return Response.json({ error: "Failed to parse Gemini JSON", raw: text.slice(0, 500) }, { status: 502, headers: CORS });
+        }
+
+        // Validate shape
+        if (!parsed.transactions || !Array.isArray(parsed.transactions)) {
+          return Response.json({ error: "Invalid response shape", parsed }, { status: 502, headers: CORS });
+        }
+
+        // Apply fixAmount (LAK thousands-separator safety) + ensure positive amounts
+        const cleaned = parsed.transactions.map(tx => ({
+          ...tx,
+          amount: fixAmount(Math.abs(Number(tx.amount) || 0), tx.currency || parsed.currency),
+        })).filter(tx => tx.amount > 0);
+
+        // Dedupe across overlapping screenshots
+        const { unique, duplicates_removed } = await dedupeTransactions(cleaned);
+
+        return Response.json({
+          bank: parsed.bank || null,
+          currency: parsed.currency || null,
+          account_hint: parsed.account_hint || null,
+          transactions: unique,
+          stats: {
+            total_extracted: cleaned.length,
+            duplicates_removed,
+            final_count: unique.length,
+            images_processed: images.length,
+          },
+        }, { headers: CORS });
+
+      } catch (e) {
+        return Response.json({ error: e.message, stack: e.stack?.slice(0, 500) }, { status: 500, headers: CORS });
       }
     }
 
