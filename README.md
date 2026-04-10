@@ -1,4 +1,4 @@
-# 🐾 Phanote · ພາໂນດ · พาโนด
+# 🐾 Phajot · ພາຈົດ
 
 Multi-currency expense tracker for life in Southeast Asia.
 
@@ -72,4 +72,4 @@ supabase/
 - [ ] Settings screen
 - [ ] Bottom navigation
 - [ ] Multi-language UI
-- [ ] Deploy to app.phanote.com
+- [ ] Deploy to app.phajot.com
