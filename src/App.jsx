@@ -1,5 +1,5 @@
 /**
- * PHANOTE — App.jsx
+ * PHAJOT — App.jsx
  * Phase 2: Budget + Analytics + Streaks + XP
  *
  * SQL migration (run once in Supabase SQL editor):
@@ -818,8 +818,8 @@ const parseWithAI=async(text,customCatIds=[],userId=null)=>{
 // ─── I18N ─────────────────────────────────────────────────────
 const i18n={
   en:{
-    welcome:"Welcome to Phanote",tagline:"ພາໂນດ · พาโนด · Your money, your story",
-    slogan:"Where did your money go? Let Phanote tell you.",
+    welcome:"Welcome to Phajot",tagline:"ພາຈົດ · Your money, your story",
+    slogan:"Where did your money go? Let Phajot tell you.",
     your_name:"Your name",pick_avatar:"Pick your companion",pick_lang:"Choose your language",
     pick_currency:"Your main currency",pick_expense_cats:"Select expense categories",
     pick_income_cats:"Select income categories",next:"Next →",start:"Start tracking! 🐾",
@@ -861,7 +861,7 @@ const i18n={
     on_track_for:"On track for",no_deadline:"No deadline set",
     no_deadline_sub:"Tap ✏️ to add a target month",
     ask_ai:"Ask AI",ai_tagline:"Your personal finance advisor",
-    ai_greeting:"Hi! 👋 I'm Phanote's AI advisor. Ask me anything about your finances!",
+    ai_greeting:"Hi! 👋 I'm Phajot's AI advisor. Ask me anything about your finances!",
     ask_placeholder:"Ask about your finances…",
     edit_tx:"Edit Transaction",name_label:"Name",amount_label:"Amount",category_label:"Category",
     add_to:"Add to",transactions_count:"transactions",
@@ -875,8 +875,8 @@ const i18n={
     months:["January","February","March","April","May","June","July","August","September","October","November","December"],
   },
   lo:{
-    welcome:"ຍິນດີຕ້ອນຮັບ Phanote",tagline:"ພາໂນດ — ຕິດຕາມການເງິນຂອງທ່ານ",
-    slogan:"ເງິນເຈົ້າໄປໃສ? ດຽວພາໂນດບອກໃຫ້ຟັງ",
+    welcome:"ຍິນດີຕ້ອນຮັບ Phajot",tagline:"ພາຈົດ — ຕິດຕາມການເງິນຂອງທ່ານ",
+    slogan:"ເງິນເຈົ້າໄປໃສ? ດຽວພາຈົດບອກໃຫ້ຟັງ",
     your_name:"ຊື່ຂອງທ່ານ",pick_avatar:"ເລືອກໂຕລະຄອນ",pick_lang:"ເລືອກພາສາ",
     pick_currency:"ສະກຸນເງິນຫຼັກ",pick_expense_cats:"ເລືອກໝວດລາຍຈ່າຍ",
     pick_income_cats:"ເລືອກໝວດລາຍຮັບ",next:"ຕໍ່ໄປ →",start:"ເລີ່ມເລີຍ! 🐾",
@@ -918,7 +918,7 @@ const i18n={
     on_track_for:"ຢູ່ໃນເສັ້ນທາງ",no_deadline:"ຍັງບໍ່ໄດ້ຕັ້ງວັນທີ",
     no_deadline_sub:"ແຕະ ✏️ ເພື່ອເພີ່ມເດືອນເປົ້າໝາຍ",
     ask_ai:"ຖາມ AI",ai_tagline:"ທີ່ປຶກສາການເງິນ AI ຂອງທ່ານ",
-    ai_greeting:"ສະບາຍດີ! 👋 ຂ້ອຍແມ່ນທີ່ປຶກສາ AI ຂອງ Phanote. ຖາມຂ້ອຍໄດ້ເລີຍ!",
+    ai_greeting:"ສະບາຍດີ! 👋 ຂ້ອຍແມ່ນທີ່ປຶກສາ AI ຂອງ Phajot. ຖາມຂ້ອຍໄດ້ເລີຍ!",
     ask_placeholder:"ຖາມກ່ຽວກັບການເງິນຂອງທ່ານ…",
     edit_tx:"ແກ້ໄຂລາຍການ",name_label:"ຊື່",amount_label:"ຈຳນວນ",category_label:"ໝວດ",
     add_to:"ເພີ່ມໃສ່",transactions_count:"ລາຍການ",
@@ -932,8 +932,7 @@ const i18n={
     months:["ມັງກອນ","ກຸມພາ","ມີນາ","ເມສາ","ພຶດສະພາ","ມິຖຸນາ","ກໍລະກົດ","ສິງຫາ","ກັນຍາ","ຕຸລາ","ພະຈິກ","ທັນວາ"],
   },
   th:{
-    welcome:"ยินดีต้อนรับสู่ Phanote",tagline:"พาโนด — ติดตามการเงินของคุณ",
-    slogan:"เงินของคุณไปไหน? ให้ Phanote เล่าให้ฟัง",
+    welcome:"ยินดีต้อนรับสู่ Phajot",tagline:"Phajot — ติดตามการเงินของคุณ",
     your_name:"ชื่อของคุณ",pick_avatar:"เลือกตัวละคร",pick_lang:"เลือกภาษา",
     pick_currency:"สกุลเงินหลัก",pick_expense_cats:"เลือกหมวดรายจ่าย",
     pick_income_cats:"เลือกหมวดรายรับ",next:"ถัดไป →",start:"เริ่มเลย! 🐾",
@@ -975,7 +974,7 @@ const i18n={
     on_track_for:"อยู่ในเส้นทางสำหรับ",no_deadline:"ยังไม่ได้ตั้งวันที่",
     no_deadline_sub:"แตะ ✏️ เพื่อเพิ่มเดือนเป้าหมาย",
     ask_ai:"ถาม AI",ai_tagline:"ที่ปรึกษาการเงิน AI ของคุณ",
-    ai_greeting:"สวัสดี! 👋 ฉันคือที่ปรึกษา AI ของ Phanote ถามได้เลยนะ!",
+    ai_greeting:"สวัสดี! 👋 ฉันคือที่ปรึกษา AI ของ Phajot ถามได้เลยนะ!",
     ask_placeholder:"ถามเรื่องการเงินของคุณ…",
     edit_tx:"แก้ไขรายการ",name_label:"ชื่อ",amount_label:"จำนวน",category_label:"หมวด",
     add_to:"เพิ่มใน",transactions_count:"รายการ",
@@ -1023,16 +1022,16 @@ const Flag=({code,size=32})=>{
 const S={title:{fontFamily:"'Noto Sans',sans-serif",fontSize:20,fontWeight:800,color:"#2D2D3A",marginBottom:6},sub:{fontSize:13,color:"#9B9BAD",marginBottom:16,lineHeight:1.5},label:{fontSize:13,fontWeight:700,color:"#2D2D3A",fontFamily:"'Noto Sans',sans-serif"}};
 
 // ═══ LOGO ═════════════════════════════════════════════════════
-// Renders the Phanote brand mark (transparent PNG, landscape aspect 823x433).
+// Renders the Phajot brand mark (transparent PNG, landscape aspect 823x433).
 // 5 resolution tiers — picks the smallest source >= display size for sharpness.
 // height: auto preserves natural aspect ratio (don't crop the capybora).
-const Logo = ({ size = 64, alt = "Phanote" }) => {
+const Logo = ({ size = 64, alt = "Phajot" }) => {
   let src;
-  if (size <= 64) src = "/phanote-favicon-64.png";
-  else if (size <= 128) src = "/phanote-logo-128.png";
-  else if (size <= 256) src = "/phanote-logo-256.png";
-  else if (size <= 512) src = "/phanote-logo-512.png";
-  else src = "/phanote-logo-1024.png";
+  if (size <= 64) src = "/phajot-favicon-64.png";
+  else if (size <= 128) src = "/phajot-logo-128.png";
+  else if (size <= 256) src = "/phajot-logo-256.png";
+  else if (size <= 512) src = "/phajot-logo-512.png";
+  else src = "/phajot-logo-1024.png";
 
   return (
     <img
@@ -1068,7 +1067,7 @@ function OnboardingScreen({onComplete, onBack}){
       <AnimalBg/>
       <div style={{textAlign:"center",marginBottom:28,zIndex:1,display:"flex",flexDirection:"column",alignItems:"center"}}>
         <Logo size={120} />
-        <div style={{fontFamily:"'Noto Sans',sans-serif",fontSize:26,fontWeight:800,color:T.dark,letterSpacing:-1,marginTop:6}}>Phanote · ພາໂນດ</div>
+        <div style={{fontFamily:"'Noto Sans',sans-serif",fontSize:26,fontWeight:800,color:T.dark,letterSpacing:-1,marginTop:6}}>Phajot · ພາຈົດ</div>
         <div style={{fontSize:12,color:T.muted,marginTop:6,textAlign:"center",maxWidth:300,lineHeight:1.5,fontFamily:"'Noto Sans',sans-serif",fontWeight:400}}>{t(lang,"slogan")}</div>
       </div>
       <div style={{display:"flex",gap:5,marginBottom:24,zIndex:1}}>
@@ -2036,7 +2035,7 @@ function SettingsScreen({profile,transactions,onUpdateProfile,onReset,pinConfig=
         <button onClick={()=>onShowGuide&&onShowGuide()} style={{width:"100%",padding:"16px 18px",border:"none",cursor:"pointer",background:"transparent",display:"flex",alignItems:"center",gap:12,textAlign:"left"}}>
           <div style={{width:40,height:40,borderRadius:12,background:"rgba(26,64,32,0.1)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><Logo size={36} /></div>
           <div style={{flex:1}}>
-            <div style={{fontSize:14,fontWeight:600,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>Phanote guide</div>
+            <div style={{fontSize:14,fontWeight:600,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>Phajot guide</div>
             <div style={{fontSize:12,color:T.muted,marginTop:1}}>How every feature works</div>
           </div>
           <div style={{fontSize:12,color:T.muted}}>›</div>
@@ -3403,10 +3402,10 @@ function AiAdvisorModal({ profile, transactions, onClose }) {
   const { lang, baseCurrency, userId } = profile;
   const [messages, setMessages] = useState([
     { role:"assistant", text: lang==="lo"
-        ? "ສະບາຍດີ! 👋 ຂ້ອຍແມ່ນທີ່ປຶກສາການເງິນ AI ຂອງ Phanote. ຖາມຂ້ອຍໄດ້ເລີຍ!"
+        ? "ສະບາຍດີ! 👋 ຂ້ອຍແມ່ນທີ່ປຶກສາການເງິນ AI ຂອງ Phajot. ຖາມຂ້ອຍໄດ້ເລີຍ!"
         : lang==="th"
-        ? "สวัสดี! 👋 ฉันคือที่ปรึกษาการเงิน AI ของ Phanote ถามได้เลยนะ!"
-        : "Hi! 👋 I'm Phanote's AI advisor. Ask me anything about your finances!" }
+        ? "สวัสดี! 👋 ฉันคือที่ปรึกษาการเงิน AI ของ Phajot ถามได้เลยนะ!"
+        : "Hi! 👋 I'm Phajot's AI advisor. Ask me anything about your finances!" }
   ]);
   const [input,    setInput]    = useState("");
   const [loading,  setLoading]  = useState(false);
@@ -3538,7 +3537,7 @@ function AiAdvisorModal({ profile, transactions, onClose }) {
             <div style={{display:"flex",alignItems:"center",gap:10}}>
               <div style={{width:38,height:38,borderRadius:12,background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>🤖</div>
               <div>
-                <div style={{fontWeight:800,fontSize:16,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>Ask Phanote AI</div>
+                <div style={{fontWeight:800,fontSize:16,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>Ask Phajot AI</div>
                 <div style={{fontSize:11,color:"#5aae5f",marginTop:1}}>{t(lang,"ai_tagline")}</div>
               </div>
             </div>
@@ -3884,7 +3883,7 @@ function ProUpgradeScreen({ onClose }) {
       <div style={{background:"#1A4020",padding:"calc(env(safe-area-inset-top,0px) + 24px) 20px 22px"}}>
         <button onClick={onClose} style={{fontSize:13,color:"rgba(255,255,255,0.5)",background:"none",border:"none",cursor:"pointer",fontFamily:"'Noto Sans',sans-serif",padding:0,marginBottom:14}}>← Settings</button>
         <div style={{marginBottom:6}}><Logo size={96} /></div>
-        <div style={{fontSize:21,fontWeight:800,color:"#fff",letterSpacing:-0.5,fontFamily:"'Noto Sans',sans-serif"}}>Phanote Pro</div>
+        <div style={{fontSize:21,fontWeight:800,color:"#fff",letterSpacing:-0.5,fontFamily:"'Noto Sans',sans-serif"}}>Phajot Pro</div>
         <div style={{fontSize:12,color:"rgba(255,255,255,0.55)",marginTop:5,lineHeight:1.6}}>Everything you need to track money across LAK, THB & USD — every day.</div>
       </div>
 
@@ -4002,7 +4001,7 @@ function GuideScreen({ lang, onClose }) {
             <div style={{fontSize:18,color:"#ACE1AF"}}>→</div>
             <div style={{background:"#fff",borderRadius:10,padding:"6px 10px",fontSize:11,fontWeight:700,color:"#1A5A30",border:"1px solid #ACE1AF"}}>☕ −₭15,000</div>
           </>}>
-          Type what you spent in the bar at the bottom of the home screen. Just write naturally — Phanote reads the amount, currency and category automatically.
+          Type what you spent in the bar at the bottom of the home screen. Just write naturally — Phajot reads the amount, currency and category automatically.
         </DemoBox>
         <TipBox label="Try these examples">
           <ExRow input="กาแฟ 45 บาท" result="☕ −฿45"/>
@@ -4010,7 +4009,7 @@ function GuideScreen({ lang, onClose }) {
           <ExRow input="grab 89" result="🛵 −฿89"/>
           <ExRow input="เงินเดือน 50000" result="💼 +฿50,000"/>
         </TipBox>
-        <TipBox label="💡 Tip">No currency written? Phanote uses your base currency. You can always edit a transaction by tapping it in the list.</TipBox>
+        <TipBox label="💡 Tip">No currency written? Phajot uses your base currency. You can always edit a transaction by tapping it in the list.</TipBox>
       </>
     ),
     ocr: (
@@ -4023,7 +4022,7 @@ function GuideScreen({ lang, onClose }) {
             <div style={{fontSize:18,color:"#ACE1AF"}}>→</div>
             <div style={{background:"#fff",borderRadius:10,padding:"6px 10px",fontSize:11,fontWeight:700,color:"#1A5A30",border:"1px solid #ACE1AF"}}>−฿185 ✓</div>
           </>}>
-          Tap the 📷 icon in the input bar. Take a photo or pick from gallery. Phanote reads the total and saves it — you just confirm.
+          Tap the 📷 icon in the input bar. Take a photo or pick from gallery. Phajot reads the total and saves it — you just confirm.
         </DemoBox>
         <TipBox label="💡 Best results">Take the photo flat and well-lit. Make sure the total is visible. Works on restaurant bills, pharmacy receipts, and supermarket slips.</TipBox>
         <TipBox label="Pro feature" warn>Receipt scanning requires a Pro plan. Tap the 🔒 icon in the input bar to learn more.</TipBox>
@@ -4056,10 +4055,10 @@ function GuideScreen({ lang, onClose }) {
             <div style={{fontSize:10,color:T.muted}}>₭2M saved of ₭5M</div>
             <div style={{fontSize:10,fontWeight:700,color:"#1A4020"}}>Save ₭500K/mo → 6 months</div>
           </div>}>
-          Go to Goals → tap +. Give your goal a name, a target amount, and a deadline month. Phanote shows how much to save each month to get there.
+          Go to Goals → tap +. Give your goal a name, a target amount, and a deadline month. Phajot shows how much to save each month to get there.
         </DemoBox>
         <TipBox label="💡 Adding savings">Tap "Add savings" on any goal card to record money set aside. The progress bar and timeline update instantly.</TipBox>
-        <TipBox label="💡 Smart suggestion">Phanote suggests which spending category to cut to reach your goal faster — look for the 💡 tip on the goal card.</TipBox>
+        <TipBox label="💡 Smart suggestion">Phajot suggests which spending category to cut to reach your goal faster — look for the 💡 tip on the goal card.</TipBox>
       </>
     ),
     advisor: (
@@ -4171,7 +4170,7 @@ function GuideScreen({ lang, onClose }) {
     <div style={{position:"relative",zIndex:1}}>
       <div style={{background:"#1A4020",padding:"calc(env(safe-area-inset-top,8px) + 14px) 16px 20px"}}>
         <button onClick={onClose} style={{fontSize:13,color:"rgba(255,255,255,0.5)",background:"none",border:"none",cursor:"pointer",fontFamily:"'Noto Sans',sans-serif",marginBottom:12,padding:0}}>← Settings</button>
-        <div style={{fontSize:22,fontWeight:800,color:"#fff",fontFamily:"'Noto Sans',sans-serif"}}>Phanote guide</div>
+        <div style={{fontSize:22,fontWeight:800,color:"#fff",fontFamily:"'Noto Sans',sans-serif"}}>Phajot guide</div>
         <div style={{fontSize:13,color:"rgba(255,255,255,0.55)",marginTop:4}}>Tap any feature to learn how it works</div>
       </div>
       <div style={{padding:"16px 16px 32px"}}>
@@ -4207,7 +4206,7 @@ function PinLock({ pinConfig, pinInput, pinShake, onKey, isSetup, setupMode, set
   return (
     <div style={{position:"fixed",inset:0,zIndex:9999,background:T.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:28}}>
       <div style={{marginBottom:6}}><Logo size={100} /></div>
-      <div style={{fontSize:22,fontWeight:800,color:T.dark,letterSpacing:-0.5,fontFamily:"'Noto Sans',sans-serif"}}>Phanote</div>
+      <div style={{fontSize:22,fontWeight:800,color:T.dark,letterSpacing:-0.5,fontFamily:"'Noto Sans',sans-serif"}}>Phajot</div>
       <div style={{fontSize:13,color:T.muted,marginTop:4,marginBottom:32,textAlign:"center",lineHeight:1.5,fontFamily:"'Noto Sans',sans-serif"}}>{subtitle}</div>
       <div style={{fontSize:17,fontWeight:700,color:T.dark,marginBottom:24,fontFamily:"'Noto Sans',sans-serif"}}>{title}</div>
       <div style={{display:"flex",gap:18,marginBottom:40,animation:pinShake?"shake .4s ease":"none"}}>
@@ -4266,7 +4265,7 @@ function LoginScreen({ onLogin }) {
       <AnimalBg />
       <div style={{ textAlign:"center", marginBottom:36, zIndex:1, display:"flex", flexDirection:"column", alignItems:"center" }}>
         <Logo size={180} />
-        <div style={{ fontFamily:"'Noto Sans',sans-serif", fontSize:28, fontWeight:800, color:T.dark, letterSpacing:-1, marginTop:8 }}>Phanote · ພາໂນດ</div>
+        <div style={{ fontFamily:"'Noto Sans',sans-serif", fontSize:28, fontWeight:800, color:T.dark, letterSpacing:-1, marginTop:8 }}>Phajot · ພາຈົດ</div>
         <div style={{ fontSize:13, color:T.muted, marginTop:6, textAlign:"center", maxWidth:320, lineHeight:1.5, fontFamily:"'Noto Sans',sans-serif", fontWeight:400 }}>{t(lang,"slogan")}</div>
       </div>
       <div style={{ background:T.surface, backdropFilter:"blur(20px)", borderRadius:28,
@@ -4548,8 +4547,8 @@ export default function App(){
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
           <Logo size={64} />
           <div>
-            <div style={{ fontSize:20, fontWeight:800, color:"#1a2e1a", fontFamily:"'Noto Sans',sans-serif", letterSpacing:-0.5 }}>PHANOTE</div>
-            <div style={{ fontSize:10, color:"#9B9BAD", fontFamily:"'Noto Sans',sans-serif", letterSpacing:1 }}>ພາໂນດ · พาโนด</div>
+            <div style={{ fontSize:20, fontWeight:800, color:"#1a2e1a", fontFamily:"'Noto Sans',sans-serif", letterSpacing:-0.5 }}>PHAJOT</div>
+            <div style={{ fontSize:10, color:"#9B9BAD", fontFamily:"'Noto Sans',sans-serif", letterSpacing:1 }}>ພາຈົດ</div>
           </div>
         </div>
         <div style={{ height:10, width:"90%", background:"#E9FFDB", borderRadius:5, overflow:"hidden" }}>

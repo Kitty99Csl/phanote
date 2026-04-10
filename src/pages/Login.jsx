@@ -38,10 +38,10 @@ export default function Login() {
             🐾
           </div>
           <h1 className="text-3xl font-bold font-display" style={{ color: 'var(--color-accent-dk)' }}>
-            Phanote
+            Phajot
           </h1>
           <p className="mt-1 text-sm" style={{ color: 'var(--color-text-sub)' }}>
-            ພາໂນດ · พาโนด · Your financial companion
+            ພາຈົດ · Your financial companion
           </p>
         </div>
 

@@ -7,7 +7,7 @@ const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemi
 export async function parseExpense(input, categories = []) {
   const catNames = categories.map(c => c.name_en.toLowerCase()).join(', ')
 
-  const prompt = `You are a financial transaction parser for Phanote, a multi-currency app used in Laos.
+  const prompt = `You are a financial transaction parser for Phajot, a multi-currency app used in Laos.
 The user may write in Lao, Thai, English, or any mix.
 Currencies: LAK (Lao Kip), THB (Thai Baht), USD (US Dollar).
 
