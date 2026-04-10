@@ -1,7 +1,7 @@
-# CLAUDE.md — Phanote project context
+# CLAUDE.md — Phajot project context
 
 ## Project
-Phanote (ພາໂນດ / พาโนด) — multi-currency personal finance PWA for Laos (LAK, THB, USD). Solo developer: Kitty. For personal + family use first, public launch later.
+Phajot (ພາຈົດ) — multi-currency personal finance PWA for Laos (LAK, THB, USD). Solo developer: Kitty. For personal + family use first, public launch later.
 
 - Repo: Kitty99Csl/phanote
 - Main branch: main
@@ -10,14 +10,16 @@ Phanote (ພາໂນດ / พาโนด) — multi-currency personal finance 
 
 ## Brand Identity
 
+> **Rename history:** Renamed from "Phanote" to "Phajot" in April 2026 due to trademark conflict with AIDC Laos. Code + UI + logo migrated in commit 608fe5c. Infrastructure (api.phanote.com, app.phanote.com, worker, repo name) staged — will flip when phajot.com DNS is attached to Cloudflare.
+
 **Slogan (locked, Session 5 Day 1):**
-- Lao (primary): ເງິນເຈົ້າໄປໃສ? ດຽວພາໂນດບອກໃຫ້ຟັງ
-- English: Where did your money go? Let Phanote tell you.
+- Lao (primary): ເງິນເຈົ້າໄປໃສ? ດຽວພາຈົດບອກໃຫ້ຟັງ
+- English: Where did your money go? Let Phajot tell you.
 - Uses "ດຽວ" (diew) particle for conversational Lao friend-voice
 - Connects to Monthly Wrap feature (storytelling theme)
 
 **Logo:** Capybora hugging celadon green spiral notebook with
-"phanote" on left page and "ພາໂນດ" on right page. Warm brown line art
+"phajot" on left page and "ພາຈົດ" on right page. Warm brown line art
 with pink blush cheeks. Landscape aspect (823×433). Transparent PNG
 at 6 resolution tiers (32-1024px).
 
