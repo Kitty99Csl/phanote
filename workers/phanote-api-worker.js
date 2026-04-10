@@ -1,6 +1,6 @@
 /**
- * PHANOTE — Main API Worker v4.2
- * Domain: api.phanote.com
+ * PHAJOT — Main API Worker v4.4.0
+ * Domains: api.phanote.com (legacy), api.phajot.com
  *
  * /parse  → Gemini 2.5 Flash (best Lao/Thai text understanding)
  * /advise → Claude Haiku    (best conversational financial reasoning)
@@ -65,7 +65,7 @@ function checkRateLimit(ip, route) {
 //
 // This is Phase 1 of the kill switch plan.
 // Phase 2 (Session 6+): move to Supabase-backed feature flags
-// readable/writable from admin.phanote.com admin panel.
+// readable/writable from admin.phajot.com admin panel.
 // Worker will check Supabase first, fall back to these env vars.
 function isFeatureEnabled(env, feature) {
   const varName = {
@@ -96,7 +96,7 @@ function disabledResponse(feature) {
 // ─── PARSE SYSTEM — Gemini 2.5 Flash ────────────────────────────
 // Uses Gemini's superior Lao/Thai language understanding
 // Category names MUST match App.jsx normalizeCategory keys exactly
-const PARSE_SYSTEM = `You are a financial transaction parser for Phanote, a personal finance app based in Laos.
+const PARSE_SYSTEM = `You are a financial transaction parser for Phajot, a personal finance app based in Laos.
 
 PRIMARY MARKET: Laos (LAK, Lao script ພາສາລາວ)
 SECONDARY: Thailand (THB, Thai script) — Lao users sometimes shop in Thailand or use Thai terms
@@ -384,7 +384,7 @@ export default {
 
     if (url.pathname === "/" || url.pathname === "/health") {
       return Response.json({
-        status: "ok", service: "Phanote API", version: "4.4.0",
+        status: "ok", service: "Phajot API", version: "4.4.0",
         parse: "gemini-2.5-flash", advise: "claude-haiku-4-5", ocr: "gemini-2.5-flash-vision", monthly_report: "claude-haiku-4-5", parse_statement: "gemini-2.5-flash-vision",
         routes: ["/parse", "/advise", "/ocr", "/monthly-report", "/parse-statement"],
         features: ["rate_limiting", "kill_switch"],
@@ -446,7 +446,7 @@ export default {
           ? JSON.stringify(recentTransactions)
           : "No transactions in the last 7 days.";
 
-        const systemPrompt = `You are Phanote's warm, friendly AI financial advisor for users in Laos and Thailand managing LAK, THB, and USD.
+        const systemPrompt = `You are Phajot's warm, friendly AI financial advisor for users in Laos and Thailand managing LAK, THB, and USD.
 
 MONTHLY SUMMARY:
 ${summary || "No financial data available yet."}
@@ -697,7 +697,7 @@ Rules:
           ? "Reply in Lao (ພາສາລາວ). Use Lao script."
           : lang === "th" ? "Reply in Thai (ภาษาไทย)." : "Reply in English.";
 
-        const systemPrompt = `You are Phanote's warm, end-of-month financial storyteller for users in Laos and Thailand managing LAK, THB, and USD.
+        const systemPrompt = `You are Phajot's warm, end-of-month financial storyteller for users in Laos and Thailand managing LAK, THB, and USD.
 
 Your job: Write a warm, specific, non-judgmental narrative summarizing the user's month. Think of it like a friend reflecting on their month over coffee.
 
