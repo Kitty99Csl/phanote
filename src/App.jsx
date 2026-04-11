@@ -898,6 +898,7 @@ const i18n={
     noActivityMonth:"No activity this month",showingDate:"Showing: {date}",showingCategory:"Showing: {category}",clearFilter:"Clear",
     heatmapSummary:"{n} active days · biggest {date} ({biggest}) · avg {avg}/day",
     biggestDays:"Biggest days",viewTransactionsBtn:"View transactions",txCount:"{n} txs",dayPopoverTop:"Top:",
+    todayLabel:"Today",recentLabel:"Recent",
     months:["January","February","March","April","May","June","July","August","September","October","November","December"],
   },
   lo:{
@@ -979,6 +980,7 @@ const i18n={
     noActivityMonth:"ບໍ່ມີກິດຈະກຳໃນເດືອນນີ້",showingDate:"ສະແດງ: {date}",showingCategory:"ສະແດງ: {category}",clearFilter:"ລ້າງ",
     heatmapSummary:"{n} ວັນມີກິດຈະກຳ · ສູງສຸດ {date} ({biggest}) · ສະເລ່ຍ {avg}/ວັນ",
     biggestDays:"ວັນໃຊ້ຈ່າຍຫຼາຍສຸດ",viewTransactionsBtn:"ເບິ່ງທຸລະກຳ",txCount:"{n} ທຸລະກຳ",dayPopoverTop:"ສູງສຸດ:",
+    todayLabel:"ມື້ນີ້",recentLabel:"ລ່າສຸດ",
     months:["ມັງກອນ","ກຸມພາ","ມີນາ","ເມສາ","ພຶດສະພາ","ມິຖຸນາ","ກໍລະກົດ","ສິງຫາ","ກັນຍາ","ຕຸລາ","ພະຈິກ","ທັນວາ"],
   },
   th:{
@@ -1039,6 +1041,7 @@ const i18n={
     noActivityMonth:"ไม่มีกิจกรรมในเดือนนี้",showingDate:"แสดง: {date}",showingCategory:"แสดง: {category}",clearFilter:"ล้าง",
     heatmapSummary:"{n} วันมีกิจกรรม · สูงสุด {date} ({biggest}) · เฉลี่ย {avg}/วัน",
     biggestDays:"วันที่จ่ายมากสุด",viewTransactionsBtn:"ดูรายการ",txCount:"{n} รายการ",dayPopoverTop:"สูงสุด:",
+    todayLabel:"วันนี้",recentLabel:"ล่าสุด",
     months:["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"],
   },
 };
@@ -3984,12 +3987,24 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
       )}
       <div ref={scrollRef} style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
         {tab==="home"&&(()=>{
-          const recent5 = transactions.slice(0, 5);
+          const sortedTxs = [...transactions].sort((a, b) => {
+            if (b.date !== a.date) return b.date.localeCompare(a.date);
+            const aCreated = new Date(a.created_at || a.createdAt || 0).getTime();
+            const bCreated = new Date(b.created_at || b.createdAt || 0).getTime();
+            return bCreated - aCreated;
+          });
+          const todayStr = new Date().toISOString().split("T")[0];
+          const todayTxs = sortedTxs.filter(tx => tx.date === todayStr);
+          const homeDisplay = todayTxs.length > 0 ? todayTxs : sortedTxs.slice(0, 5);
+          const isShowingToday = todayTxs.length > 0;
           return(<>
             <div style={{paddingTop:4}}/>
-            {recent5.length > 0 ? (
-              <TransactionList transactions={recent5} lang={lang} onUpdateNote={onUpdateNote} onDeleteTx={onDeleteTx} onEditCategory={(tx)=>{setEditTx(tx);setShowEdit(true);}} customCategories={customCategories}/>
-            ) : (
+            {homeDisplay.length > 0 ? (<>
+              <div style={{ fontSize:11,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:1.4,marginBottom:8,marginTop:16,paddingLeft:4 }}>
+                {isShowingToday ? `${t(lang,"todayLabel")} (${todayTxs.length})` : t(lang,"recentLabel")}
+              </div>
+              <TransactionList transactions={homeDisplay} lang={lang} onUpdateNote={onUpdateNote} onDeleteTx={onDeleteTx} onEditCategory={(tx)=>{setEditTx(tx);setShowEdit(true);}} customCategories={customCategories}/>
+            </>) : (
               <div style={{textAlign:"center",padding:"40px 24px",color:T.muted,fontSize:13}}>{lang==="lo"?"ຍັງບໍ່ມີລາຍການ":"No transactions yet — start logging below!"}</div>
             )}
             {transactions.length > 0 && (
