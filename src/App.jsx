@@ -890,6 +890,7 @@ const i18n={
     statementRetry:"Retry",statementCancel:"Cancel",statementBack:"Back",statementNext:"Next",
     statementMaxImages:"Maximum 10 images",statementNoImages:"Add at least 1 screenshot",
     statementToolsSection:"Tools",
+    loadMore:"Load 50 more",filteredTotal:"Total",emptyStateFilter:"No transactions in this view",
     months:["January","February","March","April","May","June","July","August","September","October","November","December"],
   },
   lo:{
@@ -964,6 +965,7 @@ const i18n={
     statementRetry:"ລອງໃໝ່",statementCancel:"ຍົກເລີກ",statementBack:"ກັບຄືນ",statementNext:"ຕໍ່ໄປ",
     statementMaxImages:"ສູງສຸດ 10 ຮູບ",statementNoImages:"ເພີ່ມຮູບຢ່າງໜ້ອຍ 1 ຮູບ",
     statementToolsSection:"ເຄື່ອງມື",
+    loadMore:"ເບິ່ງອີກ 50",filteredTotal:"ລວມ",emptyStateFilter:"ບໍ່ມີທຸລະກຳໃນມຸມມອງນີ້",
     months:["ມັງກອນ","ກຸມພາ","ມີນາ","ເມສາ","ພຶດສະພາ","ມິຖຸນາ","ກໍລະກົດ","ສິງຫາ","ກັນຍາ","ຕຸລາ","ພະຈິກ","ທັນວາ"],
   },
   th:{
@@ -3761,7 +3763,10 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
   const[showGuide,setShowGuide]=useState(false);
   const[showUpgrade,setShowUpgrade]=useState(false);
   const[showStatementScan,setShowStatementScan]=useState(false);
-  const[txFilter,setTxFilter]=useState("today"); // today | recent | all
+  const[txFilter,setTxFilter]=useState("today"); // today | yesterday | week | month | all
+  const[curFilter,setCurFilter]=useState("all"); // all | LAK | THB | USD
+  const[visibleCount,setVisibleCount]=useState(50);
+  useEffect(()=>{setVisibleCount(50);},[txFilter,curFilter]);
   const{lang,customCategories=[]}=profile;
   const greet=()=>{const h=new Date().getHours();if(h<12)return t(lang,"morning");if(h<17)return t(lang,"afternoon");return t(lang,"evening");};
   const dateStr=new Date().toLocaleDateString(lang==="th"?"th-TH":lang==="lo"?"lo-LA":"en-US",{weekday:"long",month:"long",day:"numeric"});
@@ -3805,22 +3810,43 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
           <div style={{paddingBottom:6}}><WalletCards transactions={transactions}/></div>
           <SafeToSpend transactions={transactions} profile={profile}/>
           <div style={{padding:"0 16px 6px",borderBottom:"1px solid rgba(45,45,58,0.05)"}}>
-            <div style={{display:"flex",gap:6}}>
+            <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
               {[
-                {id:"today", lo:"ມື້ນີ້", th:"วันนี้", en:"Today"},
-                {id:"recent",lo:"ລ່າສຸດ",th:"ล่าสุด",en:"Recent"},
-                {id:"all",   lo:"ທັງໝົດ",th:"ทั้งหมด",en:"All"},
+                {id:"today",     lo:"ມື້ນີ້",   th:"วันนี้",   en:"Today"},
+                {id:"yesterday", lo:"ມື້ວານ",   th:"เมื่อวาน", en:"Yesterday"},
+                {id:"week",      lo:"ອາທິດ",    th:"สัปดาห์",  en:"Week"},
+                {id:"month",     lo:"ເດືອນ",    th:"เดือน",    en:"Month"},
+                {id:"all",       lo:"ທັງໝົດ",   th:"ทั้งหมด",  en:"All"},
               ].map(f=>{
                 const label=lang==="lo"?f.lo:lang==="th"?f.th:f.en;
                 const active=txFilter===f.id;
                 return(
                   <button key={f.id} onClick={()=>setTxFilter(f.id)} style={{
-                    padding:"5px 12px",borderRadius:20,border:"none",cursor:"pointer",
-                    background:active?T.celadon:"rgba(45,45,58,0.06)",
+                    padding:"6px 12px",borderRadius:9999,border:"none",cursor:"pointer",
+                    background:active?T.celadon:"transparent",
                     color:active?"#1A4020":T.muted,
-                    fontWeight:active?700:500,fontSize:12,
+                    fontWeight:active?700:500,fontSize:13,
                     fontFamily:"'Noto Sans',sans-serif",transition:"all .2s",
                   }}>{label}</button>
+                );
+              })}
+            </div>
+            <div style={{display:"flex",gap:6,marginTop:8}}>
+              {[
+                {id:"all", label:lang==="lo"?"ທັງໝົດ":"All"},
+                {id:"LAK", label:"₭ LAK"},
+                {id:"THB", label:"฿ THB"},
+                {id:"USD", label:"$ USD"},
+              ].map(c=>{
+                const active=curFilter===c.id;
+                return(
+                  <button key={c.id} onClick={()=>setCurFilter(c.id)} style={{
+                    padding:"4px 10px",borderRadius:9999,border:"none",cursor:"pointer",
+                    background:active?T.celadon:"transparent",
+                    color:active?"#1A4020":T.muted,
+                    fontWeight:active?600:500,fontSize:11,
+                    fontFamily:"'Noto Sans',sans-serif",transition:"all .2s",
+                  }}>{c.label}</button>
                 );
               })}
               <div style={{flex:1}}/>
@@ -3834,43 +3860,58 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
       <div ref={scrollRef} style={{flex:1,overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
         {tab==="home"&&(()=>{
           const todayStr=new Date().toISOString().split("T")[0];
-          const filtered=txFilter==="today"
-            ?transactions.filter(tx=>tx.date===todayStr)
-            :txFilter==="recent"
-            ?transactions.slice(0,30)
-            :transactions;
+          const yestStr=new Date(Date.now()-86400000).toISOString().split("T")[0];
+          const weekAgoStr=new Date(Date.now()-7*86400000).toISOString().split("T")[0];
+          const monthPrefix=todayStr.slice(0,7);
 
-          // Today totals — show per currency when filter=today
-          const todayTxs=transactions.filter(tx=>tx.date===todayStr);
-          const todayTotals={};
-          todayTxs.forEach(tx=>{
-            if(!todayTotals[tx.currency])todayTotals[tx.currency]={inc:0,exp:0};
-            if(tx.type==="income")todayTotals[tx.currency].inc+=tx.amount;
-            else todayTotals[tx.currency].exp+=tx.amount;
+          let filtered=transactions;
+          if(txFilter==="today") filtered=filtered.filter(tx=>tx.date===todayStr);
+          else if(txFilter==="yesterday") filtered=filtered.filter(tx=>tx.date===yestStr);
+          else if(txFilter==="week") filtered=filtered.filter(tx=>tx.date>=weekAgoStr);
+          else if(txFilter==="month") filtered=filtered.filter(tx=>tx.date>=monthPrefix+"-01");
+          if(curFilter!=="all") filtered=filtered.filter(tx=>tx.currency===curFilter);
+
+          const totalFiltered=filtered.length;
+          const visible=filtered.slice(0,visibleCount);
+          const hasMore=totalFiltered>visibleCount;
+
+          // Filtered totals by currency
+          const fIncome={},fExpense={};
+          filtered.forEach(tx=>{
+            if(tx.type==="income") fIncome[tx.currency]=(fIncome[tx.currency]||0)+tx.amount;
+            else fExpense[tx.currency]=(fExpense[tx.currency]||0)+tx.amount;
           });
-          const hasTodayData=Object.keys(todayTotals).length>0;
 
           return(<>
-            {/* Today summary strip — only when Today filter active and has data */}
-            {txFilter==="today"&&hasTodayData&&(
-              <div onClick={()=>setTab("analytics")}
-                style={{margin:"8px 16px 4px",padding:"10px 14px",borderRadius:14,
-                  background:"rgba(172,225,175,0.12)",border:"0.5px solid rgba(172,225,175,0.3)",
-                  cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>
-                <div style={{flex:1,display:"flex",gap:12,flexWrap:"wrap"}}>
-                  {Object.entries(todayTotals).map(([cur,{inc,exp}])=>(
-                    <div key={cur} style={{display:"flex",gap:8,alignItems:"center"}}>
-                      {exp>0&&<span style={{fontSize:12,fontWeight:700,color:"#C0392B",fontFamily:"'Noto Sans',sans-serif"}}>−{fmt(exp,cur)}</span>}
-                      {inc>0&&<span style={{fontSize:12,fontWeight:700,color:"#1A5A30",fontFamily:"'Noto Sans',sans-serif"}}>+{fmt(inc,cur)}</span>}
-                    </div>
-                  ))}
+            {totalFiltered>0?(<>
+              <div style={{paddingTop:4}}/>
+              <TransactionList transactions={visible} lang={lang} onUpdateNote={onUpdateNote} onDeleteTx={onDeleteTx} onEditCategory={(tx)=>{setEditTx(tx);setShowEdit(true);}} customCategories={customCategories}/>
+              {hasMore&&(
+                <div style={{textAlign:"center",padding:"12px 0"}}>
+                  <button onClick={()=>setVisibleCount(c=>c+50)} style={{background:"transparent",border:"none",color:"#2A7A40",fontSize:13,fontWeight:600,cursor:"pointer",padding:"8px 16px",fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"loadMore")} ↓</button>
                 </div>
-                <div style={{fontSize:11,color:"#2A7A40",fontWeight:600,whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:3}}>
-                  {lang==="lo"?"ລາຍງານ →":lang==="th"?"รายงาน →":"Analytics →"}
-                </div>
+              )}
+              <div style={{margin:"8px 16px 0",padding:"14px 16px",borderRadius:14,background:T.surface,border:"1px solid rgba(172,225,175,0.2)",boxShadow:T.shadow}}>
+                <div style={{fontSize:10,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:1.4,marginBottom:8,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"filteredTotal")} · {totalFiltered} {t(lang,"total")}</div>
+                {Object.keys(fIncome).length>0&&(
+                  <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:4}}>
+                    {Object.entries(fIncome).map(([cur,amt])=><span key={cur} style={{fontSize:14,fontWeight:700,color:"#2A7A40",fontFamily:"'Noto Sans',sans-serif"}}>+{fmt(amt,cur)}</span>)}
+                  </div>
+                )}
+                {Object.keys(fExpense).length>0&&(
+                  <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+                    {Object.entries(fExpense).map(([cur,amt])=><span key={cur} style={{fontSize:14,fontWeight:700,color:"#C0392B",fontFamily:"'Noto Sans',sans-serif"}}>−{fmt(amt,cur)}</span>)}
+                  </div>
+                )}
+              </div>
+            </>):(
+              <div style={{padding:"48px 16px",textAlign:"center",color:T.muted}}>
+                <div style={{fontSize:40,marginBottom:12}}>🌿</div>
+                <div style={{fontSize:14,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"emptyStateFilter")}</div>
               </div>
             )}
-            <div style={{paddingTop:4}}/><TransactionList transactions={filtered} lang={lang} onUpdateNote={onUpdateNote} onDeleteTx={onDeleteTx} onEditCategory={(tx)=>{setEditTx(tx);setShowEdit(true);}} customCategories={customCategories}/>{filtered.length===0&&<div style={{textAlign:"center",padding:"40px 24px",color:T.muted,fontSize:13}}>{txFilter==="today"?(lang==="lo"?"ບໍ່ມີລາຍການມື້ນີ້":lang==="th"?"ไม่มีรายการวันนี้":"No transactions today — start logging below!"):(lang==="lo"?"ຍັງບໍ່ມີລາຍການ":lang==="th"?"ยังไม่มีรายการ":"No transactions yet")}</div>}<div style={{height:16}}/></>);
+            <div style={{height:16}}/>
+          </>);
         })()}
         {tab==="analytics"&&<AnalyticsScreen profile={profile} transactions={transactions}/>}
         {tab==="budget"&&<BudgetScreen profile={profile} transactions={transactions}/>}
