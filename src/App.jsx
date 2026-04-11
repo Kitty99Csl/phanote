@@ -96,6 +96,7 @@ const dbInsertTransaction = async (userId, tx) => {
     ai_confidence: tx.confidence || null, note: tx.note || null,
     category_name: tx.categoryName || null, category_emoji: tx.categoryEmoji || null,
     raw_input: tx.rawInput || null, is_deleted: false,
+    ...(tx.batchId ? { batch_id: tx.batchId } : {}),
   }).select().single();
   if (error) throw error;
   return data;
@@ -3917,7 +3918,45 @@ function StatementScanFlow({ profile, lang, onClose, onAdd, customCategories=[],
   const [saveProgress, setSaveProgress] = useState(0);
   const [detectedCurrency, setDetectedCurrency] = useState(null);
   const [currencyMismatch, setCurrencyMismatch] = useState(false);
+  const [batchHistory, setBatchHistory] = useState([]);
+  const [viewBatchId, setViewBatchId] = useState(null);
   const fileRef = useRef();
+
+  // ── Load batch import history ──
+  useEffect(() => {
+    if (!profile?.userId) return;
+    supabase.from("transactions").select("batch_id,created_at,description,currency,type,amount")
+      .eq("user_id", profile.userId).eq("is_deleted", false).not("batch_id", "is", null)
+      .order("created_at", { ascending: false }).limit(100)
+      .then(({ data }) => {
+        if (!data || data.length === 0) { setBatchHistory([]); return; }
+        const groups = {};
+        data.forEach(tx => {
+          if (!groups[tx.batch_id]) groups[tx.batch_id] = { batch_id: tx.batch_id, imported_at: tx.created_at, tx_count: 0, currency: tx.currency, txs: [] };
+          groups[tx.batch_id].tx_count++;
+          groups[tx.batch_id].txs.push(tx);
+        });
+        setBatchHistory(Object.values(groups).sort((a, b) => new Date(b.imported_at) - new Date(a.imported_at)).slice(0, 10));
+      }).catch(() => {});
+  }, [profile?.userId, step === "done"]);
+
+  const deleteBatch = async (batchId) => {
+    try {
+      await supabase.from("transactions").update({ is_deleted: true }).eq("batch_id", batchId).eq("user_id", profile?.userId);
+      setBatchHistory(prev => prev.filter(b => b.batch_id !== batchId));
+      setViewBatchId(null);
+    } catch (e) { console.error("Delete batch error:", e); }
+  };
+
+  const fmtRelative = (dateStr) => {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 60) return mins <= 1 ? "just now" : `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    const days = Math.floor(hrs / 24);
+    return `${days}d ago`;
+  };
 
   const tpl = (key, vars={}) => {
     let s = t(lang, key);
@@ -3940,7 +3979,14 @@ function StatementScanFlow({ profile, lang, onClose, onAdd, customCategories=[],
     }));
     setImages(prev => [...prev, ...newImgs]);
   };
-  const removeImage = (idx) => setImages(prev => prev.filter((_, i) => i !== idx));
+  const removeImage = (idx) => {
+    const removed = images[idx];
+    if (removed?.preview) URL.revokeObjectURL(removed.preview);
+    setImages(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  // Cleanup blob URLs on unmount
+  useEffect(() => () => { images.forEach(img => { if (img?.preview) URL.revokeObjectURL(img.preview); }); }, []);
 
   // ── Step 3: Scan ──
   const handleScan = async () => {
@@ -4025,6 +4071,7 @@ function StatementScanFlow({ profile, lang, onClose, onAdd, customCategories=[],
   // ── Step 5: Bulk save ──
   const handleImport = async () => {
     const toSave = txs.filter((_, i) => selected.has(i));
+    const batchId = crypto.randomUUID();
     setStep("saving");
     setSaveProgress(0);
     for (let i = 0; i < toSave.length; i++) {
@@ -4042,6 +4089,7 @@ function StatementScanFlow({ profile, lang, onClose, onAdd, customCategories=[],
         confidence: 0.9,
         createdAt: new Date().toISOString(),
         rawInput: "statement-scan",
+        batchId,
       };
       onAdd(txObj);
       setSaveProgress(i + 1);
@@ -4087,10 +4135,72 @@ function StatementScanFlow({ profile, lang, onClose, onAdd, customCategories=[],
               </button>
             ))}
           </div>
+          {/* ── Recent imports history ── */}
+          {batchHistory.length > 0 && (
+            <div style={{ marginTop:24, padding:16, borderRadius:16, background:"rgba(172,225,175,0.08)", border:"1px solid rgba(172,225,175,0.2)" }}>
+              <div style={{ fontSize:11, fontWeight:700, color:T.muted, textTransform:"uppercase", letterSpacing:1.4, marginBottom:10, fontFamily:"'Noto Sans',sans-serif" }}>
+                📋 {lang === "lo" ? "ການນຳເຂົ້າຫຼ້າສຸດ" : "Recent imports"}
+              </div>
+              {batchHistory.slice(0, 3).map(batch => (
+                <button key={batch.batch_id} onClick={() => setViewBatchId(batch.batch_id)} style={{
+                  width:"100%", padding:"12px", borderRadius:12, background:"#fff", marginBottom:8, cursor:"pointer", border:"none",
+                  display:"flex", justifyContent:"space-between", alignItems:"center", textAlign:"left", fontFamily:"'Noto Sans',sans-serif",
+                }}>
+                  <div>
+                    <div style={{ fontWeight:600, fontSize:14, color:T.dark }}>{batch.currency || "?"} · {batch.tx_count} tx</div>
+                    <div style={{ fontSize:12, color:T.muted, marginTop:2 }}>{fmtRelative(batch.imported_at)}</div>
+                  </div>
+                  <div style={{ color:T.muted, fontSize:14 }}>›</div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         <div style={{ padding:"16px 20px calc(env(safe-area-inset-bottom,0px) + 16px)" }}>
           {primaryBtn(tpl("statementNext"), handleCurrencyNext, !currency)}
         </div>
+
+        {/* ── Batch detail modal ── */}
+        {viewBatchId && (() => {
+          const batch = batchHistory.find(b => b.batch_id === viewBatchId);
+          if (!batch) return null;
+          return (
+            <div style={{ position:"fixed", inset:0, zIndex:600, background:"rgba(30,30,40,0.6)", backdropFilter:"blur(4px)", display:"flex", alignItems:"flex-end", justifyContent:"center" }}
+              onClick={() => setViewBatchId(null)}>
+              <div onClick={e => e.stopPropagation()} style={{ width:"100%", maxWidth:420, background:"#fff", borderRadius:"24px 24px 0 0", padding:"20px 20px calc(env(safe-area-inset-bottom,0px) + 20px)", maxHeight:"70vh", overflowY:"auto" }}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
+                  <div style={{ fontWeight:800, fontSize:18, color:T.dark, fontFamily:"'Noto Sans',sans-serif" }}>
+                    {lang === "lo" ? "ລາຍລະອຽດການນຳເຂົ້າ" : "Import details"}
+                  </div>
+                  <button onClick={() => setViewBatchId(null)} style={{ border:"none", background:"none", fontSize:20, color:T.muted, cursor:"pointer" }}>×</button>
+                </div>
+                <div style={{ display:"flex", gap:12, marginBottom:16 }}>
+                  <div style={{ background:"rgba(172,225,175,0.15)", borderRadius:12, padding:"8px 14px", fontSize:13, fontWeight:600, color:T.dark }}>{batch.currency}</div>
+                  <div style={{ background:"rgba(172,225,175,0.15)", borderRadius:12, padding:"8px 14px", fontSize:13, fontWeight:600, color:T.dark }}>{batch.tx_count} transactions</div>
+                  <div style={{ background:"rgba(45,45,58,0.06)", borderRadius:12, padding:"8px 14px", fontSize:13, color:T.muted }}>{fmtRelative(batch.imported_at)}</div>
+                </div>
+                {batch.txs.slice(0, 5).map((tx, i) => (
+                  <div key={i} style={{ display:"flex", justifyContent:"space-between", padding:"8px 0", borderBottom:"1px solid rgba(45,45,58,0.06)", fontSize:13 }}>
+                    <div style={{ color:T.dark, flex:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{tx.description || "—"}</div>
+                    <div style={{ color: tx.type === "expense" ? "#C0392B" : "#2A7A40", fontWeight:700, flexShrink:0, marginLeft:12 }}>
+                      {tx.type === "expense" ? "-" : "+"}{fmt(tx.amount, tx.currency)}
+                    </div>
+                  </div>
+                ))}
+                {batch.tx_count > 5 && <div style={{ fontSize:12, color:T.muted, padding:"8px 0", textAlign:"center" }}>+{batch.tx_count - 5} more</div>}
+                <div style={{ display:"flex", gap:10, marginTop:20 }}>
+                  <button onClick={() => setViewBatchId(null)} style={{ flex:1, padding:"14px", borderRadius:16, border:"none", background:"rgba(45,45,58,0.08)", color:T.dark, fontWeight:700, fontSize:14, cursor:"pointer", fontFamily:"'Noto Sans',sans-serif" }}>
+                    {lang === "lo" ? "ປິດ" : "Close"}
+                  </button>
+                  <button onClick={() => { if (confirm(lang === "lo" ? `ລົບ ${batch.tx_count} ທຸລະກຳ?` : `Delete ${batch.tx_count} transactions?`)) deleteBatch(batch.batch_id); }}
+                    style={{ flex:1, padding:"14px", borderRadius:16, border:"none", background:"rgba(192,57,43,0.1)", color:"#C0392B", fontWeight:700, fontSize:14, cursor:"pointer", fontFamily:"'Noto Sans',sans-serif" }}>
+                    {lang === "lo" ? `ລົບທັງໝົດ (${batch.tx_count})` : `Delete all (${batch.tx_count})`}
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
       </>)}
 
       {/* ── STEP 2: Upload images ── */}
@@ -4180,7 +4290,20 @@ function StatementScanFlow({ profile, lang, onClose, onAdd, customCategories=[],
 
         {/* Transaction list */}
         <div style={{ flex:1, overflowY:"auto", padding:"0 20px" }}>
-          {txs.map((tx, i) => {
+          {txs.length === 0 ? (
+            <div style={{ padding:40, textAlign:"center" }}>
+              <div style={{ fontSize:40, marginBottom:12 }}>📭</div>
+              <div style={{ fontSize:16, fontWeight:600, color:T.dark, marginBottom:6, fontFamily:"'Noto Sans',sans-serif" }}>
+                {lang === "lo" ? "ບໍ່ພົບທຸລະກຳ" : "No transactions found"}
+              </div>
+              <div style={{ fontSize:13, color:T.muted, lineHeight:1.5 }}>
+                {lang === "lo" ? "ລອງອັບໂຫຼດຮູບທີ່ຊັດເຈນກວ່າ ຫຼື ເລືອກທະນາຄານອື່ນ" : "Try clearer images or a different bank app screenshot"}
+              </div>
+              <button onClick={() => { setStep("upload"); setTxs([]); setStats(null); }} style={{ marginTop:16, padding:"10px 24px", borderRadius:14, border:"none", background:"rgba(45,45,58,0.08)", color:T.dark, fontWeight:600, fontSize:13, cursor:"pointer", fontFamily:"'Noto Sans',sans-serif" }}>
+                {lang === "lo" ? "ລອງໃໝ່" : "Try again"}
+              </button>
+            </div>
+          ) : txs.map((tx, i) => {
             const cat = findCat(tx.categoryId, customCategories);
             const isExp = tx.type === "expense";
             const on = selected.has(i);
