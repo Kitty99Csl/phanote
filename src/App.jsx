@@ -3896,7 +3896,8 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
       )}
       {showStatementScan&&(
         <StatementScanFlow profile={profile} lang={lang} onClose={()=>setShowStatementScan(false)} onAdd={onAdd} customCategories={customCategories}
-          onImportDone={(n)=>{setShowStatementScan(false);setTxFilter("all");setTab("home");}}/>
+          onImportDone={(n)=>{setShowStatementScan(false);setTxFilter("all");setTab("home");}}
+          onDeleteBatch={(batchId)=>{setTransactions(prev=>prev.filter(tx=>tx.batchId!==batchId&&tx.batch_id!==batchId));}}/>
       )}
       {streakToast&&<Toast msg={streakToast} onDone={onStreakToastDone}/>}
     </div>
@@ -3906,7 +3907,7 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
 // ═══ STATEMENT SCAN FLOW ═════════════════════════════════════
 // Full-screen 5-step flow: currency → upload → loading → review → save.
 // Launched from Settings → Tools → Bank statement scan (Pro only).
-function StatementScanFlow({ profile, lang, onClose, onAdd, customCategories=[], onImportDone=()=>{} }) {
+function StatementScanFlow({ profile, lang, onClose, onAdd, customCategories=[], onImportDone=()=>{}, onDeleteBatch=()=>{} }) {
   const [step, setStep] = useState("currency"); // currency | upload | loading | review | saving | done
   const [currency, setCurrency] = useState(null);
   const [images, setImages] = useState([]); // [{file, preview, data, mimeType}]
@@ -3921,6 +3922,7 @@ function StatementScanFlow({ profile, lang, onClose, onAdd, customCategories=[],
   const [batchHistory, setBatchHistory] = useState([]);
   const [viewBatchId, setViewBatchId] = useState(null);
   const fileRef = useRef();
+  const imagesRef = useRef(images);
 
   // ── Load batch import history ──
   useEffect(() => {
@@ -3944,6 +3946,7 @@ function StatementScanFlow({ profile, lang, onClose, onAdd, customCategories=[],
     try {
       await supabase.from("transactions").update({ is_deleted: true }).eq("batch_id", batchId).eq("user_id", profile?.userId);
       setBatchHistory(prev => prev.filter(b => b.batch_id !== batchId));
+      onDeleteBatch(batchId);
       setViewBatchId(null);
     } catch (e) { console.error("Delete batch error:", e); }
   };
@@ -3985,8 +3988,9 @@ function StatementScanFlow({ profile, lang, onClose, onAdd, customCategories=[],
     setImages(prev => prev.filter((_, i) => i !== idx));
   };
 
-  // Cleanup blob URLs on unmount
-  useEffect(() => () => { images.forEach(img => { if (img?.preview) URL.revokeObjectURL(img.preview); }); }, []);
+  // Keep ref in sync + cleanup blob URLs on unmount
+  useEffect(() => { imagesRef.current = images; }, [images]);
+  useEffect(() => () => { imagesRef.current.forEach(img => { if (img?.preview) URL.revokeObjectURL(img.preview); }); }, []);
 
   // ── Step 3: Scan ──
   const handleScan = async () => {
@@ -4959,6 +4963,7 @@ export default function App(){
             : "other",
           description: tx.description || "", note: tx.note || "",
           date: tx.date, confidence: tx.ai_confidence, createdAt: tx.created_at,
+          batch_id: tx.batch_id || null,
         })));
       }
     } catch (e) { console.error("Load error:", e); }
