@@ -896,6 +896,8 @@ const i18n={
     duplicate:"Duplicate",alreadyImported:"{n} already imported",allDuplicatesWarning:"All transactions already exist in your records. Check any you want to import anyway.",
     dailySpend:"Daily spend",heatmapLegendLess:"Less",heatmapLegendMore:"More",
     noActivityMonth:"No activity this month",showingDate:"Showing: {date}",showingCategory:"Showing: {category}",clearFilter:"Clear",
+    heatmapSummary:"{n} active days · biggest {date} ({biggest}) · avg {avg}/day",
+    biggestDays:"Biggest days",viewTransactionsBtn:"View transactions",txCount:"{n} txs",dayPopoverTop:"Top:",
     months:["January","February","March","April","May","June","July","August","September","October","November","December"],
   },
   lo:{
@@ -975,6 +977,8 @@ const i18n={
     duplicate:"ຊ້ຳກັນ",alreadyImported:"{n} ນຳເຂົ້າແລ້ວ",allDuplicatesWarning:"ທຸລະກຳທັງໝົດມີຢູ່ແລ້ວ. ເລືອກອັນທີ່ຕ້ອງການນຳເຂົ້າຊ້ຳ.",
     dailySpend:"ຈ່າຍລາຍວັນ",heatmapLegendLess:"ໜ້ອຍ",heatmapLegendMore:"ຫຼາຍ",
     noActivityMonth:"ບໍ່ມີກິດຈະກຳໃນເດືອນນີ້",showingDate:"ສະແດງ: {date}",showingCategory:"ສະແດງ: {category}",clearFilter:"ລ້າງ",
+    heatmapSummary:"{n} ວັນມີກິດຈະກຳ · ສູງສຸດ {date} ({biggest}) · ສະເລ່ຍ {avg}/ວັນ",
+    biggestDays:"ວັນໃຊ້ຈ່າຍຫຼາຍສຸດ",viewTransactionsBtn:"ເບິ່ງທຸລະກຳ",txCount:"{n} ທຸລະກຳ",dayPopoverTop:"ສູງສຸດ:",
     months:["ມັງກອນ","ກຸມພາ","ມີນາ","ເມສາ","ພຶດສະພາ","ມິຖຸນາ","ກໍລະກົດ","ສິງຫາ","ກັນຍາ","ຕຸລາ","ພະຈິກ","ທັນວາ"],
   },
   th:{
@@ -1033,6 +1037,8 @@ const i18n={
     wrap_active_days:"วันที่บันทึก",wrap_vs_last:"เทียบกับเดือนก่อน",wrap_close:"ปิด",
     dailySpend:"จ่ายรายวัน",heatmapLegendLess:"น้อย",heatmapLegendMore:"มาก",
     noActivityMonth:"ไม่มีกิจกรรมในเดือนนี้",showingDate:"แสดง: {date}",showingCategory:"แสดง: {category}",clearFilter:"ล้าง",
+    heatmapSummary:"{n} วันมีกิจกรรม · สูงสุด {date} ({biggest}) · เฉลี่ย {avg}/วัน",
+    biggestDays:"วันที่จ่ายมากสุด",viewTransactionsBtn:"ดูรายการ",txCount:"{n} รายการ",dayPopoverTop:"สูงสุด:",
     months:["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"],
   },
 };
@@ -2796,6 +2802,7 @@ function AnalyticsScreen({ profile, transactions, onOpenTransactions = () => {} 
   const [period, setPeriod] = useState("month");
   const [monthOffset, setMonthOffset] = useState(0);
   const [showWrap, setShowWrap] = useState(false);
+  const [popoverDay, setPopoverDay] = useState(null);
 
   const now = new Date();
 
@@ -3129,7 +3136,7 @@ function AnalyticsScreen({ profile, transactions, onOpenTransactions = () => {} 
           );
         })()}
 
-        {/* Daily spend heatmap — only in month view */}
+        {/* Daily spend heatmap + biggest days — only in month view */}
         {period === "month" && (()=>{
           const targetDate = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
           const yr = targetDate.getFullYear(), mo = targetDate.getMonth();
@@ -3137,13 +3144,23 @@ function AnalyticsScreen({ profile, transactions, onOpenTransactions = () => {} 
           const firstDow = new Date(yr, mo, 1).getDay();
           const todayStr = now.toISOString().split("T")[0];
           const spendByDay = {};
+          const txCountByDay = {};
           transactions.forEach(tx => {
             if (tx.currency !== selectedCur || tx.type !== "expense") return;
             const d = new Date(tx.date);
             if (d.getMonth() !== mo || d.getFullYear() !== yr) return;
             spendByDay[tx.date] = (spendByDay[tx.date] || 0) + tx.amount;
+            txCountByDay[tx.date] = (txCountByDay[tx.date] || 0) + 1;
           });
           const maxSpend = Math.max(...Object.values(spendByDay), 0);
+          const activeDays = Object.keys(spendByDay).length;
+          const totalSpend = Object.values(spendByDay).reduce((s,v) => s+v, 0);
+          const entries = Object.entries(spendByDay).sort((a,b) => b[1] - a[1]);
+          const biggestEntry = entries[0];
+          const daysElapsed = monthOffset === 0 ? Math.min(now.getDate(), daysInMonth) : daysInMonth;
+          const avgPerDay = daysElapsed > 0 ? totalSpend / daysElapsed : 0;
+          const aboveAvgThreshold = avgPerDay * 1.5;
+          const fmtDate = (ds) => new Date(ds+"T00:00:00").toLocaleDateString(lang==="th"?"th-TH":lang==="lo"?"lo-LA":"en-US",{month:"short",day:"numeric"});
           const getColor = (amt) => {
             if (!amt || amt <= 0) return "rgba(172,225,175,0.08)";
             const r = amt / maxSpend;
@@ -3158,10 +3175,11 @@ function AnalyticsScreen({ profile, transactions, onOpenTransactions = () => {} 
             const ds = `${yr}-${String(mo+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
             cells.push({ day: d, dateStr: ds, isFuture: ds > todayStr, spend: spendByDay[ds] || 0 });
           }
-          const hasAny = Object.keys(spendByDay).length > 0;
-          return(
+          const hasAny = activeDays > 0;
+          const top5 = entries.slice(0, 5);
+          return(<>
             <div style={{ background:T.surface,borderRadius:22,padding:"20px 18px",boxShadow:T.shadow,marginTop:20 }}>
-              <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14 }}>
+              <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:hasAny?8:14 }}>
                 <div style={{ fontSize:12,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:1 }}>{t(lang,"dailySpend")}</div>
                 <div style={{ display:"flex",alignItems:"center",gap:4,fontSize:10,color:T.muted }}>
                   <span>{t(lang,"heatmapLegendLess")}</span>
@@ -3171,6 +3189,11 @@ function AnalyticsScreen({ profile, transactions, onOpenTransactions = () => {} 
                   <span>{t(lang,"heatmapLegendMore")}</span>
                 </div>
               </div>
+              {hasAny && (
+                <div style={{ fontSize:12,color:T.muted,marginBottom:10,lineHeight:1.5 }}>
+                  {t(lang,"heatmapSummary").replace("{n}",activeDays).replace("{date}",fmtDate(biggestEntry[0])).replace("{biggest}",fmtCompact(biggestEntry[1],selectedCur)).replace("{avg}",fmtCompact(avgPerDay,selectedCur))}
+                </div>
+              )}
               <div style={{ display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4,marginBottom:4 }}>
                 {["S","M","T","W","T","F","S"].map((dh,i)=>(
                   <div key={i} style={{ textAlign:"center",fontSize:10,fontWeight:700,color:T.muted }}>{dh}</div>
@@ -3181,11 +3204,12 @@ function AnalyticsScreen({ profile, transactions, onOpenTransactions = () => {} 
                   if (!cell) return <div key={i}/>;
                   const isToday = cell.dateStr === todayStr;
                   const tappable = !cell.isFuture && cell.spend > 0;
+                  const aboveAvg = cell.spend >= aboveAvgThreshold && cell.spend > 0;
                   return(
                     <div key={i}
-                      onClick={() => { if (tappable) onOpenTransactions({ date: cell.dateStr }); }}
+                      onClick={() => { if (tappable) setPopoverDay(cell.dateStr); }}
                       style={{
-                        aspectRatio:"1",borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",
+                        position:"relative",aspectRatio:"1",borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",
                         fontSize:11,fontWeight:600,fontFamily:"'Noto Sans',sans-serif",
                         cursor:tappable?"pointer":"default",
                         background:cell.isFuture?"rgba(45,45,58,0.04)":getColor(cell.spend),
@@ -3193,13 +3217,37 @@ function AnalyticsScreen({ profile, transactions, onOpenTransactions = () => {} 
                         opacity:cell.isFuture?0.3:1,
                         border:isToday?`2px solid ${T.celadon}`:"2px solid transparent",
                         transition:"all .15s",
-                      }}>{cell.day}</div>
+                      }}>
+                      {cell.day}
+                      {!cell.isFuture && aboveAvg && <div style={{ position:"absolute",top:3,right:3,width:4,height:4,borderRadius:2,background:"#fff" }}/>}
+                    </div>
                   );
                 })}
               </div>
               {!hasAny && <div style={{ textAlign:"center",fontSize:12,color:T.muted,marginTop:12 }}>{t(lang,"noActivityMonth")}</div>}
             </div>
-          );
+            {top5.length > 0 && (
+              <div style={{ background:T.surface,borderRadius:22,padding:"20px 18px",boxShadow:T.shadow,marginTop:12 }}>
+                <div style={{ fontSize:12,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:14 }}>🔥 {t(lang,"biggestDays")}</div>
+                <div style={{ display:"flex",flexDirection:"column",gap:10 }}>
+                  {top5.map(([date,amount],i) => (
+                    <div key={i} onClick={() => onOpenTransactions({ date })}
+                      style={{ display:"flex",alignItems:"center",gap:12,cursor:"pointer",padding:"8px 12px",borderRadius:12,background:"rgba(45,45,58,0.03)",transition:"background .15s" }}
+                      onMouseEnter={e=>e.currentTarget.style.background="rgba(172,225,175,0.12)"}
+                      onMouseLeave={e=>e.currentTarget.style.background="rgba(45,45,58,0.03)"}>
+                      <div style={{ width:28,height:28,borderRadius:8,background:i===0?"rgba(192,57,43,0.1)":"rgba(45,45,58,0.06)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:i===0?"#C0392B":T.muted,flexShrink:0 }}>{i+1}</div>
+                      <div style={{ flex:1 }}>
+                        <div style={{ fontSize:13,fontWeight:700,color:T.dark,fontFamily:"'Noto Sans',sans-serif" }}>{fmtDate(date)}</div>
+                        <div style={{ fontSize:11,color:T.muted }}>{t(lang,"txCount").replace("{n}",txCountByDay[date]||0)}</div>
+                      </div>
+                      <div style={{ fontSize:14,fontWeight:800,color:"#C0392B",fontFamily:"'Noto Sans',sans-serif",flexShrink:0 }}>−{fmtCompact(amount,selectedCur)}</div>
+                      <div style={{ fontSize:14,color:T.muted,flexShrink:0 }}>›</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>);
         })()}
 
         {/* Monthly Wrap card — only in month view */}
@@ -3222,6 +3270,42 @@ function AnalyticsScreen({ profile, transactions, onOpenTransactions = () => {} 
       </>)}
 
       {showWrap && <MonthlyWrapModal open={showWrap} onClose={() => setShowWrap(false)} profile={profile} transactions={transactions} />}
+
+      {popoverDay && (()=>{
+        const dayTxs = transactions.filter(tx => tx.date === popoverDay && tx.currency === selectedCur && tx.type === "expense");
+        const dayTotal = dayTxs.reduce((s,tx) => s + tx.amount, 0);
+        const dayCats = {};
+        dayTxs.forEach(tx => {
+          const cat = findCat(tx.categoryId, customCategories);
+          if (!dayCats[cat.id]) dayCats[cat.id] = { cat, amount: 0 };
+          dayCats[cat.id].amount += tx.amount;
+        });
+        const topCats = Object.values(dayCats).sort((a,b) => b.amount - a.amount).slice(0, 3);
+        const formattedDate = new Date(popoverDay+"T00:00:00").toLocaleDateString(lang==="th"?"th-TH":lang==="lo"?"lo-LA":"en-US",{month:"long",day:"numeric",year:"numeric"});
+        return(
+          <div onClick={() => setPopoverDay(null)} style={{ position:"fixed",inset:0,zIndex:600,background:"rgba(0,0,0,0.4)",backdropFilter:"blur(4px)",display:"flex",alignItems:"center",justifyContent:"center" }}>
+            <div onClick={e => e.stopPropagation()} style={{ background:"#fff",borderRadius:20,padding:20,maxWidth:320,width:"calc(100% - 48px)",boxShadow:"0 20px 60px rgba(0,0,0,0.25)" }}>
+              <div style={{ fontSize:16,fontWeight:800,color:T.dark,fontFamily:"'Noto Sans',sans-serif",marginBottom:4 }}>{formattedDate}</div>
+              <div style={{ fontSize:22,fontWeight:800,color:"#C0392B",fontFamily:"'Noto Sans',sans-serif",marginBottom:4 }}>−{fmt(dayTotal,selectedCur)}</div>
+              <div style={{ fontSize:12,color:T.muted,marginBottom:12 }}>{t(lang,"txCount").replace("{n}",dayTxs.length)}</div>
+              {topCats.length > 0 && (
+                <div style={{ marginBottom:16 }}>
+                  <div style={{ fontSize:11,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:0.8,marginBottom:6 }}>{t(lang,"dayPopoverTop")}</div>
+                  {topCats.map((item,i) => (
+                    <div key={i} style={{ display:"flex",alignItems:"center",gap:8,marginBottom:4 }}>
+                      <span style={{ fontSize:14 }}>{item.cat.emoji}</span>
+                      <span style={{ fontSize:13,fontWeight:600,color:T.dark,flex:1,fontFamily:"'Noto Sans',sans-serif" }}>{catLabel(item.cat,lang)}</span>
+                      <span style={{ fontSize:13,fontWeight:700,color:"#C0392B",fontFamily:"'Noto Sans',sans-serif" }}>−{fmtCompact(item.amount,selectedCur)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <button onClick={() => { onOpenTransactions({ date: popoverDay }); setPopoverDay(null); }} style={{ width:"100%",padding:"13px",borderRadius:14,border:"none",background:T.celadon,color:"#1A4020",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"'Noto Sans',sans-serif",marginBottom:8 }}>{t(lang,"viewTransactionsBtn")} →</button>
+              <button onClick={() => setPopoverDay(null)} style={{ width:"100%",padding:"11px",borderRadius:14,border:"none",background:"rgba(45,45,58,0.06)",color:T.muted,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Noto Sans',sans-serif" }}>{t(lang,"cancel")}</button>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
