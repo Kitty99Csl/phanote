@@ -423,8 +423,8 @@ const localParse = (text) => {
   // ── Currency detection (LAK default — Laos is primary) ────
   const detectCurrency = (line, amount) => {
     const t = (line||'').toLowerCase();
-    if (/฿|บาท|baht|\bthb\b/i.test(t)) return 'THB';
-    if (/\$|usd|\bdollar/i.test(t)) return 'USD';
+    if (/฿|บาท|baht|thb/i.test(t)) return 'THB';
+    if (/\$|usd|\bdollar\b/i.test(t)) return 'USD';
     if (/₭|ກີບ|\bkip\b|\blak\b/i.test(t)) return 'LAK';
     const thaiCtx = /[\u0E00-\u0E7F]/.test(t) || /grab|shopee|lazada|lotus|big\s*c/i.test(t);
     if (amount < 5000 && thaiCtx) return 'THB';
@@ -3894,7 +3894,8 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
         </div>
       )}
       {showStatementScan&&(
-        <StatementScanFlow profile={profile} lang={lang} onClose={()=>setShowStatementScan(false)} onAdd={onAdd} customCategories={customCategories}/>
+        <StatementScanFlow profile={profile} lang={lang} onClose={()=>setShowStatementScan(false)} onAdd={onAdd} customCategories={customCategories}
+          onImportDone={(n)=>{setShowStatementScan(false);setTxFilter("all");setTab("home");}}/>
       )}
       {streakToast&&<Toast msg={streakToast} onDone={onStreakToastDone}/>}
     </div>
@@ -3904,7 +3905,7 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
 // ═══ STATEMENT SCAN FLOW ═════════════════════════════════════
 // Full-screen 5-step flow: currency → upload → loading → review → save.
 // Launched from Settings → Tools → Bank statement scan (Pro only).
-function StatementScanFlow({ profile, lang, onClose, onAdd, customCategories=[] }) {
+function StatementScanFlow({ profile, lang, onClose, onAdd, customCategories=[], onImportDone=()=>{} }) {
   const [step, setStep] = useState("currency"); // currency | upload | loading | review | saving | done
   const [currency, setCurrency] = useState(null);
   const [images, setImages] = useState([]); // [{file, preview, data, mimeType}]
@@ -4252,7 +4253,7 @@ function StatementScanFlow({ profile, lang, onClose, onAdd, customCategories=[] 
           </div>
           <div style={{ fontSize:13, color:T.muted }}>{bank ? `${bank} · ` : ""}{currency}</div>
           <div style={{ marginTop:12 }}>
-            {primaryBtn("Done", onClose)}
+            {primaryBtn("Done", () => onImportDone(saveProgress))}
           </div>
         </div>
       )}
