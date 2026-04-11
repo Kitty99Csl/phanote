@@ -402,6 +402,51 @@ Toast examples:
 
 ---
 
+---
+
+## 13. SESSION 6 SHIPPED FEATURES (April 9-11, 2026)
+
+Features shipped beyond the original scope tables above. See docs/session-6/SUMMARY.md for full details.
+
+### OCR Bank Statement Scan (Pro feature)
+- POST /parse-statement endpoint (Gemini 2.5 Flash Vision)
+- Supports LDB, JDB, BCEL One statement formats
+- 6-step frontend flow: currency -> upload -> scan -> review -> import -> done
+- Inline editable review rows (amount, description, type, category)
+- Cross-session duplicate detection (client-side, no schema change)
+- Import history with batch undo
+- Currency detection + mismatch warning with user choice
+
+### Dedicated TransactionsScreen
+- Full-screen overlay (replaces inline transaction list on home)
+- Search bar with text matching
+- 3-axis filtering: period (Today/Yesterday/Week/Month/All) x currency (All/LAK/THB/USD) x type (Both/Expense/Income)
+- Pagination (50 at a time with "Load more")
+- Drill-down support: accepts initialFilters from Analytics (date or category)
+- Custom filter header with clear button
+
+### Transaction Editing
+- Currency editable (LAK/THB/USD toggle)
+- Type toggle (expense <-> income) with auto category list reset
+- Amount and description inline editable
+- Statement review rows: all 4 fields editable before import
+
+### Analytics Heatmap + Drill-down
+- GitHub-style heatmap calendar (month view, 5-tier quartile coloring)
+- Text summary: active days, biggest day, daily average
+- Above-average indicator (white dot on cells >= 1.5x avg spend)
+- Day popover on tap (date, total, tx count, top categories, drill-down button)
+- Clickable donut slices + legend -> TransactionsScreen filtered by category
+- Top 5 biggest spending days list with rank badges
+
+### Home Screen Improvements
+- Shows ALL today's transactions with "TODAY (N)" header
+- Falls back to 5 most recent (by date DESC) when no today activity
+- Client-side sort by date DESC + created_at tiebreaker
+- Stable display regardless of import order or Supabase query order
+
+---
+
 *This document is subordinate to the Project Codex. When in conflict, the Codex wins.*
 
-*"Phajot · ພາຈົດ — Lead your jots. Know your money. Live without the headache."* 🐾
+*"Phajot · ພາຈົດ — Lead your jots. Know your money. Live without the headache."*

@@ -205,3 +205,41 @@ We can start coding as soon as you have:
 - ✅ Gemini API key
 
 The domain and Cloudflare can come slightly later — we'll develop locally first.
+
+---
+
+## SESSION 6 COMPLETION LOG (April 9-11, 2026)
+
+All items below shipped and verified. See docs/session-6/SUMMARY.md.
+
+### Done
+- [x] Phajot brand migration (8-step DNS, zero downtime)
+- [x] OCR bank statement backend (POST /parse-statement, Gemini Vision)
+- [x] OCR bank statement frontend (6-step flow, inline edit, import)
+- [x] Cross-session dedup for statement imports
+- [x] Import history with batch undo
+- [x] Transaction editing (currency, type, amount, description)
+- [x] Dedicated TransactionsScreen (search + 3-axis filter + pagination)
+- [x] Home simplified to daily dashboard
+- [x] Home sort fix (all today txs, date DESC)
+- [x] Heatmap calendar with summary + above-average dots
+- [x] Clickable donut slices + legend drill-down
+- [x] Day popover with context before drill-in
+- [x] Top 5 biggest spending days list
+- [x] All docs updated for Phajot brand
+
+### Session 7 Priorities (pick one)
+- [ ] LINE bot integration (wife uses LINE daily, ~2-3 hours)
+- [ ] Recurring transactions (salary, rent, subscriptions, needs schema)
+- [ ] CSV export (one-button filtered export, ~1 hour)
+- [ ] Wife testing + feedback capture (like Session 5 WIFE-REACTION.md)
+- [ ] Bulk select/delete in TransactionsScreen (~1.5 hours)
+
+### Backlog (discovered during Session 6)
+- [ ] Budget progress bars on home
+- [ ] Top merchants list in analytics
+- [ ] Advanced filters (amount range, custom date picker)
+- [ ] Week-over-week trend line
+- [ ] Export filtered view
+- [ ] Desktop max-width polish on fullscreen overlays
+- [ ] Family/shared accounts
