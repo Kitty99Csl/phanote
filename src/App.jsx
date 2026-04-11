@@ -894,6 +894,8 @@ const i18n={
     loadMore:"Load 50 more",filteredTotal:"Total",emptyStateFilter:"No transactions in this view",
     viewAllTx:"View all transactions",searchTx:"Search transactions...",typeBoth:"Both",txScreenTitle:"Transactions",showingCount:"Showing {visible} of {total}",
     duplicate:"Duplicate",alreadyImported:"{n} already imported",allDuplicatesWarning:"All transactions already exist in your records. Check any you want to import anyway.",
+    dailySpend:"Daily spend",heatmapLegendLess:"Less",heatmapLegendMore:"More",
+    noActivityMonth:"No activity this month",showingDate:"Showing: {date}",showingCategory:"Showing: {category}",clearFilter:"Clear",
     months:["January","February","March","April","May","June","July","August","September","October","November","December"],
   },
   lo:{
@@ -971,6 +973,8 @@ const i18n={
     loadMore:"ເບິ່ງອີກ 50",filteredTotal:"ລວມ",emptyStateFilter:"ບໍ່ມີທຸລະກຳໃນມຸມມອງນີ້",
     viewAllTx:"ເບິ່ງທຸລະກຳທັງໝົດ",searchTx:"ຄົ້ນຫາທຸລະກຳ...",typeBoth:"ທັງໝົດ",txScreenTitle:"ທຸລະກຳ",showingCount:"ສະແດງ {visible} ຈາກ {total}",
     duplicate:"ຊ້ຳກັນ",alreadyImported:"{n} ນຳເຂົ້າແລ້ວ",allDuplicatesWarning:"ທຸລະກຳທັງໝົດມີຢູ່ແລ້ວ. ເລືອກອັນທີ່ຕ້ອງການນຳເຂົ້າຊ້ຳ.",
+    dailySpend:"ຈ່າຍລາຍວັນ",heatmapLegendLess:"ໜ້ອຍ",heatmapLegendMore:"ຫຼາຍ",
+    noActivityMonth:"ບໍ່ມີກິດຈະກຳໃນເດືອນນີ້",showingDate:"ສະແດງ: {date}",showingCategory:"ສະແດງ: {category}",clearFilter:"ລ້າງ",
     months:["ມັງກອນ","ກຸມພາ","ມີນາ","ເມສາ","ພຶດສະພາ","ມິຖຸນາ","ກໍລະກົດ","ສິງຫາ","ກັນຍາ","ຕຸລາ","ພະຈິກ","ທັນວາ"],
   },
   th:{
@@ -1027,6 +1031,8 @@ const i18n={
     wrap_retry:"ลองอีกครั้ง",wrap_total_expense:"ค่าใช้จ่ายรวม",wrap_total_income:"รายรับรวม",
     wrap_top_category:"หมวดสูงสุด",wrap_biggest_day:"วันที่ใช้จ่ายมากสุด",
     wrap_active_days:"วันที่บันทึก",wrap_vs_last:"เทียบกับเดือนก่อน",wrap_close:"ปิด",
+    dailySpend:"จ่ายรายวัน",heatmapLegendLess:"น้อย",heatmapLegendMore:"มาก",
+    noActivityMonth:"ไม่มีกิจกรรมในเดือนนี้",showingDate:"แสดง: {date}",showingCategory:"แสดง: {category}",clearFilter:"ล้าง",
     months:["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"],
   },
 };
@@ -2783,7 +2789,7 @@ function BudgetScreen({ profile, transactions }) {
 }
 
 // ═══ ANALYTICS SCREEN ════════════════════════════════════════
-function AnalyticsScreen({ profile, transactions }) {
+function AnalyticsScreen({ profile, transactions, onOpenTransactions = () => {} }) {
   const { lang, baseCurrency, customCategories = [] } = profile;
   const [selectedCur, setSelectedCur] = useState(baseCurrency || "LAK");
   // period: "today" | "week" | "month" | "all"
@@ -3017,7 +3023,10 @@ function AnalyticsScreen({ profile, transactions }) {
                       strokeDasharray={`${slice.dash} ${DONUT_C-slice.dash}`}
                       strokeDashoffset={slice.offset}
                       strokeLinecap="round"
-                      style={{transform:"rotate(-90deg)",transformOrigin:"65px 65px"}}/>
+                      onClick={() => onOpenTransactions({ categoryId: slice.cat.id })}
+                      onMouseEnter={e=>e.target.setAttribute("stroke-width","22")}
+                      onMouseLeave={e=>e.target.setAttribute("stroke-width","18")}
+                      style={{transform:"rotate(-90deg)",transformOrigin:"65px 65px",cursor:"pointer",transition:"stroke-width .15s"}}/>
                   ))}
                 </svg>
                 <div style={{ position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center" }}>
@@ -3027,7 +3036,9 @@ function AnalyticsScreen({ profile, transactions }) {
               </div>
               <div style={{ flex:1,display:"flex",flexDirection:"column",gap:8 }}>
                 {donutSlices.map((slice,i)=>(
-                  <div key={i} style={{ display:"flex",alignItems:"center",gap:8 }}>
+                  <div key={i} onClick={() => onOpenTransactions({ categoryId: slice.cat.id })} style={{ display:"flex",alignItems:"center",gap:8,cursor:"pointer",borderRadius:6,padding:"2px 4px",margin:"-2px -4px",transition:"background .15s" }}
+                    onMouseEnter={e=>e.currentTarget.style.background="rgba(172,225,175,0.15)"}
+                    onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
                     <div style={{ width:10,height:10,borderRadius:3,background:slice.color,flexShrink:0 }}/>
                     <div style={{ flex:1,fontSize:12,color:T.dark,fontWeight:600,fontFamily:"'Noto Sans',sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{slice.cat.emoji} {catLabel(slice.cat,lang)}</div>
                     <div style={{ fontSize:11,fontWeight:700,color:T.muted,flexShrink:0 }}>{Math.round((slice.amount/expenses)*100)}%</div>
@@ -3114,6 +3125,79 @@ function AnalyticsScreen({ profile, transactions }) {
                 <div style={{ display:"flex",alignItems:"center",gap:5 }}><div style={{ width:10,height:10,borderRadius:3,background:"#3da873" }}/><span style={{ fontSize:11,color:T.muted }}>Income</span></div>
                 <div style={{ display:"flex",alignItems:"center",gap:5 }}><div style={{ width:10,height:10,borderRadius:3,background:"#e8857a" }}/><span style={{ fontSize:11,color:T.muted }}>Expenses</span></div>
               </div>
+            </div>
+          );
+        })()}
+
+        {/* Daily spend heatmap — only in month view */}
+        {period === "month" && (()=>{
+          const targetDate = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
+          const yr = targetDate.getFullYear(), mo = targetDate.getMonth();
+          const daysInMonth = new Date(yr, mo + 1, 0).getDate();
+          const firstDow = new Date(yr, mo, 1).getDay();
+          const todayStr = now.toISOString().split("T")[0];
+          const spendByDay = {};
+          transactions.forEach(tx => {
+            if (tx.currency !== selectedCur || tx.type !== "expense") return;
+            const d = new Date(tx.date);
+            if (d.getMonth() !== mo || d.getFullYear() !== yr) return;
+            spendByDay[tx.date] = (spendByDay[tx.date] || 0) + tx.amount;
+          });
+          const maxSpend = Math.max(...Object.values(spendByDay), 0);
+          const getColor = (amt) => {
+            if (!amt || amt <= 0) return "rgba(172,225,175,0.08)";
+            const r = amt / maxSpend;
+            if (r <= 0.25) return "rgba(172,225,175,0.3)";
+            if (r <= 0.5) return "rgba(172,225,175,0.5)";
+            if (r <= 0.75) return "rgba(172,225,175,0.75)";
+            return "#ACE1AF";
+          };
+          const cells = [];
+          for (let i = 0; i < firstDow; i++) cells.push(null);
+          for (let d = 1; d <= daysInMonth; d++) {
+            const ds = `${yr}-${String(mo+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+            cells.push({ day: d, dateStr: ds, isFuture: ds > todayStr, spend: spendByDay[ds] || 0 });
+          }
+          const hasAny = Object.keys(spendByDay).length > 0;
+          return(
+            <div style={{ background:T.surface,borderRadius:22,padding:"20px 18px",boxShadow:T.shadow,marginTop:20 }}>
+              <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14 }}>
+                <div style={{ fontSize:12,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:1 }}>{t(lang,"dailySpend")}</div>
+                <div style={{ display:"flex",alignItems:"center",gap:4,fontSize:10,color:T.muted }}>
+                  <span>{t(lang,"heatmapLegendLess")}</span>
+                  {[0.08,0.3,0.5,0.75,1].map((op,i)=>(
+                    <div key={i} style={{ width:10,height:10,borderRadius:2,background:i===4?"#ACE1AF":`rgba(172,225,175,${op})` }}/>
+                  ))}
+                  <span>{t(lang,"heatmapLegendMore")}</span>
+                </div>
+              </div>
+              <div style={{ display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4,marginBottom:4 }}>
+                {["S","M","T","W","T","F","S"].map((dh,i)=>(
+                  <div key={i} style={{ textAlign:"center",fontSize:10,fontWeight:700,color:T.muted }}>{dh}</div>
+                ))}
+              </div>
+              <div style={{ display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4 }}>
+                {cells.map((cell,i) => {
+                  if (!cell) return <div key={i}/>;
+                  const isToday = cell.dateStr === todayStr;
+                  const tappable = !cell.isFuture && cell.spend > 0;
+                  return(
+                    <div key={i}
+                      onClick={() => { if (tappable) onOpenTransactions({ date: cell.dateStr }); }}
+                      style={{
+                        aspectRatio:"1",borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",
+                        fontSize:11,fontWeight:600,fontFamily:"'Noto Sans',sans-serif",
+                        cursor:tappable?"pointer":"default",
+                        background:cell.isFuture?"rgba(45,45,58,0.04)":getColor(cell.spend),
+                        color:cell.isFuture?"rgba(45,45,58,0.25)":T.dark,
+                        opacity:cell.isFuture?0.3:1,
+                        border:isToday?`2px solid ${T.celadon}`:"2px solid transparent",
+                        transition:"all .15s",
+                      }}>{cell.day}</div>
+                  );
+                })}
+              </div>
+              {!hasAny && <div style={{ textAlign:"center",fontSize:12,color:T.muted,marginTop:12 }}>{t(lang,"noActivityMonth")}</div>}
             </div>
           );
         })()}
@@ -3769,6 +3853,7 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
   const[showUpgrade,setShowUpgrade]=useState(false);
   const[showStatementScan,setShowStatementScan]=useState(false);
   const[showTransactions,setShowTransactions]=useState(false);
+  const[txScreenFilters,setTxScreenFilters]=useState(null);
   const{lang,customCategories=[]}=profile;
   const greet=()=>{const h=new Date().getHours();if(h<12)return t(lang,"morning");if(h<17)return t(lang,"afternoon");return t(lang,"evening");};
   const dateStr=new Date().toLocaleDateString(lang==="th"?"th-TH":lang==="lo"?"lo-LA":"en-US",{weekday:"long",month:"long",day:"numeric"});
@@ -3831,7 +3916,7 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
             <div style={{height:16}}/>
           </>);
         })()}
-        {tab==="analytics"&&<AnalyticsScreen profile={profile} transactions={transactions}/>}
+        {tab==="analytics"&&<AnalyticsScreen profile={profile} transactions={transactions} onOpenTransactions={(filters)=>{setTxScreenFilters(filters);setShowTransactions(true);}}/>}
         {tab==="budget"&&<BudgetScreen profile={profile} transactions={transactions}/>}
         {tab==="goals"&&<GoalsScreen profile={profile} transactions={transactions}/>}
         {tab==="settings" && (pinRole === "owner"
@@ -3881,7 +3966,7 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
       )}
       {showTransactions&&(
         <TransactionsScreen lang={lang} profile={profile} customCategories={customCategories} transactions={transactions}
-          onClose={()=>setShowTransactions(false)} onEditTx={(tx)=>{setEditTx(tx);setShowEdit(true);}} onDeleteTx={onDeleteTx} onUpdateNote={onUpdateNote}/>
+          onClose={()=>{setShowTransactions(false);setTxScreenFilters(null);}} onEditTx={(tx)=>{setEditTx(tx);setShowEdit(true);}} onDeleteTx={onDeleteTx} onUpdateNote={onUpdateNote} initialFilters={txScreenFilters}/>
       )}
       {streakToast&&<Toast msg={streakToast} onDone={onStreakToastDone}/>}
     </div>
@@ -3889,13 +3974,19 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
 }
 
 // ═══ TRANSACTIONS SCREEN ═════════════════════════════════════
-function TransactionsScreen({ lang, profile, customCategories=[], transactions, onClose, onEditTx, onDeleteTx, onUpdateNote }) {
+function TransactionsScreen({ lang, profile, customCategories=[], transactions, onClose, onEditTx, onDeleteTx, onUpdateNote, initialFilters=null }) {
   const [txFilter, setTxFilter] = useState("all");
   const [curFilter, setCurFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("both");
   const [searchQuery, setSearchQuery] = useState("");
   const [visibleCount, setVisibleCount] = useState(50);
-  useEffect(() => { setVisibleCount(50); }, [txFilter, curFilter, typeFilter, searchQuery]);
+  const [customDate, setCustomDate] = useState(null);
+  const [customCategoryId, setCustomCategoryId] = useState(null);
+  useEffect(() => { setVisibleCount(50); }, [txFilter, curFilter, typeFilter, searchQuery, customDate, customCategoryId]);
+  useEffect(() => {
+    if (initialFilters?.date) { setCustomDate(initialFilters.date); setTxFilter("all"); }
+    if (initialFilters?.categoryId) { setCustomCategoryId(initialFilters.categoryId); setTxFilter("all"); }
+  }, [initialFilters]);
 
   const tpl = (key, vars={}) => { let s = t(lang, key); Object.entries(vars).forEach(([k,v]) => { s = s.replace(`{${k}}`, v); }); return s; };
 
@@ -3912,6 +4003,8 @@ function TransactionsScreen({ lang, profile, customCategories=[], transactions, 
   if (curFilter !== "all") filtered = filtered.filter(tx => tx.currency === curFilter);
   if (typeFilter !== "both") filtered = filtered.filter(tx => tx.type === typeFilter);
   if (searchQuery.trim()) { const q = searchQuery.toLowerCase().trim(); filtered = filtered.filter(tx => (tx.description || "").toLowerCase().includes(q)); }
+  if (customDate) filtered = filtered.filter(tx => tx.date === customDate);
+  if (customCategoryId) filtered = filtered.filter(tx => tx.categoryId === customCategoryId);
 
   const totalFiltered = filtered.length;
   const visible = filtered.slice(0, visibleCount);
@@ -3935,10 +4028,21 @@ function TransactionsScreen({ lang, profile, customCategories=[], transactions, 
           {searchQuery && <button onClick={() => setSearchQuery("")} style={{ border:"none", background:"none", cursor:"pointer", fontSize:16, color:T.muted, padding:0 }}>×</button>}
         </div>
       </div>
+      {(customDate || customCategoryId) && (
+        <div style={{ padding:"0 16px 8px", flexShrink:0 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 14px", borderRadius:12, background:"rgba(172,225,175,0.15)", border:"1px solid rgba(172,225,175,0.3)" }}>
+            <div style={{ flex:1, fontSize:13, fontWeight:600, color:T.dark, fontFamily:"'Noto Sans',sans-serif" }}>
+              {customDate && tpl("showingDate", { date: new Date(customDate+"T00:00:00").toLocaleDateString(lang==="th"?"th-TH":lang==="lo"?"lo-LA":"en-US", {month:"long",day:"numeric",year:"numeric"}) })}
+              {customCategoryId && tpl("showingCategory", { category: catLabel(findCat(customCategoryId, customCategories), lang) })}
+            </div>
+            <button onClick={() => { setCustomDate(null); setCustomCategoryId(null); }} style={{ border:"none", background:"rgba(45,45,58,0.08)", borderRadius:8, padding:"4px 10px", fontSize:12, fontWeight:600, color:T.muted, cursor:"pointer", fontFamily:"'Noto Sans',sans-serif", flexShrink:0 }}>× {t(lang,"clearFilter")}</button>
+          </div>
+        </div>
+      )}
       <div style={{ padding:"0 16px 10px", flexShrink:0, display:"flex", flexDirection:"column", gap:6 }}>
         <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
           {[{id:"today",lo:"ມື້ນີ້",th:"วันนี้",en:"Today"},{id:"yesterday",lo:"ມື້ວານ",th:"เมื่อวาน",en:"Yesterday"},{id:"week",lo:"ອາທິດ",th:"สัปดาห์",en:"Week"},{id:"month",lo:"ເດືອນ",th:"เดือน",en:"Month"},{id:"all",lo:"ທັງໝົດ",th:"ทั้งหมด",en:"All"}].map(f =>
-            <button key={f.id} onClick={() => setTxFilter(f.id)} style={pill(txFilter === f.id)}>{lang === "lo" ? f.lo : lang === "th" ? f.th : f.en}</button>)}
+            <button key={f.id} onClick={() => { setTxFilter(f.id); setCustomDate(null); setCustomCategoryId(null); }} style={pill(txFilter === f.id)}>{lang === "lo" ? f.lo : lang === "th" ? f.th : f.en}</button>)}
         </div>
         <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>
           {[{id:"all",label:lang==="lo"?"ທັງໝົດ":"All"},{id:"LAK",label:"₭ LAK"},{id:"THB",label:"฿ THB"},{id:"USD",label:"$ USD"}].map(c =>
