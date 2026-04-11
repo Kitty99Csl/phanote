@@ -872,6 +872,23 @@ const i18n={
     wrap_retry:"Try again",wrap_total_expense:"Total expenses",wrap_total_income:"Total income",
     wrap_top_category:"Top category",wrap_biggest_day:"Biggest day",
     wrap_active_days:"Active days",wrap_vs_last:"Vs last month",wrap_close:"Close",
+    statementScan:"Bank statement scan",statementScanSubtitle:"Import transactions from your bank app",
+    statementScanProGate:"Upgrade to Pro to scan bank statements",
+    statementPickCurrency:"Which currency?",statementPickCurrencyHint:"Pick the currency of the transactions in your screenshots",
+    statementUploadTitle:"Upload screenshots",statementUploadHint:"Up to 10 images from BCEL One, LDB, or JDB",
+    statementUploadButton:"Choose images",statementScanButton:"Scan transactions",
+    statementScanning:"Scanning {n} images...",statementScanningHint:"This may take 10-30 seconds",
+    statementReviewTitle:"Review transactions",statementReviewStats:"Found {n} transactions",
+    statementReviewDuplicates:"({n} duplicates removed)",statementImportButton:"Import {n} selected",
+    statementImporting:"Importing {current} of {total}...",statementSuccess:"Imported {n} transactions!",
+    statementCurrencyMismatch:"Bank shows {detected} but you picked {selected}",
+    statementCurrencyUseDetected:"Use {detected} (from bank)",statementCurrencyUseSelected:"Use {selected} (as I picked)",
+    statementErrorParse:"Couldn't read the screenshots. Try clearer images.",
+    statementErrorNetwork:"Network error. Check connection and try again.",
+    statementErrorRateLimit:"Too many requests. Wait a minute and retry.",
+    statementRetry:"Retry",statementCancel:"Cancel",statementBack:"Back",statementNext:"Next",
+    statementMaxImages:"Maximum 10 images",statementNoImages:"Add at least 1 screenshot",
+    statementToolsSection:"Tools",
     months:["January","February","March","April","May","June","July","August","September","October","November","December"],
   },
   lo:{
@@ -929,6 +946,23 @@ const i18n={
     wrap_retry:"ລອງໃໝ່",wrap_total_expense:"ລວມລາຍຈ່າຍ",wrap_total_income:"ລວມລາຍຮັບ",
     wrap_top_category:"ໝວດສູງສຸດ",wrap_biggest_day:"ວັນທີ່ໃຊ້ຈ່າຍຫຼາຍສຸດ",
     wrap_active_days:"ມື້ທີ່ບັນທຶກ",wrap_vs_last:"ທຽບກັບເດືອນກ່ອນ",wrap_close:"ປິດ",
+    statementScan:"ສະແກນໃບແຈ້ງຍອດ",statementScanSubtitle:"ນຳເຂົ້າທຸລະກຳຈາກແອັບທະນາຄານ",
+    statementScanProGate:"ອັບເກຣດເປັນ Pro ເພື່ອສະແກນໃບແຈ້ງຍອດ",
+    statementPickCurrency:"ສະກຸນເງິນຫຍັງ?",statementPickCurrencyHint:"ເລືອກສະກຸນເງິນຂອງທຸລະກຳໃນຮູບພາບ",
+    statementUploadTitle:"ອັບໂຫຼດຮູບພາບ",statementUploadHint:"ສູງສຸດ 10 ຮູບຈາກ BCEL One, LDB ຫຼື JDB",
+    statementUploadButton:"ເລືອກຮູບ",statementScanButton:"ສະແກນທຸລະກຳ",
+    statementScanning:"ກຳລັງສະແກນ {n} ຮູບ...",statementScanningHint:"ອາດໃຊ້ເວລາ 10-30 ວິນາທີ",
+    statementReviewTitle:"ກວດສອບທຸລະກຳ",statementReviewStats:"ພົບ {n} ທຸລະກຳ",
+    statementReviewDuplicates:"({n} ຊ້ຳກັນຖືກລົບແລ້ວ)",statementImportButton:"ນຳເຂົ້າ {n} ລາຍການ",
+    statementImporting:"ກຳລັງນຳເຂົ້າ {current}/{total}...",statementSuccess:"ນຳເຂົ້າ {n} ທຸລະກຳສຳເລັດ!",
+    statementCurrencyMismatch:"ທະນາຄານສະແດງ {detected} ແຕ່ເຈົ້າເລືອກ {selected}",
+    statementCurrencyUseDetected:"ໃຊ້ {detected} (ຈາກທະນາຄານ)",statementCurrencyUseSelected:"ໃຊ້ {selected} (ຕາມທີ່ເລືອກ)",
+    statementErrorParse:"ອ່ານຮູບບໍ່ໄດ້. ລອງຮູບທີ່ຊັດເຈນກວ່າ.",
+    statementErrorNetwork:"ມີບັນຫາເຄືອຂ່າຍ. ກວດເບິ່ງການເຊື່ອມຕໍ່.",
+    statementErrorRateLimit:"ຄຳຂໍເກີນກຳນົດ. ລໍຖ້າ 1 ນາທີ.",
+    statementRetry:"ລອງໃໝ່",statementCancel:"ຍົກເລີກ",statementBack:"ກັບຄືນ",statementNext:"ຕໍ່ໄປ",
+    statementMaxImages:"ສູງສຸດ 10 ຮູບ",statementNoImages:"ເພີ່ມຮູບຢ່າງໜ້ອຍ 1 ຮູບ",
+    statementToolsSection:"ເຄື່ອງມື",
     months:["ມັງກອນ","ກຸມພາ","ມີນາ","ເມສາ","ພຶດສະພາ","ມິຖຸນາ","ກໍລະກົດ","ສິງຫາ","ກັນຍາ","ຕຸລາ","ພະຈິກ","ທັນວາ"],
   },
   th:{
@@ -1909,7 +1943,7 @@ function CategoryManager({lang,customCategories,onAdd,onRemove}){
 }
 
 // ═══ SETTINGS ════════════════════════════════════════════════
-function SettingsScreen({profile,transactions,onUpdateProfile,onReset,pinConfig={owner:null,guest:null},savePinConfig=()=>{},setPinRole=()=>{},setPinSetupMode=()=>{},onShowGuide=()=>{},onShowUpgrade=()=>{}}){
+function SettingsScreen({profile,transactions,onUpdateProfile,onReset,pinConfig={owner:null,guest:null},savePinConfig=()=>{},setPinRole=()=>{},setPinSetupMode=()=>{},onShowGuide=()=>{},onShowUpgrade=()=>{},onShowStatementScan=()=>{}}){
   const{lang,baseCurrency,name,avatar,customCategories=[]}=profile;
   const isPro = profile?.isPro || false;
   const[showLang,setShowLang]=useState(false);
@@ -1987,6 +2021,19 @@ function SettingsScreen({profile,transactions,onUpdateProfile,onReset,pinConfig=
         onAdd={(cat)=>onUpdateProfile({customCategories:[...customCategories,cat]})}
         onRemove={(id)=>onUpdateProfile({customCategories:customCategories.filter(c=>c.id!==id)})}/>
       <div style={{marginTop:24}}/>
+
+      {/* ─── Tools ─── */}
+      <div style={{fontSize:10,fontWeight:700,letterSpacing:1.4,color:T.muted,textTransform:"uppercase",marginBottom:10,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"statementToolsSection")}</div>
+      <div style={{background:T.surface,backdropFilter:"blur(20px)",borderRadius:20,boxShadow:T.shadow,marginBottom:20,overflow:"hidden"}}>
+        <button onClick={()=>isPro?onShowStatementScan():onShowUpgrade()} style={{width:"100%",padding:"16px 18px",border:"none",cursor:"pointer",background:"transparent",display:"flex",alignItems:"center",gap:12,textAlign:"left"}}>
+          <div style={{width:40,height:40,borderRadius:12,background:"rgba(172,225,175,0.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>📄</div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:14,fontWeight:600,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"statementScan")}</div>
+            <div style={{fontSize:12,color:T.muted,marginTop:1}}>{t(lang,"statementScanSubtitle")}</div>
+          </div>
+          <div style={{fontSize:12,color:T.muted}}>{isPro?"›":"✨"}</div>
+        </button>
+      </div>
 
       {/* ─── Security / PIN ─── */}
       <div style={{fontSize:10,fontWeight:700,letterSpacing:1.4,color:T.muted,textTransform:"uppercase",marginBottom:10,fontFamily:"'Noto Sans',sans-serif"}}>Security / ຄວາມປອດໄພ</div>
@@ -3691,6 +3738,7 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
   const[showAdvisor,setShowAdvisor]=useState(false);
   const[showGuide,setShowGuide]=useState(false);
   const[showUpgrade,setShowUpgrade]=useState(false);
+  const[showStatementScan,setShowStatementScan]=useState(false);
   const[txFilter,setTxFilter]=useState("today"); // today | recent | all
   const{lang,customCategories=[]}=profile;
   const greet=()=>{const h=new Date().getHours();if(h<12)return t(lang,"morning");if(h<17)return t(lang,"afternoon");return t(lang,"evening");};
@@ -3806,7 +3854,7 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
         {tab==="budget"&&<BudgetScreen profile={profile} transactions={transactions}/>}
         {tab==="goals"&&<GoalsScreen profile={profile} transactions={transactions}/>}
         {tab==="settings" && (pinRole === "owner"
-          ? <SettingsScreen profile={profile} transactions={transactions} onUpdateProfile={onUpdateProfile} onReset={onReset} pinConfig={pinConfig} savePinConfig={savePinConfig} setPinRole={setPinRole} setPinSetupMode={setPinSetupMode} onShowGuide={()=>setShowGuide(true)} onShowUpgrade={()=>setShowUpgrade(true)}/>
+          ? <SettingsScreen profile={profile} transactions={transactions} onUpdateProfile={onUpdateProfile} onReset={onReset} pinConfig={pinConfig} savePinConfig={savePinConfig} setPinRole={setPinRole} setPinSetupMode={setPinSetupMode} onShowGuide={()=>setShowGuide(true)} onShowUpgrade={()=>setShowUpgrade(true)} onShowStatementScan={()=>setShowStatementScan(true)}/>
           : <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"80px 24px",textAlign:"center"}}>
               <div style={{fontSize:44,marginBottom:16}}>🔒</div>
               <div style={{fontSize:18,fontWeight:700,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>Settings unavailable</div>
@@ -3845,7 +3893,369 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
           <GuideScreen lang={lang} onClose={()=>setShowGuide(false)}/>
         </div>
       )}
+      {showStatementScan&&(
+        <StatementScanFlow profile={profile} lang={lang} onClose={()=>setShowStatementScan(false)} onAdd={onAdd} customCategories={customCategories}/>
+      )}
       {streakToast&&<Toast msg={streakToast} onDone={onStreakToastDone}/>}
+    </div>
+  );
+}
+
+// ═══ STATEMENT SCAN FLOW ═════════════════════════════════════
+// Full-screen 5-step flow: currency → upload → loading → review → save.
+// Launched from Settings → Tools → Bank statement scan (Pro only).
+function StatementScanFlow({ profile, lang, onClose, onAdd, customCategories=[] }) {
+  const [step, setStep] = useState("currency"); // currency | upload | loading | review | saving | done
+  const [currency, setCurrency] = useState(null);
+  const [images, setImages] = useState([]); // [{file, preview, data, mimeType}]
+  const [error, setError] = useState(null);
+  const [txs, setTxs] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [bank, setBank] = useState(null);
+  const [selected, setSelected] = useState(new Set());
+  const [saveProgress, setSaveProgress] = useState(0);
+  const [detectedCurrency, setDetectedCurrency] = useState(null);
+  const [currencyMismatch, setCurrencyMismatch] = useState(false);
+  const fileRef = useRef();
+
+  const tpl = (key, vars={}) => {
+    let s = t(lang, key);
+    Object.entries(vars).forEach(([k,v]) => { s = s.replace(`{${k}}`, v); });
+    return s;
+  };
+
+  // ── Step 1: Currency picker ──
+  const handleCurrencyNext = () => { if (currency) setStep("upload"); };
+
+  // ── Step 2: File handling ──
+  const handleFiles = (e) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = "";
+    const remaining = 10 - images.length;
+    const batch = files.slice(0, remaining);
+    const newImgs = batch.map(file => ({
+      file, preview: URL.createObjectURL(file),
+      mimeType: file.type || "image/jpeg",
+    }));
+    setImages(prev => [...prev, ...newImgs]);
+  };
+  const removeImage = (idx) => setImages(prev => prev.filter((_, i) => i !== idx));
+
+  // ── Step 3: Scan ──
+  const handleScan = async () => {
+    setStep("loading");
+    setError(null);
+    try {
+      // Convert all images to base64
+      const encoded = await Promise.all(images.map(img =>
+        new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve({ data: reader.result.split(",")[1], mimeType: img.mimeType });
+          reader.onerror = reject;
+          reader.readAsDataURL(img.file);
+        })
+      ));
+
+      const res = await fetch("https://api.phajot.com/parse-statement", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ images: encoded, currency, userId: profile?.userId }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        const s = res.status;
+        setError(s === 429 ? tpl("statementErrorRateLimit")
+          : s >= 500 ? tpl("statementErrorParse")
+          : tpl("statementErrorParse"));
+        setStep("upload");
+        return;
+      }
+
+      // Check currency mismatch
+      if (data.currency && data.currency !== currency) {
+        setDetectedCurrency(data.currency);
+        setCurrencyMismatch(true);
+      }
+
+      const parsed = (data.transactions || []).map((tx, i) => ({
+        ...tx,
+        _idx: i,
+        currency: data.currency || currency,
+        categoryId: normalizeCategory(tx.category || "other", tx.type || "expense"),
+      }));
+      setTxs(parsed);
+      setStats(data.stats || {});
+      setBank(data.bank);
+      setSelected(new Set(parsed.map((_, i) => i)));
+      setStep("review");
+
+    } catch (e) {
+      setError(tpl("statementErrorNetwork"));
+      setStep("upload");
+    }
+  };
+
+  // ── Currency mismatch resolution ──
+  const resolveCurrency = (chosen) => {
+    setCurrencyMismatch(false);
+    if (chosen !== currency) {
+      setCurrency(chosen);
+      setTxs(prev => prev.map(tx => ({ ...tx, currency: chosen })));
+    }
+  };
+
+  // ── Step 4: Toggle selection ──
+  const toggleSelect = (idx) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      next.has(idx) ? next.delete(idx) : next.add(idx);
+      return next;
+    });
+  };
+
+  // ── Category change (inline) ──
+  const [catPickerIdx, setCatPickerIdx] = useState(null);
+  const changeCat = (idx, catId) => {
+    setTxs(prev => prev.map((tx, i) => i === idx ? { ...tx, categoryId: catId } : tx));
+    setCatPickerIdx(null);
+  };
+
+  // ── Step 5: Bulk save ──
+  const handleImport = async () => {
+    const toSave = txs.filter((_, i) => selected.has(i));
+    setStep("saving");
+    setSaveProgress(0);
+    for (let i = 0; i < toSave.length; i++) {
+      const tx = toSave[i];
+      const cat = findCat(tx.categoryId, customCategories);
+      const txObj = {
+        id: `tx_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+        amount: tx.amount,
+        currency: tx.currency || currency,
+        type: tx.type || "expense",
+        categoryId: tx.categoryId,
+        description: tx.description || "",
+        note: JSON.stringify({ source: "statement", bank: bank, ref: tx.ref_number || null }),
+        date: tx.date || new Date().toISOString().split("T")[0],
+        confidence: 0.9,
+        createdAt: new Date().toISOString(),
+        rawInput: "statement-scan",
+      };
+      onAdd(txObj);
+      setSaveProgress(i + 1);
+      // Small delay to avoid UI freeze
+      if (i % 5 === 4) await new Promise(r => setTimeout(r, 50));
+    }
+    setStep("done");
+  };
+
+  // ── Shared styles ──
+  const headerStyle = { display:"flex", alignItems:"center", gap:12, padding:"calc(env(safe-area-inset-top,8px) + 12px) 20px 12px" };
+  const backBtn = (action) => (
+    <button onClick={action} style={{ width:36, height:36, borderRadius:12, border:"none", background:"rgba(45,45,58,0.06)", cursor:"pointer", fontSize:16, display:"flex", alignItems:"center", justifyContent:"center" }}>←</button>
+  );
+  const primaryBtn = (label, onClick, disabled=false) => (
+    <button onClick={onClick} disabled={disabled} style={{ width:"100%", padding:"16px", borderRadius:18, border:"none", background:disabled?"rgba(45,45,58,0.1)":"#1A4020", color:disabled?T.muted:"#fff", fontSize:15, fontWeight:800, cursor:disabled?"default":"pointer", fontFamily:"'Noto Sans',sans-serif", opacity:disabled?0.5:1 }}>{label}</button>
+  );
+
+  return (
+    <div style={{ position:"fixed", inset:0, zIndex:500, background:"#F7FCF5", overflowY:"auto", WebkitOverflowScrolling:"touch", display:"flex", flexDirection:"column" }}>
+
+      {/* ── STEP 1: Currency picker ── */}
+      {step === "currency" && (<>
+        <div style={headerStyle}>
+          {backBtn(onClose)}
+          <div style={{ flex:1, fontWeight:800, fontSize:18, color:T.dark, fontFamily:"'Noto Sans',sans-serif" }}>{tpl("statementPickCurrency")}</div>
+        </div>
+        <div style={{ padding:"0 20px", flex:1 }}>
+          <div style={{ fontSize:13, color:T.muted, marginBottom:20, lineHeight:1.5 }}>{tpl("statementPickCurrencyHint")}</div>
+          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+            {Object.entries(CURR).map(([code, c]) => (
+              <button key={code} onClick={() => setCurrency(code)} style={{
+                display:"flex", alignItems:"center", gap:14, padding:"16px 18px", borderRadius:18, border:"none", cursor:"pointer",
+                background: currency === code ? "rgba(172,225,175,0.25)" : T.surface, boxShadow: currency === code ? "0 2px 12px rgba(172,225,175,0.4)" : T.shadow,
+                transform: currency === code ? "scale(1.02)" : "scale(1)", transition:"all .2s ease",
+              }}>
+                <Flag code={code} size={28} />
+                <div style={{ flex:1, textAlign:"left" }}>
+                  <div style={{ fontSize:16, fontWeight:700, color:T.dark, fontFamily:"'Noto Sans',sans-serif" }}>{code}</div>
+                  <div style={{ fontSize:12, color:T.muted }}>{c.name}</div>
+                </div>
+                {currency === code && <div style={{ fontSize:18, color:"#2A7A40" }}>✓</div>}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div style={{ padding:"16px 20px calc(env(safe-area-inset-bottom,0px) + 16px)" }}>
+          {primaryBtn(tpl("statementNext"), handleCurrencyNext, !currency)}
+        </div>
+      </>)}
+
+      {/* ── STEP 2: Upload images ── */}
+      {step === "upload" && (<>
+        <div style={headerStyle}>
+          {backBtn(() => setStep("currency"))}
+          <div style={{ flex:1, fontWeight:800, fontSize:18, color:T.dark, fontFamily:"'Noto Sans',sans-serif" }}>{tpl("statementUploadTitle")}</div>
+          <div style={{ fontSize:12, color:T.muted, fontWeight:600 }}>{images.length}/10</div>
+        </div>
+        <div style={{ padding:"0 20px", flex:1 }}>
+          <div style={{ fontSize:13, color:T.muted, marginBottom:16, lineHeight:1.5 }}>{tpl("statementUploadHint")}</div>
+          {error && (
+            <div style={{ background:"rgba(255,179,167,0.15)", borderRadius:14, padding:"12px 16px", marginBottom:16, fontSize:13, color:"#C0392B", lineHeight:1.4 }}>
+              {error}
+            </div>
+          )}
+          {/* Thumbnail grid */}
+          {images.length > 0 && (
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8, marginBottom:16 }}>
+              {images.map((img, i) => (
+                <div key={i} style={{ position:"relative", borderRadius:12, overflow:"hidden", aspectRatio:"3/4", background:"rgba(45,45,58,0.06)" }}>
+                  <img src={img.preview} alt="" style={{ width:"100%", height:"100%", objectFit:"cover" }} />
+                  <button onClick={() => removeImage(i)} style={{ position:"absolute", top:4, right:4, width:24, height:24, borderRadius:12, border:"none", background:"rgba(0,0,0,0.5)", color:"#fff", fontSize:14, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>×</button>
+                </div>
+              ))}
+            </div>
+          )}
+          {/* Add button */}
+          {images.length < 10 && (
+            <button onClick={() => fileRef.current?.click()} style={{
+              width:"100%", padding:"20px", borderRadius:18, border:"2px dashed rgba(172,225,175,0.5)", background:"rgba(172,225,175,0.08)",
+              cursor:"pointer", fontSize:14, fontWeight:600, color:"#2A7A40", fontFamily:"'Noto Sans',sans-serif", textAlign:"center",
+            }}>
+              📷 {tpl("statementUploadButton")}
+            </button>
+          )}
+          {images.length >= 10 && (
+            <div style={{ fontSize:12, color:T.muted, textAlign:"center", padding:8 }}>{tpl("statementMaxImages")}</div>
+          )}
+          <input ref={fileRef} type="file" accept="image/*" multiple style={{ display:"none" }} onChange={handleFiles} />
+        </div>
+        <div style={{ padding:"16px 20px calc(env(safe-area-inset-bottom,0px) + 16px)" }}>
+          {primaryBtn(tpl("statementScanButton"), handleScan, images.length === 0)}
+        </div>
+      </>)}
+
+      {/* ── STEP 3: Loading ── */}
+      {step === "loading" && (
+        <div style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:40, gap:16 }}>
+          <div style={{ width:60, height:60, borderRadius:20, background:"rgba(172,225,175,0.2)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:28, animation:"pulse 1.5s ease infinite" }}>📄</div>
+          <div style={{ fontSize:16, fontWeight:700, color:T.dark, fontFamily:"'Noto Sans',sans-serif" }}>{tpl("statementScanning", { n: images.length })}</div>
+          <div style={{ fontSize:13, color:T.muted }}>{tpl("statementScanningHint")}</div>
+          <style>{`@keyframes pulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.6; transform:scale(0.95); } }`}</style>
+        </div>
+      )}
+
+      {/* ── STEP 4: Review ── */}
+      {step === "review" && (<>
+        <div style={headerStyle}>
+          {backBtn(() => { setStep("upload"); setTxs([]); setStats(null); })}
+          <div style={{ flex:1 }}>
+            <div style={{ fontWeight:800, fontSize:18, color:T.dark, fontFamily:"'Noto Sans',sans-serif" }}>{tpl("statementReviewTitle")}</div>
+            <div style={{ fontSize:12, color:T.muted, marginTop:2 }}>
+              {bank && <span style={{ fontWeight:700, marginRight:6 }}>{bank}</span>}
+              {tpl("statementReviewStats", { n: txs.length })}
+              {stats?.duplicates_removed > 0 && <span> {tpl("statementReviewDuplicates", { n: stats.duplicates_removed })}</span>}
+            </div>
+          </div>
+        </div>
+
+        {/* Currency mismatch warning */}
+        {currencyMismatch && detectedCurrency && (
+          <div style={{ margin:"0 20px 12px", background:"rgba(245,197,24,0.15)", borderRadius:14, padding:"14px 16px" }}>
+            <div style={{ fontSize:13, fontWeight:600, color:"#7A5A00", marginBottom:10, lineHeight:1.4 }}>
+              {tpl("statementCurrencyMismatch", { detected: detectedCurrency, selected: currency })}
+            </div>
+            <div style={{ display:"flex", gap:8 }}>
+              <button onClick={() => resolveCurrency(detectedCurrency)} style={{ flex:1, padding:"10px", borderRadius:12, border:"none", background:"#F5C518", color:"#7A3E00", fontWeight:700, fontSize:12, cursor:"pointer", fontFamily:"'Noto Sans',sans-serif" }}>
+                {tpl("statementCurrencyUseDetected", { detected: detectedCurrency })}
+              </button>
+              <button onClick={() => resolveCurrency(currency)} style={{ flex:1, padding:"10px", borderRadius:12, border:"none", background:"rgba(45,45,58,0.08)", color:T.dark, fontWeight:600, fontSize:12, cursor:"pointer", fontFamily:"'Noto Sans',sans-serif" }}>
+                {tpl("statementCurrencyUseSelected", { selected: currency })}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Transaction list */}
+        <div style={{ flex:1, overflowY:"auto", padding:"0 20px" }}>
+          {txs.map((tx, i) => {
+            const cat = findCat(tx.categoryId, customCategories);
+            const isExp = tx.type === "expense";
+            const on = selected.has(i);
+            return (
+              <div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 0", borderBottom:"1px solid rgba(45,45,58,0.06)", opacity: on ? 1 : 0.4 }}>
+                <button onClick={() => toggleSelect(i)} style={{ width:24, height:24, borderRadius:8, border: on ? "none" : "2px solid rgba(45,45,58,0.2)", background: on ? "#2A7A40" : "transparent", color:"#fff", fontSize:12, cursor:"pointer", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                  {on && "✓"}
+                </button>
+                <button onClick={() => setCatPickerIdx(catPickerIdx === i ? null : i)} style={{ width:36, height:36, borderRadius:10, border:"none", background:"rgba(172,225,175,0.15)", cursor:"pointer", fontSize:18, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                  {cat.emoji}
+                </button>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontSize:13, fontWeight:600, color:T.dark, fontFamily:"'Noto Sans',sans-serif", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{tx.description || catLabel(cat, lang)}</div>
+                  <div style={{ fontSize:11, color:T.muted, marginTop:1 }}>{tx.date}{tx.time ? ` · ${tx.time.slice(0,5)}` : ""}</div>
+                </div>
+                <div style={{ fontSize:14, fontWeight:700, color: isExp ? "#C0392B" : "#2A7A40", fontFamily:"'Noto Sans',sans-serif", flexShrink:0 }}>
+                  {isExp ? "-" : "+"}{fmt(tx.amount, tx.currency || currency)}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Category picker bottom sheet */}
+        {catPickerIdx !== null && (
+          <div style={{ position:"fixed", bottom:0, left:0, right:0, zIndex:600, background:"#fff", borderRadius:"24px 24px 0 0", boxShadow:"0 -4px 24px rgba(0,0,0,0.12)", maxHeight:"50vh", overflowY:"auto", padding:"16px 20px calc(env(safe-area-inset-bottom,0px) + 16px)" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+              <div style={{ fontSize:14, fontWeight:700, color:T.dark, fontFamily:"'Noto Sans',sans-serif" }}>Category</div>
+              <button onClick={() => setCatPickerIdx(null)} style={{ border:"none", background:"none", fontSize:18, color:T.muted, cursor:"pointer" }}>×</button>
+            </div>
+            <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
+              {[...DEFAULT_EXPENSE_CATS, ...DEFAULT_INCOME_CATS].map(c => (
+                <button key={c.id} onClick={() => changeCat(catPickerIdx, c.id)} style={{
+                  padding:"6px 12px", borderRadius:12, border:"none", cursor:"pointer", fontSize:12, fontWeight:600,
+                  background: txs[catPickerIdx]?.categoryId === c.id ? "rgba(172,225,175,0.3)" : "rgba(45,45,58,0.06)",
+                  color:T.dark, fontFamily:"'Noto Sans',sans-serif", display:"flex", alignItems:"center", gap:4,
+                }}>
+                  <span>{c.emoji}</span> {catLabel(c, lang)}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Import button */}
+        <div style={{ padding:"16px 20px calc(env(safe-area-inset-bottom,0px) + 16px)", borderTop:"1px solid rgba(45,45,58,0.06)" }}>
+          {primaryBtn(tpl("statementImportButton", { n: selected.size }), handleImport, selected.size === 0)}
+        </div>
+      </>)}
+
+      {/* ── STEP 5: Saving ── */}
+      {step === "saving" && (
+        <div style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:40, gap:16 }}>
+          <div style={{ width:60, height:60, borderRadius:20, background:"rgba(172,225,175,0.2)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:28 }}>💾</div>
+          <div style={{ fontSize:16, fontWeight:700, color:T.dark, fontFamily:"'Noto Sans',sans-serif" }}>
+            {tpl("statementImporting", { current: saveProgress, total: selected.size })}
+          </div>
+          <div style={{ width:200, height:6, borderRadius:3, background:"rgba(45,45,58,0.1)", overflow:"hidden" }}>
+            <div style={{ width:`${(saveProgress / selected.size) * 100}%`, height:"100%", background:"#2A7A40", borderRadius:3, transition:"width .2s ease" }} />
+          </div>
+        </div>
+      )}
+
+      {/* ── STEP 6: Done ── */}
+      {step === "done" && (
+        <div style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:40, gap:16 }}>
+          <div style={{ fontSize:48 }}>✅</div>
+          <div style={{ fontSize:18, fontWeight:800, color:T.dark, fontFamily:"'Noto Sans',sans-serif" }}>
+            {tpl("statementSuccess", { n: saveProgress })}
+          </div>
+          <div style={{ fontSize:13, color:T.muted }}>{bank ? `${bank} · ` : ""}{currency}</div>
+          <div style={{ marginTop:12 }}>
+            {primaryBtn("Done", onClose)}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
