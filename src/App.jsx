@@ -1258,10 +1258,10 @@ function EditTransactionModal({tx,lang,onSave,onClose,customCategories=[]}){
     :[...DEFAULT_EXPENSE_CATS,...customCategories.filter(c=>c.type==="expense")];
   const flipType=(newType)=>{
     setEditType(newType);
-    if(!cats.find(c=>c.id===catId)){
-      const newCats=newType==="income"?DEFAULT_INCOME_CATS:DEFAULT_EXPENSE_CATS;
-      setCatId(newCats[0].id);
-    }
+    const newCats=newType==="income"
+      ?[...DEFAULT_INCOME_CATS,...customCategories.filter(c=>c.type==="income")]
+      :[...DEFAULT_EXPENSE_CATS,...customCategories.filter(c=>c.type==="expense")];
+    if(!newCats.find(c=>c.id===catId)) setCatId(newCats[0].id);
   };
   const save=()=>{const a=parseFloat(String(amount).replace(/,/g,""));if(!a||a<=0)return;onSave({...tx,amount:a,categoryId:catId,description:desc.trim()||tx.description,currency:editCurrency,type:editType});};
   const pillBtn=(active,label,onClick,color)=>(<button onClick={onClick} style={{flex:1,padding:"8px 0",borderRadius:12,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"'Noto Sans',sans-serif",background:active?(color||"rgba(172,225,175,0.25)"):"rgba(45,45,58,0.06)",color:active?T.dark:T.muted,transition:"all .15s"}}>{label}</button>);
