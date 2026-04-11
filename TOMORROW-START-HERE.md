@@ -1,50 +1,38 @@
 # Next Session Start Here
 
-**Last session:** Phajot rename + full DNS migration (April 10, 2026)
-**Status:** Migration complete, all 8 steps shipped, verified.
+**Last session:** Session 6 (April 11, 2026) — OCR feature + Phajot migration + home refactor
+**Status:** 21 commits shipped. All features live at app.phajot.com. Wife testing pending.
 
-## Quick context
+## What shipped in Session 6
 
-- Brand is now Phajot (ພາຈົດ) — renamed from Phanote due to trademark conflict
-- All live domains: phajot.com, app.phajot.com, api.phajot.com
-- Legacy phanote.com still serves as fallback (redirect + dual-route)
-- OCR backend shipped at POST /parse-statement, frontend not built yet
+- Phajot brand migration complete (8-step DNS + code rename)
+- OCR bank statement scan: full 6-step flow (Settings → currency → upload → scan → review → import)
+- Import history with batch undo (delete all from a batch)
+- Editable transactions: currency, amount, description, type toggle
+- Currency detection fix ("50thb" now correctly detects THB)
+- Dedicated TransactionsScreen: search + 3-axis filter (period × currency × type) + pagination
+- Simplified home: greeting + cards + 5 recent txs + "View all →"
+- README, CLAUDE.md, project docs all updated for Phajot brand
 
-## What's ready to ship next
+## What's ready for Session 7
 
-### Priority: OCR bank statement frontend (Session 6 continuation)
+- Wife testing the OCR flow with real LDB/JDB/BCEL One screenshots
+- Capture wife reaction + feedback (like Session 5 WIFE-REACTION.md)
+- Analytics/heatmap improvements if requested
+- Any new priority that emerges from real usage
 
-Backend status:
-- POST /parse-statement — LIVE at api.phajot.com
-- Accepts up to 10 base64 images
-- Returns parsed transactions with bank/currency/category detection
-- Dedupe via hashTx (date|time|amount|description)
-- Tested with curl, response shape documented in commit f0241cf
+## Backlog
 
-Frontend to build:
-- Upload screen: multi-select max 10 images
-- Currency picker (user selects before upload)
-- Loading state during Gemini Vision processing
-- Review screen: editable list of parsed transactions
-- Bulk save to Supabase transactions table
-- Error handling for parse failures, rate limits, partial results
-
-Estimated: 2-3 hours focused work.
-
-Sample screenshots in the chat history from April 10 showing LDB, JDB,
-BCEL One formats to test against.
-
-## Other things on the backlog
-
-- Session 7: Could also do sync-to-other-devices feature
-- Delete the old phanote.com domain someday (not urgent, it redirects fine)
-- Rename worker file phanote-api-worker.js to phajot-api-worker.js (risky, skip)
-- Category expansion if needed based on real usage
+- Sync-to-other-devices feature
+- Advanced filters (amount range, category filter, sort order)
+- Bulk select/delete in TransactionsScreen
+- Export filtered transactions
+- Desktop max-width polish on fullscreen overlays
 
 ## How to start next session
 
 1. Open Codespace
 2. git pull origin main
-3. npm run dev (app) + cd landing && python3 -m http.server 8080 (landing)
-4. Verify both still work on new domains
-5. Tell Claude: "continue OCR frontend"
+3. npm run dev
+4. Test on phone: app.phajot.com
+5. Tell Claude what to build next
