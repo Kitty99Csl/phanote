@@ -184,6 +184,7 @@ const CURR = {
 };
 const fmt=(n,c)=>{const{symbol}=CURR[c];if(c==="LAK")return`${symbol}${Math.round(n).toLocaleString()}`;return`${symbol}${Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,",")}`};
 const fmtCompact=(n,c)=>{if(c==="LAK"){if(n>=1e6)return`₭${(n/1e6).toFixed(1)}M`;if(n>=1e3)return`₭${(n/1e3).toFixed(0)}K`;return`₭${Math.round(n)}`}const s=CURR[c].symbol;return n>=1000?`${s}${(n/1000).toFixed(1)}K`:`${s}${Number(n).toFixed(2)}`};
+const txDedupKey=(tx)=>`${tx.date}|${tx.amount}|${(tx.description||"").toLowerCase().trim()}`;
 const AVATARS=["🦫","🐱","🦝","🦦","🦊","🔮","🐨","🦔","🐸","🐼"];
 const EMOJI_PICKS=["🍜","🍺","☕","🛵","🚗","✈️","🏠","💡","🛍️","👗","💊","🏋️","🎉","🎤","🎮","📚","💇","🎁","💼","💰","📈","💵","🏧","📦","🌟","🎯","🏌️","🎵","🏖️","🐾"];
 const GOAL_EMOJIS=["🎯","✈️","🏖️","🏠","🚗","💍","📱","💻","🎓","💊","🌏","🏋️","🎵","🎮","👶","🐾","🌟","💎","🏌️","🛵"];
@@ -892,6 +893,7 @@ const i18n={
     statementToolsSection:"Tools",
     loadMore:"Load 50 more",filteredTotal:"Total",emptyStateFilter:"No transactions in this view",
     viewAllTx:"View all transactions",searchTx:"Search transactions...",typeBoth:"Both",txScreenTitle:"Transactions",showingCount:"Showing {visible} of {total}",
+    duplicate:"Duplicate",alreadyImported:"{n} already imported",allDuplicatesWarning:"All transactions already exist in your records. Check any you want to import anyway.",
     months:["January","February","March","April","May","June","July","August","September","October","November","December"],
   },
   lo:{
@@ -968,6 +970,7 @@ const i18n={
     statementToolsSection:"ເຄື່ອງມື",
     loadMore:"ເບິ່ງອີກ 50",filteredTotal:"ລວມ",emptyStateFilter:"ບໍ່ມີທຸລະກຳໃນມຸມມອງນີ້",
     viewAllTx:"ເບິ່ງທຸລະກຳທັງໝົດ",searchTx:"ຄົ້ນຫາທຸລະກຳ...",typeBoth:"ທັງໝົດ",txScreenTitle:"ທຸລະກຳ",showingCount:"ສະແດງ {visible} ຈາກ {total}",
+    duplicate:"ຊ້ຳກັນ",alreadyImported:"{n} ນຳເຂົ້າແລ້ວ",allDuplicatesWarning:"ທຸລະກຳທັງໝົດມີຢູ່ແລ້ວ. ເລືອກອັນທີ່ຕ້ອງການນຳເຂົ້າຊ້ຳ.",
     months:["ມັງກອນ","ກຸມພາ","ມີນາ","ເມສາ","ພຶດສະພາ","ມິຖຸນາ","ກໍລະກົດ","ສິງຫາ","ກັນຍາ","ຕຸລາ","ພະຈິກ","ທັນວາ"],
   },
   th:{
@@ -3872,7 +3875,7 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
         </div>
       )}
       {showStatementScan&&(
-        <StatementScanFlow profile={profile} lang={lang} onClose={()=>setShowStatementScan(false)} onAdd={onAdd} customCategories={customCategories}
+        <StatementScanFlow profile={profile} lang={lang} onClose={()=>setShowStatementScan(false)} onAdd={onAdd} customCategories={customCategories} transactions={transactions}
           onImportDone={(n)=>{setShowStatementScan(false);setShowTransactions(true);setTab("home");}}
           onDeleteBatch={(batchId)=>{setTransactions(prev=>prev.filter(tx=>tx.batchId!==batchId&&tx.batch_id!==batchId));}}/>
       )}
@@ -3968,7 +3971,7 @@ function TransactionsScreen({ lang, profile, customCategories=[], transactions, 
 // ═══ STATEMENT SCAN FLOW ═════════════════════════════════════
 // Full-screen 5-step flow: currency → upload → loading → review → save.
 // Launched from Settings → Tools → Bank statement scan (Pro only).
-function StatementScanFlow({ profile, lang, onClose, onAdd, customCategories=[], onImportDone=()=>{}, onDeleteBatch=()=>{} }) {
+function StatementScanFlow({ profile, lang, onClose, onAdd, customCategories=[], onImportDone=()=>{}, onDeleteBatch=()=>{}, transactions=[] }) {
   const [step, setStep] = useState("currency"); // currency | upload | loading | review | saving | done
   const [currency, setCurrency] = useState(null);
   const [images, setImages] = useState([]); // [{file, preview, data, mimeType}]
@@ -4090,16 +4093,19 @@ function StatementScanFlow({ profile, lang, onClose, onAdd, customCategories=[],
         setCurrencyMismatch(true);
       }
 
+      // Cross-session dedup: mark transactions that already exist in user's records
+      const existingKeys = new Set(transactions.map(tx => txDedupKey(tx)));
       const parsed = (data.transactions || []).map((tx, i) => ({
         ...tx,
         _idx: i,
         currency: data.currency || currency,
         categoryId: normalizeCategory(tx.category || "other", tx.type || "expense"),
+        _isDuplicate: existingKeys.has(txDedupKey({ ...tx, amount: tx.amount, description: tx.description, date: tx.date })),
       }));
       setTxs(parsed);
-      setStats(data.stats || {});
+      setStats({ ...(data.stats || {}), alreadyImported: parsed.filter(t => t._isDuplicate).length });
       setBank(data.bank);
-      setSelected(new Set(parsed.map((_, i) => i)));
+      setSelected(new Set(parsed.map((tx, i) => tx._isDuplicate ? null : i).filter(i => i !== null)));
       setStep("review");
 
     } catch (e) {
@@ -4349,9 +4355,17 @@ function StatementScanFlow({ profile, lang, onClose, onAdd, customCategories=[],
               {bank && <span style={{ fontWeight:700, marginRight:6 }}>{bank}</span>}
               {tpl("statementReviewStats", { n: txs.length })}
               {stats?.duplicates_removed > 0 && <span> {tpl("statementReviewDuplicates", { n: stats.duplicates_removed })}</span>}
+              {stats?.alreadyImported > 0 && <span> · {tpl("alreadyImported", { n: stats.alreadyImported })}</span>}
             </div>
           </div>
         </div>
+
+        {/* All duplicates banner */}
+        {txs.length > 0 && txs.every(tx => tx._isDuplicate) && (
+          <div style={{ margin:"0 20px 12px", padding:"14px 16px", borderRadius:12, background:"rgba(245,197,24,0.12)", border:"1px solid rgba(245,197,24,0.3)", fontSize:13, color:"#5C4500", lineHeight:1.4 }}>
+            ⚠️ {t(lang, "allDuplicatesWarning")}
+          </div>
+        )}
 
         {/* Currency mismatch warning */}
         {currencyMismatch && detectedCurrency && (
@@ -4409,6 +4423,7 @@ function StatementScanFlow({ profile, lang, onClose, onAdd, customCategories=[],
                       style={{ fontSize:13, fontWeight:600, color:T.dark, fontFamily:"'Noto Sans',sans-serif", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", cursor:"text", borderBottom:"1px dashed transparent" }}
                       onMouseEnter={e => e.target.style.borderBottomColor = "rgba(172,225,175,0.5)"} onMouseLeave={e => e.target.style.borderBottomColor = "transparent"}>
                       {tx.description || catLabel(cat, lang)}
+                      {tx._isDuplicate && <span style={{ fontSize:9, fontWeight:700, padding:"2px 6px", borderRadius:6, background:"rgba(245,197,24,0.2)", color:"#7A5A00", marginLeft:6, textTransform:"uppercase", letterSpacing:0.5 }}>{t(lang,"duplicate")}</span>}
                     </div>
                   )}
                   <div style={{ fontSize:11, color:T.muted, marginTop:1 }}>{tx.date}{tx.time ? ` · ${tx.time.slice(0,5)}` : ""}</div>
