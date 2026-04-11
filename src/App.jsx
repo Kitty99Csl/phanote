@@ -1250,17 +1250,26 @@ function EditTransactionModal({tx,lang,onSave,onClose,customCategories=[]}){
   const[amount,setAmount]=useState(String(tx.amount));
   const[desc,setDesc]=useState(tx.description||"");
   const[catId,setCatId]=useState(tx.categoryId);
+  const[editCurrency,setEditCurrency]=useState(tx.currency||"LAK");
+  const[editType,setEditType]=useState(tx.type||"expense");
   const kbOffset=useKeyboardOffset();
-  const cats=tx.type==="income"
+  const cats=editType==="income"
     ?[...DEFAULT_INCOME_CATS,...customCategories.filter(c=>c.type==="income")]
     :[...DEFAULT_EXPENSE_CATS,...customCategories.filter(c=>c.type==="expense")];
-  const save=()=>{const a=parseFloat(String(amount).replace(/,/g,""));if(!a||a<=0)return;onSave({...tx,amount:a,categoryId:catId,description:desc.trim()||tx.description});};
+  const flipType=(newType)=>{
+    setEditType(newType);
+    if(!cats.find(c=>c.id===catId)){
+      const newCats=newType==="income"?DEFAULT_INCOME_CATS:DEFAULT_EXPENSE_CATS;
+      setCatId(newCats[0].id);
+    }
+  };
+  const save=()=>{const a=parseFloat(String(amount).replace(/,/g,""));if(!a||a<=0)return;onSave({...tx,amount:a,categoryId:catId,description:desc.trim()||tx.description,currency:editCurrency,type:editType});};
+  const pillBtn=(active,label,onClick,color)=>(<button onClick={onClick} style={{flex:1,padding:"8px 0",borderRadius:12,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"'Noto Sans',sans-serif",background:active?(color||"rgba(172,225,175,0.25)"):"rgba(45,45,58,0.06)",color:active?T.dark:T.muted,transition:"all .15s"}}>{label}</button>);
   return(
     <div style={{position:"fixed",inset:0,zIndex:2000,background:"rgba(30,30,40,0.6)",backdropFilter:"blur(4px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}}
       onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
       <div style={{background:"#fff",borderRadius:"28px 28px 0 0",width:"100%",maxWidth:430,animation:"slideUp .3s ease",maxHeight:"88dvh",display:"flex",flexDirection:"column",
         transform:kbOffset>0?`translateY(-${kbOffset}px)`:undefined,transition:"transform .25s ease"}}>
-        {/* Scrollable content */}
         <div style={{overflowY:"auto",flex:1,minHeight:0,padding:"22px 20px 8px",display:"flex",flexDirection:"column",gap:14,WebkitOverflowScrolling:"touch"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
             <div style={{fontWeight:800,fontSize:16,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>Edit Transaction</div>
@@ -1273,9 +1282,22 @@ function EditTransactionModal({tx,lang,onSave,onClose,customCategories=[]}){
               onFocus={e=>e.target.style.borderColor="#ACE1AF"} onBlur={e=>e.target.style.borderColor="rgba(45,45,58,0.12)"}/>
           </div>
           <div>
-            <div style={{fontSize:11,fontWeight:700,color:T.muted,letterSpacing:0.8,textTransform:"uppercase",marginBottom:6,fontFamily:"'Noto Sans',sans-serif"}}>Amount ({tx.currency})</div>
+            <div style={{fontSize:11,fontWeight:700,color:T.muted,letterSpacing:0.8,textTransform:"uppercase",marginBottom:6,fontFamily:"'Noto Sans',sans-serif"}}>Type</div>
+            <div style={{display:"flex",gap:6}}>
+              {pillBtn(editType==="expense","− Expense",()=>flipType("expense"),"rgba(255,179,167,0.3)")}
+              {pillBtn(editType==="income","+ Income",()=>flipType("income"),"rgba(172,225,175,0.3)")}
+            </div>
+          </div>
+          <div>
+            <div style={{fontSize:11,fontWeight:700,color:T.muted,letterSpacing:0.8,textTransform:"uppercase",marginBottom:6,fontFamily:"'Noto Sans',sans-serif"}}>Currency</div>
+            <div style={{display:"flex",gap:6}}>
+              {Object.entries(CURR).map(([code,c])=>pillBtn(editCurrency===code,`${c.symbol} ${code}`,()=>setEditCurrency(code)))}
+            </div>
+          </div>
+          <div>
+            <div style={{fontSize:11,fontWeight:700,color:T.muted,letterSpacing:0.8,textTransform:"uppercase",marginBottom:6,fontFamily:"'Noto Sans',sans-serif"}}>Amount ({editCurrency})</div>
             <div style={{display:"flex",alignItems:"center",gap:8,background:"rgba(172,225,175,0.08)",borderRadius:14,padding:"4px 4px 4px 16px",border:"1.5px solid #ACE1AF"}}>
-              <span style={{fontSize:18,fontWeight:800,color:T.dark}}>{tx.currency==="LAK"?"₭":tx.currency==="THB"?"฿":"$"}</span>
+              <span style={{fontSize:18,fontWeight:800,color:T.dark}}>{CURR[editCurrency]?.symbol}</span>
               <input value={amount} onChange={e=>setAmount(e.target.value)} onFocus={e=>e.target.select()} type="number" inputMode="decimal"
                 style={{flex:1,border:"none",outline:"none",background:"transparent",fontSize:22,fontWeight:800,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}/>
             </div>
@@ -1294,7 +1316,6 @@ function EditTransactionModal({tx,lang,onSave,onClose,customCategories=[]}){
           </div>
           <div style={{height:8}}/>
         </div>
-        {/* Pinned save — always above keyboard */}
         <div style={{padding:"12px 20px",paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 12px)",borderTop:"0.5px solid rgba(45,45,58,0.06)",flexShrink:0,background:"#fff"}}>
           <button onClick={save} style={{width:"100%",padding:"15px",borderRadius:16,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",color:"#1A4020",fontWeight:800,fontSize:15,fontFamily:"'Noto Sans',sans-serif",boxShadow:"0 4px 16px rgba(172,225,175,0.4)"}}>Save Changes ✓</button>
         </div>
@@ -3760,9 +3781,9 @@ function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdate
   const handleEditSave=(updated)=>{
     if(!editTx)return;
     setShowEdit(false);setEditTx(null);
-    onUpdateCategory(editTx.id,updated.categoryId,updated.amount,updated.description);
+    onUpdateCategory(editTx.id,updated.categoryId,updated.amount,updated.description,updated.currency,updated.type);
     const cat=findCat(updated.categoryId,customCategories);
-    if(profile?.userId){dbSaveMemory(profile.userId,updated.description||editTx.description||"",cat.id,editTx.type,0.99).catch(()=>{});}
+    if(profile?.userId){dbSaveMemory(profile.userId,updated.description||editTx.description||"",cat.id,updated.type||editTx.type,0.99).catch(()=>{});}
   };
   return(
     <div style={{height:"100dvh",background:T.bg,display:"flex",flexDirection:"column",maxWidth:430,margin:"0 auto",position:"relative",overflow:"hidden"}}>
@@ -4065,11 +4086,28 @@ function StatementScanFlow({ profile, lang, onClose, onAdd, customCategories=[],
     });
   };
 
-  // ── Category change (inline) ──
+  // ── Inline editing helpers ──
   const [catPickerIdx, setCatPickerIdx] = useState(null);
-  const changeCat = (idx, catId) => {
-    setTxs(prev => prev.map((tx, i) => i === idx ? { ...tx, categoryId: catId } : tx));
-    setCatPickerIdx(null);
+  const [editingField, setEditingField] = useState(null); // {idx, field, value}
+  const updateTx = (idx, updates) => setTxs(prev => prev.map((t, i) => i === idx ? { ...t, ...updates } : t));
+  const changeCat = (idx, catId) => { updateTx(idx, { categoryId: catId }); setCatPickerIdx(null); };
+  const commitEdit = () => {
+    if (!editingField) return;
+    const { idx, field, value } = editingField;
+    if (field === "amount") {
+      const n = parseFloat(String(value).replace(/,/g, ""));
+      if (isFinite(n) && n > 0) updateTx(idx, { amount: n });
+    } else if (field === "description") {
+      updateTx(idx, { description: value });
+    }
+    setEditingField(null);
+  };
+  const toggleType = (idx) => {
+    const tx = txs[idx];
+    const newType = tx.type === "expense" ? "income" : "expense";
+    const newCats = newType === "income" ? DEFAULT_INCOME_CATS : DEFAULT_EXPENSE_CATS;
+    const catValid = newCats.find(c => c.id === tx.categoryId);
+    updateTx(idx, { type: newType, ...(catValid ? {} : { categoryId: newCats[0].id }) });
   };
 
   // ── Step 5: Bulk save ──
@@ -4311,6 +4349,8 @@ function StatementScanFlow({ profile, lang, onClose, onAdd, customCategories=[],
             const cat = findCat(tx.categoryId, customCategories);
             const isExp = tx.type === "expense";
             const on = selected.has(i);
+            const isEditingDesc = editingField?.idx === i && editingField?.field === "description";
+            const isEditingAmt = editingField?.idx === i && editingField?.field === "amount";
             return (
               <div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 0", borderBottom:"1px solid rgba(45,45,58,0.06)", opacity: on ? 1 : 0.4 }}>
                 <button onClick={() => toggleSelect(i)} style={{ width:24, height:24, borderRadius:8, border: on ? "none" : "2px solid rgba(45,45,58,0.2)", background: on ? "#2A7A40" : "transparent", color:"#fff", fontSize:12, cursor:"pointer", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center" }}>
@@ -4320,11 +4360,34 @@ function StatementScanFlow({ profile, lang, onClose, onAdd, customCategories=[],
                   {cat.emoji}
                 </button>
                 <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ fontSize:13, fontWeight:600, color:T.dark, fontFamily:"'Noto Sans',sans-serif", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{tx.description || catLabel(cat, lang)}</div>
+                  {isEditingDesc ? (
+                    <input autoFocus value={editingField.value} onChange={e => setEditingField(prev => ({ ...prev, value: e.target.value }))}
+                      onBlur={commitEdit} onKeyDown={e => e.key === "Enter" && commitEdit()}
+                      style={{ width:"100%", fontSize:13, fontWeight:600, color:T.dark, fontFamily:"'Noto Sans',sans-serif", border:"none", borderBottom:"2px solid #ACE1AF", outline:"none", background:"transparent", padding:"2px 0", boxSizing:"border-box" }} />
+                  ) : (
+                    <div onClick={() => setEditingField({ idx: i, field: "description", value: tx.description || "" })}
+                      style={{ fontSize:13, fontWeight:600, color:T.dark, fontFamily:"'Noto Sans',sans-serif", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", cursor:"text", borderBottom:"1px dashed transparent" }}
+                      onMouseEnter={e => e.target.style.borderBottomColor = "rgba(172,225,175,0.5)"} onMouseLeave={e => e.target.style.borderBottomColor = "transparent"}>
+                      {tx.description || catLabel(cat, lang)}
+                    </div>
+                  )}
                   <div style={{ fontSize:11, color:T.muted, marginTop:1 }}>{tx.date}{tx.time ? ` · ${tx.time.slice(0,5)}` : ""}</div>
                 </div>
-                <div style={{ fontSize:14, fontWeight:700, color: isExp ? "#C0392B" : "#2A7A40", fontFamily:"'Noto Sans',sans-serif", flexShrink:0 }}>
-                  {isExp ? "-" : "+"}{fmt(tx.amount, tx.currency || currency)}
+                <div style={{ display:"flex", alignItems:"center", gap:4, flexShrink:0 }}>
+                  <button onClick={() => toggleType(i)} style={{ border:"none", background:"none", cursor:"pointer", fontSize:12, fontWeight:800, color: isExp ? "#C0392B" : "#2A7A40", padding:"2px 4px", fontFamily:"'Noto Sans',sans-serif" }}>
+                    {isExp ? "−" : "+"}
+                  </button>
+                  {isEditingAmt ? (
+                    <input autoFocus value={editingField.value} onChange={e => setEditingField(prev => ({ ...prev, value: e.target.value }))}
+                      onBlur={commitEdit} onKeyDown={e => e.key === "Enter" && commitEdit()} type="number" inputMode="decimal"
+                      style={{ width:80, fontSize:14, fontWeight:700, color: isExp ? "#C0392B" : "#2A7A40", fontFamily:"'Noto Sans',sans-serif", border:"none", borderBottom:"2px solid #ACE1AF", outline:"none", background:"transparent", textAlign:"right", padding:"2px 0" }} />
+                  ) : (
+                    <div onClick={() => setEditingField({ idx: i, field: "amount", value: String(tx.amount) })}
+                      style={{ fontSize:14, fontWeight:700, color: isExp ? "#C0392B" : "#2A7A40", fontFamily:"'Noto Sans',sans-serif", cursor:"text", borderBottom:"1px dashed transparent" }}
+                      onMouseEnter={e => e.target.style.borderBottomColor = "rgba(172,225,175,0.5)"} onMouseLeave={e => e.target.style.borderBottomColor = "transparent"}>
+                      {fmt(tx.amount, tx.currency || currency)}
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -5046,10 +5109,10 @@ export default function App(){
     try { await dbUpdateTransaction(txId, { note, edited_at: new Date().toISOString() }); } catch (e) { console.error(e); }
   };
 
-  const handleUpdateCategory = async (txId, newCatId, newAmount=null, newDesc=null) => {
+  const handleUpdateCategory = async (txId, newCatId, newAmount=null, newDesc=null, newCurrency=null, newType=null) => {
     setTransactions(prev => prev.map(tx => {
       if(tx.id !== txId) return tx;
-      return { ...tx, categoryId: newCatId, ...(newAmount ? {amount: newAmount} : {}), ...(newDesc ? {description: newDesc} : {}) };
+      return { ...tx, categoryId: newCatId, ...(newAmount ? {amount: newAmount} : {}), ...(newDesc ? {description: newDesc} : {}), ...(newCurrency ? {currency: newCurrency} : {}), ...(newType ? {type: newType} : {}) };
     }));
     if (txId.startsWith("tx_")) return;
     try {
@@ -5057,6 +5120,8 @@ export default function App(){
       const updates = { category_name: cat.en, category_emoji: cat.emoji, edited_at: new Date().toISOString() };
       if (newAmount) updates.amount = newAmount;
       if (newDesc) updates.description = newDesc;
+      if (newCurrency) updates.currency = newCurrency;
+      if (newType) updates.type = newType;
       await dbUpdateTransaction(txId, updates);
     } catch (e) { console.error("Update error:", e); }
   };
