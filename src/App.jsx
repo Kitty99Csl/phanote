@@ -13,6 +13,7 @@ import { createClient } from "@supabase/supabase-js";
 import Sheet from "./components/Sheet";
 import { T, CURR, fmt, fmtCompact, S } from "./lib/theme";
 import { txDedupKey, AVATARS, EMOJI_PICKS, GOAL_EMOJIS, TOASTS } from "./lib/constants";
+import { store } from "./lib/store";
 
 // ─── SUPABASE ─────────────────────────────────────────────────
 const supabase = createClient(
@@ -327,12 +328,6 @@ const normalizeCategory=(cat,type)=>{
     other:type==="income"?"other_inc":"other",
   };
   return m[cat?.toLowerCase()]||(type==="income"?"salary":"food");
-};
-
-const store={
-  get:(k)=>{try{return JSON.parse(localStorage.getItem(k));}catch{return null;}},
-  set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch{}},
-  del:(k)=>{try{localStorage.removeItem(k);}catch{}},
 };
 
 // ─── KEYBOARD OFFSET HOOK ─────────────────────────────────────
