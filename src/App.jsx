@@ -33,6 +33,9 @@ import { AnimalBg } from "./components/AnimalBg";
 import { Toast } from "./components/Toast";
 import { Flag } from "./components/Flag";
 import { Logo } from "./components/Logo";
+import { StreakBadge } from "./components/StreakBadge";
+import { ConfirmModal } from "./modals/ConfirmModal";
+import { QuickEditToast } from "./modals/QuickEditToast";
 
 // ─── AI MEMORY HELPERS ───────────────────────────────────────
 // ─── STREAK + XP SYSTEM ──────────────────────────────────────
@@ -286,93 +289,8 @@ function EditTransactionModal({tx,lang,onSave,onClose,customCategories=[]}){
 }
 
 // ═══ CONFIRM MODAL ════════════════════════════════════════════
-function ConfirmModal({parsed,lang,onConfirm,onEdit}){
-  const[note,setNote]=useState("");
-  const cat=findCat(parsed.category||parsed.categoryId);
-  const aiDone=parsed._aiDone;
-  const aiUpdated=parsed._aiUpdated;
-  return(
-    <Sheet open={true} onClose={onEdit} showCloseButton={false} footer={
-      <div style={{display:"flex",gap:10}}>
-        <button onClick={onEdit} style={{flex:1,padding:"14px",borderRadius:16,border:"none",cursor:"pointer",background:"rgba(155,155,173,0.12)",color:T.muted,fontWeight:700,fontSize:14,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"confirm_edit")}</button>
-        <button onClick={()=>onConfirm({...parsed,note:note.trim()})} style={{flex:2,padding:"14px",borderRadius:16,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",color:"#1A4020",fontWeight:800,fontSize:14,fontFamily:"'Noto Sans',sans-serif",boxShadow:"0 4px 16px rgba(172,225,175,0.4)"}}>{t(lang,"confirm_yes")}</button>
-      </div>
-    }>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14,paddingTop:20}}>
-        <div style={{fontSize:13,color:T.muted,fontWeight:600}}>{t(lang,"confirm_q")}</div>
-        {!aiDone&&(
-          <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"#2A7A40",fontWeight:700,background:"rgba(172,225,175,0.15)",padding:"3px 9px",borderRadius:9999}}>
-            <div style={{width:6,height:6,borderRadius:3,background:"#ACE1AF",animation:"pulse 1s infinite"}}/>
-            AI checking…
-          </div>
-        )}
-        {aiDone&&aiUpdated&&(
-          <div style={{fontSize:11,color:"#2A7A40",fontWeight:700,background:"rgba(172,225,175,0.15)",padding:"3px 9px",borderRadius:9999}}>
-            ✦ AI corrected
-          </div>
-        )}
-        {aiDone&&!aiUpdated&&(
-          <div style={{fontSize:11,color:T.muted,padding:"3px 9px"}}>✓ AI confirmed</div>
-        )}
-      </div>
-      <div style={{display:"flex",alignItems:"center",gap:14,background:T.bg,borderRadius:20,padding:"14px 16px",marginBottom:14}}>
-        <div style={{width:48,height:48,borderRadius:15,fontSize:24,background:parsed.type==="expense"?"rgba(255,179,167,0.25)":"rgba(172,225,175,0.25)",display:"flex",alignItems:"center",justifyContent:"center"}}>{cat.emoji}</div>
-        <div style={{flex:1}}>
-          <div style={{fontWeight:700,fontSize:15,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{parsed.description}</div>
-          <div style={{fontSize:12,color:T.muted,marginTop:2}}>{catLabel(cat,lang)} · {parsed.currency}</div>
-        </div>
-        <div style={{fontWeight:800,fontSize:18,fontFamily:"'Noto Sans',sans-serif",color:parsed.type==="expense"?"#C0392B":"#1A5A30"}}>{parsed.type==="expense"?"-":"+"}{fmt(parsed.amount,parsed.currency)}</div>
-      </div>
-      <input value={note} onChange={e=>setNote(e.target.value)} placeholder={t(lang,"note_placeholder")}
-        style={{width:"100%",padding:"11px 14px",borderRadius:14,border:"1.5px solid rgba(45,45,58,0.1)",outline:"none",fontSize:13,fontFamily:"'Noto Sans',sans-serif",color:T.dark,background:"rgba(172,225,175,0.06)",boxSizing:"border-box"}}
-        onFocus={e=>e.target.style.borderColor="#ACE1AF"} onBlur={e=>e.target.style.borderColor="rgba(45,45,58,0.1)"}/>
-      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}`}</style>
-    </Sheet>
-  );
-}
 
 // ═══ QUICK EDIT TOAST ════════════════════════════════════════
-function QuickEditToast({tx,lang,onChangeCategory,onDone,customCategories=[]}){
-  const cat=findCat(tx.categoryId,customCategories);
-  const[visible,setVisible]=useState(true);
-  // Auto-dismiss after 2.5s — short enough to not block view
-  useEffect(()=>{const timer=setTimeout(()=>{setVisible(false);setTimeout(onDone,250);},2500);return()=>clearTimeout(timer);},[]);
-  return(
-    <div style={{
-      position:"fixed",
-      // Sit just above the bottom nav bar (56px) + quick add bar (~58px) + 8px gap
-      bottom:"calc(env(safe-area-inset-bottom,0px) + 122px)",
-      right:16,
-      zIndex:400,
-      opacity:visible?1:0,
-      transform:visible?"translateY(0)":"translateY(8px)",
-      transition:"opacity .25s ease, transform .25s ease",
-      pointerEvents:visible?"auto":"none",
-    }}>
-      <div style={{
-        background:"rgba(26,46,26,0.95)",
-        backdropFilter:"blur(8px)",
-        borderRadius:14,
-        padding:"8px 12px 8px 10px",
-        display:"flex",alignItems:"center",gap:8,
-        boxShadow:"0 4px 16px rgba(0,0,0,0.18)",
-        maxWidth:200,
-      }}>
-        <span style={{fontSize:16,flexShrink:0}}>{cat.emoji}</span>
-        <div style={{flex:1,minWidth:0}}>
-          <div style={{fontSize:11,fontWeight:700,color:"#fff",fontFamily:"'Noto Sans',sans-serif",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-            {lang==="lo"?"ບັນທຶກແລ້ວ":lang==="th"?"บันทึกแล้ว":"Saved"} ✓
-          </div>
-          <div style={{fontSize:10,color:"rgba(255,255,255,0.55)",marginTop:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{tx.description}</div>
-        </div>
-        <button onClick={()=>{setVisible(false);onChangeCategory();}}
-          style={{padding:"4px 8px",borderRadius:8,border:"1px solid rgba(255,255,255,0.2)",background:"transparent",color:"#ACE1AF",fontSize:10,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",fontFamily:"'Noto Sans',sans-serif",flexShrink:0}}>
-          ✏️
-        </button>
-      </div>
-    </div>
-  );
-}
 
 // ═══ OCR BUTTON + FLOW ═══════════════════════════════════════
 function OcrButton({ profile, onAdd, lang, compact=false }) {
@@ -2459,26 +2377,6 @@ function MonthlyWrapModal({ open, onClose, profile, transactions }) {
 }
 
 // ═══ STREAK BADGE (home header) ══════════════════════════════
-function StreakBadge({ profile, onPress }) {
-  const { streakCount = 0, xp = 0, lang = "lo" } = profile;
-  const level = getLevel(xp);
-  const pct   = getLevelProgress(xp);
-  return (
-    <button onClick={onPress} style={{
-      display:"flex", alignItems:"center", gap:5, padding:"4px 10px 4px 8px",
-      borderRadius:20, border:"1px solid rgba(45,45,58,0.08)", cursor:"pointer",
-      background:"rgba(172,225,175,0.12)",
-    }}>
-      <span style={{fontSize:13}}>{streakCount >= 7 ? "🔥" : "📅"}</span>
-      <span style={{fontSize:12, fontWeight:700, color:T.dark, fontFamily:"'Noto Sans',sans-serif"}}>
-        {streakCount}{lang==="lo"?"ວ":lang==="th"?"ว":"d"}
-      </span>
-      <span style={{fontSize:10, color:T.muted}}>·</span>
-      <span style={{fontSize:11}}>{level.emoji}</span>
-      <span style={{fontSize:10, fontWeight:600, color:T.muted}}>Lv.{level.index}</span>
-    </button>
-  );
-}
 
 // ═══ STREAK MODAL (tap badge → full card) ════════════════════
 function StreakModal({ profile, onClose }) {
