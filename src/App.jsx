@@ -1,13 +1,3 @@
-/**
- * PHAJOT — App.jsx
- * Phase 2: Budget + Analytics + Streaks + XP
- *
- * SQL migration (run once in Supabase SQL editor):
- * ALTER TABLE profiles
- *   ADD COLUMN IF NOT EXISTS streak_count int DEFAULT 0,
- *   ADD COLUMN IF NOT EXISTS streak_last_date date,
- *   ADD COLUMN IF NOT EXISTS xp int DEFAULT 0;
- */
 import { useState, useEffect } from "react";
 import { T } from "./lib/theme";
 import { store } from "./lib/store";
@@ -24,72 +14,6 @@ import { PinLock } from "./screens/PinLock";
 import { LoginScreen } from "./screens/LoginScreen";
 import { OnboardingScreen } from "./screens/OnboardingScreen";
 import { HomeScreen } from "./screens/HomeScreen";
-
-// ─── AI MEMORY HELPERS ───────────────────────────────────────
-// ─── STREAK + XP SYSTEM ──────────────────────────────────────
-
-// ─── THEME & CONSTANTS ────────────────────────────────────────
-
-// ─── DEFAULT CATEGORIES ───────────────────────────────────────
-// ─── KEYBOARD OFFSET HOOK ─────────────────────────────────────
-
-// ─── UI PRIMITIVES ────────────────────────────────────────────
-
-// ═══ ONBOARDING ═══════════════════════════════════════════════
-
-// ═══ WALLET CARDS ═════════════════════════════════════════════
-
-// ═══ EDIT TRANSACTION MODAL ───────────────────────────────────
-
-// ═══ CONFIRM MODAL ════════════════════════════════════════════
-
-// ═══ QUICK EDIT TOAST ════════════════════════════════════════
-
-// ═══ OCR BUTTON + FLOW ═══════════════════════════════════════
-
-// ═══ QUICK ADD BAR ════════════════════════════════════════════
-
-// ═══ TRANSACTION LIST ════════════════════════════════════════
-
-// ═══ CUSTOM CATEGORY MANAGER ══════════════════════════════════
-
-// ═══ SETTINGS ════════════════════════════════════════════════
-
-// ═══ GOAL MODAL (create / edit) ══════════════════════════════
-
-// ═══ ADD SAVINGS MODAL ════════════════════════════════════════
-
-// ═══ GOALS SCREEN ════════════════════════════════════════════
-
-// ═══ BUDGET SCREEN ════════════════════════════════════════════
-
-// ═══ ANALYTICS SCREEN ════════════════════════════════════════
-
-// ═══ MONTHLY WRAP MODAL ═══════════════════════════════════════
-
-// ═══ STREAK BADGE (home header) ══════════════════════════════
-
-// ═══ STREAK MODAL (tap badge → full card) ════════════════════
-
-// ═══ AI ADVISOR MODAL ════════════════════════════════════════
-
-// ═══ SAFE TO SPEND ═══════════════════════════════════════════
-
-// ═══ BOTTOM NAV ═══════════════════════════════════════════════
-
-// ═══ HOME SCREEN ══════════════════════════════════════════════
-
-// ═══ TRANSACTIONS SCREEN ═════════════════════════════════════
-
-// ═══ STATEMENT SCAN FLOW ═════════════════════════════════════
-
-// ═══ LOGIN SCREEN ════════════════════════════════════════════
-// ═══ PRO UPGRADE SCREEN ══════════════════════════════════════
-
-// ═══ GUIDE SCREEN ════════════════════════════════════════════
-
-// ═══ PIN LOCK ════════════════════════════════════════════════
-
 
 // ═══ ROOT APP ════════════════════════════════════════════════
 export default function App(){
