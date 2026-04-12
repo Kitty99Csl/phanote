@@ -3,10 +3,10 @@
 ## Project
 Phajot (ພາຈົດ) — multi-currency personal finance PWA for Laos (LAK, THB, USD). Solo developer: Kitty. For personal + family use first, public launch later.
 
-- Repo: Kitty99Csl/phanote
+- Repo: Kitty99Csl/phanote (repo name intentionally preserved post-rename)
 - Main branch: main
-- Working branch: session-4
-- Live: app.phanote.com, api.phanote.com, phanote.com
+- Working branch: main (Session 7 not yet started, no working branch cut)
+- Live: app.phajot.com, api.phajot.com, phajot.com (legacy phanote.com domains 301 redirect)
 
 ## Brand Identity
 
@@ -36,13 +36,15 @@ accessible via Settings for existing users.
 telling you about your money over coffee, not a bank dashboard.
 
 ## Tech stack
-- Frontend: React + Vite, src/App.jsx is 3,381 lines (needs refactor into multi-layer structure)
+- Frontend: React 19 + Vite 8, src/App.jsx is **5,480 lines** (up from 3,381 pre-Session 6 — refactor overdue, see src-App-jsx-snapshot.md)
 - DB: Supabase (Singapore)
-- Worker: Cloudflare Workers at workers/phanote-api-worker.js, name "phanote-parser"
+- Worker: Cloudflare Workers at workers/phanote-api-worker.js (v4.4.0), name "phanote-parser" (filename preserved post-rename)
 - AI parse: Gemini 2.5 Flash
 - AI advise: Claude Haiku 4.5
 - AI OCR: Gemini 2.5 Flash Vision
+- Worker endpoints: /parse, /advise, /ocr, /parse-statement, /monthly-report, /health
 - Deploy worker: npx wrangler deploy (requires CLOUDFLARE_API_TOKEN)
+- Snapshot for chat Claude: docs/snapshots/phanote-api-worker.js (read-only, refresh at session end)
 
 ## Required reading before editing
 1. project_codex.md (the bible — design rules, UX, architecture)
