@@ -12,6 +12,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@supabase/supabase-js";
 import Sheet from "./components/Sheet";
 import { T, CURR, fmt, fmtCompact, S } from "./lib/theme";
+import { txDedupKey, AVATARS, EMOJI_PICKS, GOAL_EMOJIS, TOASTS } from "./lib/constants";
 
 // ─── SUPABASE ─────────────────────────────────────────────────
 const supabase = createClient(
@@ -173,10 +174,6 @@ const updateStreak = async (userId, currentProfile, setProfile) => {
 };
 
 // ─── THEME & CONSTANTS ────────────────────────────────────────
-const txDedupKey=(tx)=>`${tx.date}|${tx.amount}|${(tx.description||"").toLowerCase().trim()}`;
-const AVATARS=["🦫","🐱","🦝","🦦","🦊","🔮","🐨","🦔","🐸","🐼"];
-const EMOJI_PICKS=["🍜","🍺","☕","🛵","🚗","✈️","🏠","💡","🛍️","👗","💊","🏋️","🎉","🎤","🎮","📚","💇","🎁","💼","💰","📈","💵","🏧","📦","🌟","🎯","🏌️","🎵","🏖️","🐾"];
-const GOAL_EMOJIS=["🎯","✈️","🏖️","🏠","🚗","💍","📱","💻","🎓","💊","🌏","🏋️","🎵","🎮","👶","🐾","🌟","💎","🏌️","🛵"];
 
 // ─── DEFAULT CATEGORIES ───────────────────────────────────────
 const DEFAULT_EXPENSE_CATS = [
@@ -1035,11 +1032,6 @@ const i18n={
   },
 };
 const t=(lang,key)=>i18n[lang]?.[key]||i18n.en[key]||key;
-
-const TOASTS={
-  expense:[(d,a,c)=>`${d} — ${fmt(a,c)} logged. Every kip tracked! 🐾`,(d,a,c)=>`${fmt(a,c)} out for ${d}. You're on it. ✨`,(d)=>`${d} done. Noted with care. 🌿`],
-  income:[(d,a,c)=>`${fmt(a,c)} in! ${d} — let's track it well together. 💚`,(d,a,c)=>`${d} — +${fmt(a,c)} added. Money in! 🎉`],
-};
 
 // ─── UI PRIMITIVES ────────────────────────────────────────────
 const AnimalBg=()=>(
