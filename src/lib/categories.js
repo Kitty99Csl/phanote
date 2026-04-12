@@ -52,7 +52,10 @@ export const findCat=(id,customCats=[])=>buildAllCats(customCats).find(c=>c.id==
 
 export const normalizeCategory=(cat,type)=>{
   const m={
-    // Self-mappings — when AI/parser returns category ID directly
+    // Self-mappings: canonical IDs pass through unchanged.
+    // Keep alias-to-ID entries in the dedicated section blocks below.
+    // Adding a key in both places is safe (JS silent overwrite with
+    // same value) but creates a latent footgun — audit rejects it.
     drinks:"drinks",transport:"transport",travel:"travel",rent:"rent",
     phone_internet:"phone_internet",household:"household",
     health:"health",beauty:"beauty",fitness:"fitness",
@@ -83,7 +86,7 @@ export const normalizeCategory=(cat,type)=>{
     indrive:"transport",bus:"transport",fuel:"transport",gas:"transport",
     petrol:"transport",tuk:"transport",ນ້ຳມັນ:"transport",
     // ── Travel ────────────────────────────────────────────────
-    travel:"travel",flight:"travel",hotel:"travel",trip:"travel",
+    flight:"travel",hotel:"travel",trip:"travel",
     vacation:"travel",holiday:"travel",resort:"travel",ທ່ອງທ່ຽວ:"travel",
     // ── Housing (id="rent") ───────────────────────────────────
     housing:"rent",apartment:"rent",room:"rent",
@@ -108,7 +111,7 @@ export const normalizeCategory=(cat,type)=>{
     medical:"health",doctor:"health",medicine:"health",hospital:"health",
     clinic:"health",pharmacy:"health",ໂຮງໝໍ:"health",ຢາ:"health",
     // ── Beauty ────────────────────────────────────────────────
-    beauty:"beauty",salon:"beauty",haircut:"beauty",nail:"beauty",spa:"beauty",ຕັດຜົມ:"beauty",
+    salon:"beauty",haircut:"beauty",nail:"beauty",spa:"beauty",ຕັດຜົມ:"beauty",
     // ── Fitness ───────────────────────────────────────────────
     gym:"fitness",sport:"fitness",exercise:"fitness",
     golf:"fitness",swimming:"fitness",yoga:"fitness",ອອກກຳລັງ:"fitness",
@@ -137,7 +140,7 @@ export const normalizeCategory=(cat,type)=>{
     fee:"fees",charge:"fees","atm fee":"fees","transfer fee":"fees","bank fee":"fees",
     ຄ່າທຳນຽມ:"fees",ຄ່າບໍລິການ:"fees",
     // ── Repair ────────────────────────────────────────────────
-    repair:"repair",fix:"repair",maintenance:"repair",mechanic:"repair",
+    fix:"repair",maintenance:"repair",mechanic:"repair",
     ຊ່ອມ:"repair",ສ້ອມ:"repair",ແກ້:"repair",
     // ── Income ────────────────────────────────────────────────
     salary:"salary",wage:"salary",paycheck:"salary",payroll:"salary",
