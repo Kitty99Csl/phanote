@@ -10,7 +10,7 @@ Phajot (ພາຈົດ) — multi-currency personal finance PWA for Laos (LAK, 
 
 ## Brand Identity
 
-> **Rename history:** Renamed from "Phanote" to "Phajot" in April 2026 due to trademark conflict with AIDC Laos. Code + UI + logo migrated in commit 608fe5c. Infrastructure (api.phanote.com, app.phanote.com, worker, repo name) staged — will flip when phajot.com DNS is attached to Cloudflare.
+> **Rename history:** Renamed from "Phanote" to "Phajot" in April 2026 due to trademark conflict with AIDC Laos. Code + UI + logo migrated in commit 608fe5c. DNS migration completed 2026-04-10 across 8 staged steps — phajot.com, app.phajot.com, api.phajot.com are now primary. Legacy phanote.com domains 301 redirect cleanly. Auth identifiers (email domain, password prefix, localStorage keys, repo name, worker filename) intentionally preserved to avoid breaking existing users.
 
 **Slogan (locked, Session 5 Day 1):**
 - Lao (primary): ເງິນເຈົ້າໄປໃສ? ດຽວພາຈົດບອກໃຫ້ຟັງ
@@ -62,46 +62,45 @@ telling you about your money over coffee, not a bank dashboard.
 10. Ask Kitty before architectural decisions. Don't guess.
 
 ## Known bugs to fix
-- ~~StreakModal kbOffset crash~~ — FIXED in commit 4f8cd5e (Day 1)
+- (none active — Session 6 fixes all shipped)
 
-## Current session: Session 4 + Session 5 refactor
+## Current state: Session 6 complete, Session 7 not yet started
 
-**Session 4 in progress** — see `docs/session-4/DAY-2-SUMMARY.md`:
+**Session 6 shipped (April 9-11, 2026)** — 26 commits. See `docs/session-6/SUMMARY.md` for full details.
 
-### Day 1 (April 8)
-- ✅ Part 1.2: Rate limiting on worker (v4.1.0)
-- ✅ Part 1.3: AI kill switch (v4.2.0, env vars)
-- ✅ Part 1.4: Sheet component + 2 modal migrations
-- ✅ Part 1.4.1: Sheet BottomNav overlap + iPhone SE maxHeight fixes
-- ✅ CLAUDE.md auto-loaded project context
-- ✅ StreakModal kbOffset crash fix
+### Major deliverables
+- **Phajot brand migration**: 8-step DNS migration complete, zero downtime
+- **OCR bank statement scan** (backend + frontend): Gemini Vision, LDB/JDB/BCEL support, 6-step flow, batch undo, cross-session dedup
+- **Dedicated TransactionsScreen**: search + 3-axis filters + pagination + drill-down from Analytics
+- **Analytics heatmap**: calendar grid + summary line + above-avg dots + day popover + top 5 biggest days list
+- **Clickable donut slices**: drill to filtered TransactionsScreen
+- **Home refactor**: shows ALL today's transactions with "TODAY (N)" header, sort by date DESC at display layer
+- **Transaction editing**: currency, type toggle, inline amount/description edit
+- **Fixed**: stale closure in EditTransactionModal, word-boundary regex for "50thb"
 
-### Day 2 (April 9) — Wife Feedback Sprint
-- ✅ Part 1.5: **Parse pipeline Tier 1** (confidence threshold + AI wait + save confidence)
-- ✅ Part 1.6: **Parse pipeline Tier 3** (fuzzy matching + 10 keyword patterns + 5 audit fixes)
-- ✅ Part 1.7: **Polish** (ai_memory 406 fix + friendly OCR errors + 0.47 SQL cleanup)
+### Next session: Session 7 (open)
+See `TOMORROW-START-HERE.md` for 5 priority options: LINE bot, recurring transactions, CSV export, wife testing, bulk actions.
 
-### Day 3 (next session — planned)
-- ⏳ **Part 1.8: AI Advisor scope fix** (wife feedback Issue 2, 60-90 min, HIGH PRIORITY)
-- ⏳ Part 1.1: RLS on Supabase (profiles, transactions) — STILL BLOCKING public launch
+### Still on the backlog
+- ⏳ RLS on Supabase (profiles, transactions) — **STILL BLOCKING public launch**
+- ⏳ App.jsx refactor into multi-layer structure (now 5480 lines)
+- ⏳ Budget progress bars, top merchants, advanced filters
+- ⏳ Family/shared accounts
 
-### Deferred to Session 5 or later
-- ⏳ Tier 2 category picker modal (when both local + AI < 0.60)
-- ⏳ Part 2: Usage limits system
-- ⏳ Part 3: Observability (Sentry, admin views)
-- ⏳ Part 4: Monthly Wrap feature
-- ⏳ Part 5: Foundation polish
+## Recent key learnings (from Session 6)
 
-**Session 5 (planned)** — App.jsx refactor into multi-layer structure. 2 hours estimated.
+1. **JS regex `\b` doesn't fire between digits and letters** — "50thb" failed `\bthb\b`. Drop `\b` on short currency codes.
+2. **Display-layer sorting beats state-layer sorting** — Supabase + optimistic adds create unreliable array order. Always sort at render time.
+3. **Cross-session dedup is cheap client-side** — Set of existing tx hashes, no schema change needed
+4. **Stale closures in useEffect cleanup need refs** — category list must rebuild from NEW type, not stale closure
+5. **Heatmaps need context** — colored squares alone aren't useful; pair with summary line + above-avg indicators + top days list
+6. **Sort bugs hide until data volume grows** — `slice(0, 5)` worked with 3 manual entries, broke with 14 imported
 
-## Recent key learnings (from Session 4 Day 2)
-
-1. **SQL diagnostics beat code guessing** — Run queries against real data first
-2. **Audit patterns, not instances** — Finding one bug means there are likely more
-3. **Short-word fuzzy matching is dangerous** — Use exact match for ≤5 char words
-4. **Rule order matters in CAT_RULES** — First match wins, use negative lookahead to refine
-5. **Wife as QA > any synthetic test** — Real user inputs catch what tests miss
-6. **`.single()` → `.maybeSingle()` in Supabase** — 0 rows throws 406, remember forever
+Older Session 4-5 learnings still apply:
+- SQL diagnostics beat code guessing
+- Audit patterns, not instances
+- Short-word fuzzy matching is dangerous (≤5 char exact match only)
+- `.single()` → `.maybeSingle()` in Supabase (0 rows throws 406)
 
 ## Parse pipeline architecture (locked 2026-04-09)
 
