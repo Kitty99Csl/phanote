@@ -28,6 +28,7 @@ import {
 } from "./lib/categories";
 import { localParse, parseWithAI } from "./lib/parser";
 import { i18n, t } from "./lib/i18n";
+import { useKeyboardOffset } from "./hooks/useKeyboardOffset";
 
 // ─── AI MEMORY HELPERS ───────────────────────────────────────
 // ─── STREAK + XP SYSTEM ──────────────────────────────────────
@@ -36,24 +37,6 @@ import { i18n, t } from "./lib/i18n";
 
 // ─── DEFAULT CATEGORIES ───────────────────────────────────────
 // ─── KEYBOARD OFFSET HOOK ─────────────────────────────────────
-// iOS Safari: position:fixed elements don't shrink when keyboard opens.
-// This hook returns how many px the keyboard is covering at bottom.
-// Apply as transform:translateY(-Xpx) or marginBottom:Xpx on modal sheets.
-const useKeyboardOffset = () => {
-  const [offset, setOffset] = useState(0);
-  useEffect(() => {
-    const vv = window.visualViewport;
-    if (!vv) return;
-    const update = () => {
-      const kh = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-      setOffset(kh);
-    };
-    vv.addEventListener('resize', update);
-    vv.addEventListener('scroll', update);
-    return () => { vv.removeEventListener('resize', update); vv.removeEventListener('scroll', update); };
-  }, []);
-  return offset;
-};
 
 // ─── UI PRIMITIVES ────────────────────────────────────────────
 const AnimalBg=()=>(
