@@ -9,30 +9,11 @@
  *   ADD COLUMN IF NOT EXISTS xp int DEFAULT 0;
  */
 import { useState, useEffect, useRef, useCallback } from "react";
-import { createClient } from "@supabase/supabase-js";
 import Sheet from "./components/Sheet";
 import { T, CURR, fmt, fmtCompact, S } from "./lib/theme";
 import { txDedupKey, AVATARS, EMOJI_PICKS, GOAL_EMOJIS, TOASTS } from "./lib/constants";
 import { store } from "./lib/store";
-
-// ─── SUPABASE ─────────────────────────────────────────────────
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY,
-  { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false } }
-);
-
-const signInWithPhone = async (phone, countryCode) => {
-  const cleaned = phone.replace(/\D/g, "");
-  const fullPhone = countryCode + cleaned;
-  const email = `${countryCode.replace("+","")}${cleaned}@phanote.app`;
-  const password = `Ph4n0te${cleaned}X`;
-  const { data: si } = await supabase.auth.signInWithPassword({ email, password });
-  if (si?.user) return { user: si.user, isNew: false, phone: fullPhone, countryCode };
-  const { data: su, error } = await supabase.auth.signUp({ email, password });
-  if (su?.user) return { user: su.user, isNew: true, phone: fullPhone, countryCode };
-  throw new Error(error?.message || "Auth failed");
-};
+import { supabase, signInWithPhone } from "./lib/supabase";
 
 // ─── AI MEMORY HELPERS ───────────────────────────────────────
 const dbCheckMemory = async (userId, pattern) => {
