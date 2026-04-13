@@ -81,3 +81,21 @@ template. Both need only:
   - async arrow wrapper
   - await the inner call
   - set state to close after the await
+
+### StatementScanFlow — missing Thai translations for statementError* keys
+The StatementScanFlow i18n keys use a 3-key + partial pattern.
+Existing keys (statementErrorParse, statementErrorNetwork,
+statementErrorRateLimit) all have EN + LO but no TH entries.
+Sprint A Ext added statementErrorTimeout following the same
+partial pattern.
+
+Thai users fall back to English via t() helper. Not a regression
+from Sprint A Ext — this gap has existed since Session 6 when
+StatementScanFlow was written. Add all 4 Thai keys in the Sprint D
+i18n marathon.
+
+Keys needing Thai:
+- statementErrorParse
+- statementErrorNetwork
+- statementErrorRateLimit
+- statementErrorTimeout (added Sprint A Ext Hour 2)

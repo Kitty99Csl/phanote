@@ -11,7 +11,6 @@
 //     current position. DO NOT hoist to top without testing.
 //   - Direct supabase client usage (load batch history + delete batch)
 //     instead of lib/db.js wrappers (5th file in the migration cleanup).
-//   - fetch to /parse-statement has no timeout/abort handling.
 //   - Inline `tpl` i18n template helper — duplicate of TransactionsScreen's
 //     pattern. Hoist both to lib/i18n.js in a shared utility.
 //   - Hardcoded English strings mixed with i18n keys (see cleanup notes).
@@ -20,6 +19,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useClickGuard } from "../hooks/useClickGuard";
+import { fetchWithTimeout, FetchTimeoutError } from "../lib/fetchWithTimeout";
 import { T, CURR, fmt } from "../lib/theme";
 import { t } from "../lib/i18n";
 import {
@@ -134,11 +134,11 @@ export function StatementScanFlow({ profile, lang, onClose, onAdd, customCategor
         })
       ));
 
-      const res = await fetch("https://api.phajot.com/parse-statement", {
+      const res = await fetchWithTimeout("https://api.phajot.com/parse-statement", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ images: encoded, currency, userId: profile?.userId }),
-      });
+      }, 60000);
 
       const data = await res.json();
       if (!res.ok || data.error) {
@@ -172,7 +172,7 @@ export function StatementScanFlow({ profile, lang, onClose, onAdd, customCategor
       setStep("review");
 
     } catch (e) {
-      setError(tpl("statementErrorNetwork"));
+      setError(e instanceof FetchTimeoutError ? tpl("statementErrorTimeout") : tpl("statementErrorNetwork"));
       setStep("upload");
     }
   };

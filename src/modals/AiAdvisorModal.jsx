@@ -7,13 +7,13 @@
 //   - uses supabase client directly instead of lib/db.js wrappers
 //   - dead `baseCurrency` destructure from profile, never read
 //   - mixed i18n: some t() keys, some hardcoded English fallbacks
-//   - fetch to /advise has no timeout/abort (Sprint B fetchWithTimeout)
 
 import { useState, useEffect, useRef } from "react";
 import { T } from "../lib/theme";
 import { t } from "../lib/i18n";
 import { supabase } from "../lib/supabase";
 import Sheet from "../components/Sheet";
+import { fetchWithTimeout, FetchTimeoutError } from "../lib/fetchWithTimeout";
 
 export function AiAdvisorModal({ profile, transactions, onClose }) {
   const { lang, baseCurrency, userId } = profile;
@@ -128,16 +128,19 @@ export function AiAdvisorModal({ profile, transactions, onClose }) {
     setMessages(prev => [...prev, { role:"user", text: q }]);
     setLoading(true);
     try {
-      const res = await fetch("https://api.phajot.com/advise", {
+      const res = await fetchWithTimeout("https://api.phajot.com/advise", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: q, lang, summary: buildSummary(), recentTransactions: buildRecentTransactions() }),
-      });
+      }, 30000);
       const data = await res.json();
       const reply = data.reply || data.error || "Sorry, couldn't get a response. Try again!";
       setMessages(prev => [...prev, { role:"assistant", text: reply }]);
-    } catch {
-      setMessages(prev => [...prev, { role:"assistant", text: "Connection issue — check your internet and try again." }]);
+    } catch (e) {
+      const errText = e instanceof FetchTimeoutError
+        ? (lang==="lo"?"ຊ້າເກີນໄປ ⏳ ລອງໃໝ່":lang==="th"?"ช้าเกินไป ⏳ ลองใหม่":"Taking too long ⏳ Please try again")
+        : "Connection issue — check your internet and try again.";
+      setMessages(prev => [...prev, { role:"assistant", text: errText }]);
     }
     setLoading(false);
     setTimeout(() => inputRef.current?.focus(), 100);

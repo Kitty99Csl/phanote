@@ -21,6 +21,7 @@ import { T, fmt } from "../lib/theme";
 import { findCat, catLabel, normalizeCategory } from "../lib/categories";
 import Sheet from "./Sheet";
 import { useClickGuard } from "../hooks/useClickGuard";
+import { fetchWithTimeout, FetchTimeoutError } from "../lib/fetchWithTimeout";
 
 export function OcrButton({ profile, onAdd, lang, compact=false }) {
   const [status,     setStatus]     = useState("idle"); // idle | picker | scanning | confirm | error
@@ -51,7 +52,7 @@ export function OcrButton({ profile, onAdd, lang, compact=false }) {
         reader.readAsDataURL(file);
       });
 
-      const res = await fetch("https://api.phajot.com/ocr", {
+      const res = await fetchWithTimeout("https://api.phajot.com/ocr", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -59,7 +60,7 @@ export function OcrButton({ profile, onAdd, lang, compact=false }) {
           mimeType: file.type || "image/jpeg",
           userId: profile?.userId,
         }),
-      });
+      }, 20000);
 
       const data = await res.json();
       if (data.error || !data.amount) {
@@ -78,7 +79,11 @@ export function OcrButton({ profile, onAdd, lang, compact=false }) {
       setStatus("confirm");
 
     } catch (e) {
-      setErrMsg(lang==="lo"?"ເຊື່ອມຕໍ່ບໍ່ໄດ້ 😕 ລອງໃໝ່":lang==="th"?"เชื่อมต่อไม่ได้ 😕 ลองใหม่":"Connection error 😕 Please try again.");
+      if (e instanceof FetchTimeoutError) {
+        setErrMsg(lang==="lo"?"ອ່ານໃບບິນຊ້າເກີນໄປ ⏳ ລອງໃໝ່":lang==="th"?"อ่านใบเสร็จช้าเกินไป ⏳ ลองใหม่":"Scan is taking too long ⏳ Please try again");
+      } else {
+        setErrMsg(lang==="lo"?"ເຊື່ອມຕໍ່ບໍ່ໄດ້ 😕 ລອງໃໝ່":lang==="th"?"เชื่อมต่อไม่ได้ 😕 ลองใหม่":"Connection error 😕 Please try again.");
+      }
       setStatus("error");
     }
   };
