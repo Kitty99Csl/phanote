@@ -5,8 +5,6 @@
 //
 // Pre-existing gaps flagged for cleanup backlog:
 //   - uses supabase client directly instead of lib/db.js wrappers
-//   - raw <div> overlay instead of shared Sheet component
-//   - missing useKeyboardOffset despite having text input field
 //   - dead `baseCurrency` destructure from profile, never read
 //   - mixed i18n: some t() keys, some hardcoded English fallbacks
 
@@ -14,6 +12,8 @@ import { useState, useEffect, useRef } from "react";
 import { T } from "../lib/theme";
 import { t } from "../lib/i18n";
 import { supabase } from "../lib/supabase";
+import Sheet from "../components/Sheet";
+import { fetchWithTimeout, FetchTimeoutError } from "../lib/fetchWithTimeout";
 
 export function AiAdvisorModal({ profile, transactions, onClose }) {
   const { lang, baseCurrency, userId } = profile;
@@ -128,42 +128,56 @@ export function AiAdvisorModal({ profile, transactions, onClose }) {
     setMessages(prev => [...prev, { role:"user", text: q }]);
     setLoading(true);
     try {
-      const res = await fetch("https://api.phajot.com/advise", {
+      const res = await fetchWithTimeout("https://api.phajot.com/advise", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: q, lang, summary: buildSummary(), recentTransactions: buildRecentTransactions() }),
-      });
+      }, 30000);
       const data = await res.json();
       const reply = data.reply || data.error || "Sorry, couldn't get a response. Try again!";
       setMessages(prev => [...prev, { role:"assistant", text: reply }]);
-    } catch {
-      setMessages(prev => [...prev, { role:"assistant", text: "Connection issue — check your internet and try again." }]);
+    } catch (e) {
+      const errText = e instanceof FetchTimeoutError
+        ? (lang==="lo"?"ຊ້າເກີນໄປ ⏳ ລອງໃໝ່":lang==="th"?"ช้าเกินไป ⏳ ลองใหม่":"Taking too long ⏳ Please try again")
+        : "Connection issue — check your internet and try again.";
+      setMessages(prev => [...prev, { role:"assistant", text: errText }]);
     }
     setLoading(false);
     setTimeout(() => inputRef.current?.focus(), 100);
   };
 
   return (
-    <div style={{position:"fixed",inset:0,zIndex:3000,background:"rgba(30,30,40,0.6)",backdropFilter:"blur(4px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}}
-      onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
-      <div style={{background:"#fff",borderRadius:"28px 28px 0 0",width:"100%",maxWidth:430,animation:"slideUp .3s ease",height:"80dvh",display:"flex",flexDirection:"column"}}>
-
-        {/* Header */}
-        <div style={{padding:"20px 20px 14px",borderBottom:"1px solid rgba(45,45,58,0.07)",flexShrink:0}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <div style={{display:"flex",alignItems:"center",gap:10}}>
-              <div style={{width:38,height:38,borderRadius:12,background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>🤖</div>
-              <div>
-                <div style={{fontWeight:800,fontSize:16,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>Ask Phajot AI</div>
-                <div style={{fontSize:11,color:"#5aae5f",marginTop:1}}>{t(lang,"ai_tagline")}</div>
-              </div>
-            </div>
-            <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:22,color:T.muted}}>✕</button>
+    <>
+      <Sheet open={true} onClose={onClose} showCloseButton={false} maxHeight="80dvh" footer={
+        <div style={{borderTop:"1px solid rgba(45,45,58,0.07)",paddingTop:8}}>
+          <div style={{display:"flex",gap:8,alignItems:"center",background:"rgba(45,45,58,0.05)",borderRadius:16,padding:"6px 6px 6px 14px"}}>
+            <input ref={inputRef} value={input} onChange={e=>setInput(e.target.value)}
+              onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&ask(input)}
+              placeholder={t(lang,"ask_placeholder")}
+              style={{flex:1,border:"none",outline:"none",background:"transparent",fontSize:14,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}/>
+            <button onClick={()=>ask(input)} disabled={loading||!input.trim()} style={{
+              width:36,height:36,borderRadius:11,border:"none",cursor:"pointer",flexShrink:0,
+              background:input.trim()?"linear-gradient(145deg,#ACE1AF,#7BC8A4)":"rgba(45,45,58,0.1)",
+              display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,
+              color:input.trim()?"#1A4020":T.muted,transition:"all .2s",
+            }}>↑</button>
           </div>
+        </div>
+      }>
+        {/* Rich header with icon + title + tagline + close */}
+        <div style={{paddingTop:20,paddingBottom:14,borderBottom:"1px solid rgba(45,45,58,0.07)",marginBottom:16,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <div style={{width:38,height:38,borderRadius:12,background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>🤖</div>
+            <div>
+              <div style={{fontWeight:800,fontSize:16,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>Ask Phajot AI</div>
+              <div style={{fontSize:11,color:"#5aae5f",marginTop:1}}>{t(lang,"ai_tagline")}</div>
+            </div>
+          </div>
+          <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:22,color:T.muted}}>✕</button>
         </div>
 
         {/* Messages */}
-        <div style={{flex:1,overflowY:"auto",padding:"16px 16px 8px",display:"flex",flexDirection:"column",gap:12,WebkitOverflowScrolling:"touch"}}>
+        <div style={{display:"flex",flexDirection:"column",gap:12}}>
           {messages.map((msg, i) => (
             <div key={i} style={{display:"flex",justifyContent:msg.role==="user"?"flex-end":"flex-start"}}>
               {msg.role==="assistant" && (
@@ -196,7 +210,7 @@ export function AiAdvisorModal({ profile, transactions, onClose }) {
 
         {/* Quick questions — show only at start */}
         {messages.length <= 1 && (
-          <div style={{padding:"0 16px 10px",display:"flex",gap:6,flexWrap:"wrap",flexShrink:0}}>
+          <div style={{paddingTop:10,paddingBottom:10,display:"flex",gap:6,flexWrap:"wrap"}}>
             {QUICK_QUESTIONS.map((q,i) => (
               <button key={i} onClick={()=>ask(q)} style={{
                 padding:"7px 12px",borderRadius:20,border:"1px solid rgba(172,225,175,0.5)",
@@ -206,24 +220,8 @@ export function AiAdvisorModal({ profile, transactions, onClose }) {
             ))}
           </div>
         )}
-
-        {/* Input */}
-        <div style={{padding:"8px 12px",paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 10px)",borderTop:"1px solid rgba(45,45,58,0.07)",flexShrink:0}}>
-          <div style={{display:"flex",gap:8,alignItems:"center",background:"rgba(45,45,58,0.05)",borderRadius:16,padding:"6px 6px 6px 14px"}}>
-            <input ref={inputRef} value={input} onChange={e=>setInput(e.target.value)}
-              onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&ask(input)}
-              placeholder={t(lang,"ask_placeholder")}
-              style={{flex:1,border:"none",outline:"none",background:"transparent",fontSize:14,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}/>
-            <button onClick={()=>ask(input)} disabled={loading||!input.trim()} style={{
-              width:36,height:36,borderRadius:11,border:"none",cursor:"pointer",flexShrink:0,
-              background:input.trim()?"linear-gradient(145deg,#ACE1AF,#7BC8A4)":"rgba(45,45,58,0.1)",
-              display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,
-              color:input.trim()?"#1A4020":T.muted,transition:"all .2s",
-            }}>↑</button>
-          </div>
-        </div>
-      </div>
+      </Sheet>
       <style>{`@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}`}</style>
-    </div>
+    </>
   );
 }

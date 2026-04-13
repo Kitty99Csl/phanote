@@ -14,6 +14,7 @@ import Sheet from "../components/Sheet";
 import { T, fmt, fmtCompact } from "../lib/theme";
 import { i18n, t } from "../lib/i18n";
 import { supabase } from "../lib/supabase";
+import { fetchWithTimeout, FetchTimeoutError } from "../lib/fetchWithTimeout";
 
 const getMonthName = (month, lang) => {
   const mo = parseInt(month.split("-")[1], 10) - 1;
@@ -83,7 +84,7 @@ export function MonthlyWrapModal({ open, onClose, profile, transactions }) {
 
       const prevExp = computePrevMonthExpense(transactions, month);
 
-      const res = await fetch("https://api.phajot.com/monthly-report", {
+      const res = await fetchWithTimeout("https://api.phajot.com/monthly-report", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -91,7 +92,7 @@ export function MonthlyWrapModal({ open, onClose, profile, transactions }) {
           transactions: monthTxs,
           prev_month_expense: Object.keys(prevExp).length ? prevExp : undefined,
         }),
-      });
+      }, 30000);
       const data = await res.json();
 
       if (data.narrative) {
@@ -109,8 +110,8 @@ export function MonthlyWrapModal({ open, onClose, profile, transactions }) {
       } else {
         setError("failed");
       }
-    } catch {
-      setError("failed");
+    } catch (e) {
+      setError(e instanceof FetchTimeoutError ? "timeout" : "failed");
     }
     setLoading(false);
   };
@@ -163,6 +164,18 @@ export function MonthlyWrapModal({ open, onClose, profile, transactions }) {
           <div style={{ textAlign:"center", padding:"48px 16px" }}>
             <div style={{ fontSize:14, color:T.muted, fontFamily:"'Noto Sans',sans-serif", marginBottom:16 }}>
               {t(lang,"wrap_error")}
+            </div>
+            <button onClick={generate} style={{ padding:"10px 24px", borderRadius:14, border:"none", cursor:"pointer",
+              background:T.celadon, fontWeight:700, fontSize:13, color:"#1A4020", fontFamily:"'Noto Sans',sans-serif" }}>
+              {t(lang,"wrap_retry")}
+            </button>
+          </div>
+        )}
+
+        {error === "timeout" && (
+          <div style={{ textAlign:"center", padding:"48px 16px" }}>
+            <div style={{ fontSize:14, color:T.muted, fontFamily:"'Noto Sans',sans-serif", marginBottom:16 }}>
+              {t(lang,"wrap_timeout")}
             </div>
             <button onClick={generate} style={{ padding:"10px 24px", borderRadius:14, border:"none", cursor:"pointer",
               background:T.celadon, fontWeight:700, fontSize:13, color:"#1A4020", fontFamily:"'Noto Sans',sans-serif" }}>

@@ -5,16 +5,6 @@
 // root as props.
 // Extracted from App.jsx in Session 7.
 //
-// ⚠️ Pre-existing latent bugs (flagged for cleanup backlog):
-//   - L139 original: setTxFilter("today") in handleAdd —
-//     setTxFilter is undefined in HomeScreen scope. Silent
-//     ReferenceError, swallowed by React event system. The
-//     "after-add, switch filter to today" behavior never fires.
-//   - L249 original: setTransactions(...) in StatementScanFlow
-//     onDeleteBatch callback — setTransactions lives in App root
-//     scope, not HomeScreen. Silent ReferenceError; deleted
-//     batches stay visible in local state until page reload.
-//
 // Pre-existing gaps flagged for cleanup backlog:
 //   - Non-Pro Advisor fallback is inline JSX (should be
 //     reusable ProGateModal)
@@ -52,7 +42,7 @@ import { BudgetScreen } from "./BudgetScreen";
 import { GoalsScreen } from "./GoalsScreen";
 import { SettingsScreen } from "./SettingsScreen";
 
-export function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdateNote,onUpdateCategory,onDeleteTx,streakToast,onStreakToastDone,pinRole="owner",pinConfig={},savePinConfig,setPinRole,setPinSetupMode}){
+export function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdateNote,onUpdateCategory,onDeleteTx,streakToast,onStreakToastDone,pinRole="owner",pinConfig={},savePinConfig,setPinRole,setPinSetupMode,onDeleteBatch}){
   const[tab,setTab]=useState("home");
   const[toast,setToast]=useState(null);
   const[editTx,setEditTx]=useState(null);
@@ -73,8 +63,6 @@ export function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,o
     // Skip QuickEditToast for AI background corrections (_update flag)
     if(!tx._update){
       setEditTx(tx);
-      // Auto-switch to today filter so user sees their new transaction
-      setTxFilter("today");
     }
     setToast(null);
     // Scroll list to top so new transaction is visible
@@ -184,7 +172,7 @@ export function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,o
       {showStatementScan&&(
         <StatementScanFlow profile={profile} lang={lang} onClose={()=>setShowStatementScan(false)} onAdd={onAdd} customCategories={customCategories} transactions={transactions}
           onImportDone={(n)=>{setShowStatementScan(false);setShowTransactions(true);setTab("home");}}
-          onDeleteBatch={(batchId)=>{setTransactions(prev=>prev.filter(tx=>tx.batchId!==batchId&&tx.batch_id!==batchId));}}/>
+          onDeleteBatch={onDeleteBatch}/>
       )}
       {showTransactions&&(
         <TransactionsScreen lang={lang} profile={profile} customCategories={customCategories} transactions={transactions}

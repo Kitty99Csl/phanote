@@ -9,18 +9,25 @@ import { useState } from "react";
 import { T, CURR, fmt, fmtCompact } from "../lib/theme";
 import { catLabel } from "../lib/categories";
 import { useKeyboardOffset } from "../hooks/useKeyboardOffset";
+import { useClickGuard } from "../hooks/useClickGuard";
 
 export function SetBudgetModal({ cat, currency, currentLimit, spent, lang, onSave, onClose }) {
   const [amount, setAmount] = useState(currentLimit > 0 ? String(currentLimit) : "");
   const kbOffset = useKeyboardOffset();
+  const { busy, run } = useClickGuard();
   const sym = CURR[currency].symbol;
   const pct = currentLimit > 0 ? Math.min((spent / currentLimit) * 100, 100) : 0;
   const barColor = pct >= 100 ? "#C0392B" : pct >= 80 ? "#d4993a" : "#3da873";
-  const save = () => {
+  const save = () => run(async () => {
     const a = parseFloat(String(amount).replace(/,/g, ""));
     if (!a || a <= 0) return;
-    onSave(a);
-  };
+    await onSave(a);
+    onClose();
+  });
+  const remove = () => run(async () => {
+    await onSave(0);
+    onClose();
+  });
   const QUICK = {
     LAK: [500000, 1000000, 2000000, 5000000],
     THB: [500, 1000, 2000, 5000],
@@ -85,14 +92,14 @@ export function SetBudgetModal({ cat, currency, currentLimit, spent, lang, onSav
           borderTop:"0.5px solid rgba(45,45,58,0.06)", flexShrink:0, background:"#fff"}}>
           <div style={{display:"flex",gap:10}}>
             {currentLimit > 0 && (
-              <button onClick={() => onSave(0)} style={{ flex:1, padding:"14px", borderRadius:16,
-                border:"none", cursor:"pointer", background:"rgba(255,179,167,0.15)", color:"#C0392B",
-                fontWeight:700, fontSize:13, fontFamily:"'Noto Sans',sans-serif" }}>Remove</button>
+              <button onClick={remove} disabled={busy} style={{ flex:1, padding:"14px", borderRadius:16,
+                border:"none", cursor:busy?"wait":"pointer", background:"rgba(255,179,167,0.15)", color:"#C0392B",
+                fontWeight:700, fontSize:13, fontFamily:"'Noto Sans',sans-serif", opacity:busy?0.6:1 }}>Remove</button>
             )}
-            <button onClick={save} style={{ flex:2, padding:"14px", borderRadius:16, border:"none",
-              cursor:"pointer", background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)", color:"#1A4020",
+            <button onClick={save} disabled={busy} style={{ flex:2, padding:"14px", borderRadius:16, border:"none",
+              cursor:busy?"wait":"pointer", background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)", color:"#1A4020",
               fontWeight:800, fontSize:15, fontFamily:"'Noto Sans',sans-serif",
-              boxShadow:"0 4px 16px rgba(172,225,175,0.4)" }}>Save Budget ✓</button>
+              boxShadow:"0 4px 16px rgba(172,225,175,0.4)", opacity:busy?0.6:1 }}>Save Budget ✓</button>
           </div>
         </div>
       </div>

@@ -253,6 +253,10 @@ export default function App(){
     } catch (e) { console.error(e); }
   };
 
+  const handleDeleteBatch = (batchId) => {
+    setTransactions(prev => prev.filter(tx => tx.batchId !== batchId && tx.batch_id !== batchId));
+  };
+
   const handleReset = async () => {
     if (!window.confirm(t(profile?.lang||"lo","reset_confirm"))) return;
     setProfile(null); setTransactions([]);
@@ -327,6 +331,7 @@ export default function App(){
           onUpdateNote={handleUpdateNote}
           onUpdateCategory={handleUpdateCategory}
           onDeleteTx={handleDeleteTransaction}
+          onDeleteBatch={handleDeleteBatch}
           streakToast={streakToast}
           onStreakToastDone={()=>setStreakToast(null)}
           pinRole={pinRole}
