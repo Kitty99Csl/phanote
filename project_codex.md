@@ -21,9 +21,11 @@
 | **Brand Pronunciation** | pha-jot |
 | **Primary Domain (PWA)** | `app.phajot.com` |
 | **Marketing Domain** | `phajot.com` ✅ LIVE |
-| **Current Version** | v0.4.0 — Phase 2 Stable |
+| **Current Version** | v0.6.0 — Phase 2 Stable + Session 7 Refactor |
 | **Status** | 🟡 Family Testing |
-| **Last Codex Update** | April 7, 2026 · Session 4 |
+| **Last Codex Update** | April 13, 2026 · Session 7 |
+
+> **Updated [2026-04-13]:** Back-filled Sessions 5, 6, and 7 in a single codex update. Session 5 shipped Monthly Wrap (Pro). Session 6 shipped Phajot rename + OCR statement scanning + dedicated TransactionsScreen + analytics heatmap. Session 7 decomposed src/App.jsx from 5,480 lines to 340 lines across 45 extracted files (-93.8%, 26 pure-move commits, zero regressions).
 
 > **Updated [2026-04-10]:** Renamed Phanote → Phajot (trademark conflict). All domains migrated: phajot.com, app.phajot.com, api.phajot.com. Legacy phanote.com 301-redirects to phajot.com.
 
@@ -114,6 +116,8 @@ The app should respond to the user the way a warm, witty, financially-savvy frie
 
 ## 6. FEATURE SCOPE
 
+> **Updated [2026-04-13]:** Added Session 5 and 6 additions. Session 5 shipped Monthly Wrap as a Pro feature. Session 6 added a dedicated Transactions screen (search + 3-axis filter + pagination), inline transaction edit, analytics heatmap calendar, clickable donut drill-down, top 5 biggest spending days, month navigation, and cross-session import dedup with batch undo. The Pro tier's OCR row splits into receipt OCR (always available) and bank statement OCR (Session 6).
+
 ### 6.1 Free tier
 
 | # | Feature | Status |
@@ -135,18 +139,24 @@ The app should respond to the user the way a warm, witty, financially-savvy frie
 | F15 | 24 Lao-specific categories | ✅ Live (Session 4) |
 | F16 | Transaction filters (today/recent/all) | ✅ Live |
 | F17 | PIN security (owner + guest PIN) | ✅ Live |
+| F18 | Dedicated Transactions screen with search, 3-axis filter (period × currency × type), pagination | ✅ Live (Session 6) |
+| F19 | Inline transaction edit — description, amount, category, currency, type toggle | ✅ Live (Session 6) |
+| F20 | Analytics heatmap calendar with percentile-based spend colors + month navigation | ✅ Live (Session 6) |
+| F21 | Clickable donut drill-down and top-5 biggest days list (→ Transactions screen filtered) | ✅ Live (Session 6) |
+| F22 | Cross-session import dedup + batch undo for statement-scanned transactions | ✅ Live (Session 6) |
 
 ### 6.2 Pro tier
 
 | # | Feature | Status |
 |---|---|---|
-| P1 | Receipt photo OCR (Gemini Vision) | ✅ Live |
+| P1a | Receipt photo OCR — single-receipt quick scan (Gemini Vision) | ✅ Live |
+| P1b | Bank statement OCR — LDB / JDB / BCEL multi-image upload with cross-session dedup and batch undo (Gemini Vision) | ✅ Live (Session 6) |
 | P2 | AI Financial Advisor chat | ✅ Live (⚠️ not gated yet) |
-| P3 | Monthly Wrap — AI monthly report + heat map | 🔜 Session 5 |
+| P3 | Monthly Wrap — AI monthly report + stats (Claude Haiku 4.5) | ✅ Live (Session 5) |
 | P4 | Excel/CSV export | 🔜 Phase 5 |
 | P5 | Recurring transactions | 🔜 Phase 5 |
 | P6 | AI Memory (learns user patterns) | ✅ Live (ai_memory table) |
-| P7 | Past months analytics | 🔜 Session 5 (part of Monthly Wrap) |
+| P7 | Past months analytics | ✅ Live (Session 6 — monthOffset nav + heatmap) |
 | P8 | Daily reminders (push) | 🔜 Phase 5 |
 
 ### 6.3 Category System
@@ -163,26 +173,31 @@ The app should respond to the user the way a warm, witty, financially-savvy frie
 
 ## 7. TECH STACK
 
+> **Updated [2026-04-13]:** Session 5 shipped Monthly Wrap on Claude Haiku 4.5 (not Gemini as previously planned). Session 6 added bank statement OCR via `/parse-statement` (Gemini 2.5 Flash Vision, LDB/JDB/BCEL detection). Session 7 decomposed src/App.jsx from 5,480 → 340 lines across a new multi-layer structure (src/lib/, src/hooks/, src/components/, src/modals/, src/screens/).
+>
 > **Updated [2026-04-07]:** AI stack revised. phanote.com live.
 
 ### 7.1 Official Stack (Current)
 
 | Layer | Technology | Notes |
 |---|---|---|
-| Frontend | React + Vite → `src/App.jsx` | 4,272 lines — single file |
+| Frontend | React + Vite → `src/App.jsx` (340 lines) + `src/lib/` + `src/hooks/` + `src/components/` + `src/modals/` + `src/screens/` | Multi-layer after Session 7 refactor (was 5,480-line monolith) |
 | Hosting (App) | Cloudflare Pages | Auto-deploy → `app.phajot.com` |
 | Hosting (Landing) | Cloudflare Pages (separate project) | `phanote-com` → `phajot.com` |
-| Database | Supabase (PostgreSQL, Singapore) | 6 tables live, 1 designed |
+| Database | Supabase (PostgreSQL, Singapore) | 7 tables live (RLS ⚠️ on `profiles` + `transactions`) |
 | Auth | Phone → silent email/password | `{phone}@phanote.app` |
 | AI — Parse | **Gemini 2.5 Flash** | `/parse` — best Lao/Thai NLP |
 | AI — Advisor | **Claude Haiku 4.5** | `/advise` — best conversational |
 | AI — OCR | **Gemini 2.5 Flash Vision** | `/ocr` — best Lao script OCR |
-| AI — Monthly Wrap | Gemini 2.5 Flash | `/monthly-report` — planned |
+| AI — Bank Statement OCR | **Gemini 2.5 Flash Vision** | `/parse-statement` — live (Session 6), LDB/JDB/BCEL detection |
+| AI — Monthly Wrap | **Claude Haiku 4.5** | `/monthly-report` — live (Session 5) |
 | Worker | Cloudflare Workers | `api.phajot.com` v4.4.0 |
 | Dev environment | GitHub Codespaces | `super-duper-capybara` |
 
 ### 7.2 AI Architecture — Definitive
 
+> **Updated [2026-04-13]:** Now five endpoints live. `/monthly-report` shipped Session 5 on Claude Haiku 4.5 (quality > cost, decided in Day 1 review). `/parse-statement` shipped Session 6 on Gemini 2.5 Flash Vision for multi-image bank statement extraction (LDB / JDB / BCEL).
+>
 > **Updated [2026-04-07]:** Two-provider model confirmed.
 
 | Endpoint | Model | Purpose | Cost |
@@ -192,7 +207,8 @@ The app should respond to the user the way a warm, witty, financially-savvy frie
 | `/parse` fallback | Gemini 2.5 Flash | Ambiguous inputs only | ~$0.0001/call |
 | `/advise` | Claude Haiku 4.5 | AI financial advisor | ~$0.0004/call |
 | `/ocr` | Gemini 2.5 Flash Vision | Receipt scanning | ~$0.0003/photo |
-| `/monthly-report` | Gemini 2.5 Flash | Monthly narrative | ~$0.003/report |
+| `/monthly-report` | **Claude Haiku 4.5** | Monthly narrative + stats | ~$0.0024/call |
+| `/parse-statement` | **Gemini 2.5 Flash Vision** | Bank statement multi-image OCR (LDB/JDB/BCEL, 10-image cap) | ~$0.003/call (est.) |
 
 **Two secrets required in Cloudflare Worker:**
 - `GEMINI_API_KEY` — for `/parse` and `/ocr`
@@ -210,19 +226,25 @@ api.phajot.com       → Cloudflare Workers ✅ LIVE
 
 ## 8. DATABASE SCHEMA (Current State)
 
+> **Updated [2026-04-13]:** Sessions 5 and 6 added significant schema. `monthly_reports` is now live (Session 5 Day 1, Apr 9 2026). `transactions` gained `category_name`, `category_emoji`, `ai_confidence` (replaces `confidence`), `source`, `is_deleted`, `batch_id`. `profiles` gained `phone`, `phone_country_code`, `avatar`, `custom_categories`, `exp_cats`, `inc_cats`, `pin_config`, `last_seen_at`, `app_version`, `onboarding_complete`. `app_events.payload` is actually `event_data`. The `ai_memory` description here was partially fictitious — corrected against `src/lib/db.js`.
+>
 > **Updated [2026-04-07]:** monthly_reports table designed (not yet run).
 
-### Live tables
+### Live tables (7)
 
 ```
 profiles        — id, display_name, avatar, language, base_currency,
+                  onboarding_complete, phone, phone_country_code,
+                  custom_categories (jsonb), exp_cats (jsonb), inc_cats (jsonb),
                   streak_count, streak_last_date, xp, is_pro,
-                  custom_categories (jsonb), created_at
+                  pin_config (jsonb), last_seen_at, app_version, created_at
                   RLS: ⚠️ DISABLED — fix before public launch
 
-transactions    — id (text), user_id, amount, currency, type,
-                  category_id (text), description, note, date,
-                  confidence, raw_input, created_at
+transactions    — id (uuid), user_id, amount, currency, type, description, date,
+                  category_name, category_emoji,
+                  source, ai_confidence, raw_input, note,
+                  is_deleted (default false), batch_id (nullable, for statement-scan undo),
+                  created_at
                   RLS: ⚠️ DISABLED — fix before public launch
 
 budgets         — id, user_id, category_id, currency, monthly_limit, created_at
@@ -234,23 +256,33 @@ goals           — id, user_id, name, emoji, target_amount, saved_amount,
                   RLS: ✅ ENABLED
 
 ai_memory       — id, user_id, input_pattern, category_name, type,
-                  confidence, usage_count, user_corrected, created_at, updated_at
+                  confidence, usage_count, created_at, updated_at
                   UNIQUE(user_id, input_pattern)
                   RLS: ✅ ENABLED (read-all, write-own)
 
-app_events      — id, user_id, event_type, payload (jsonb), created_at
+app_events      — id, user_id, event_type, event_data (jsonb),
+                  app_version, platform, created_at
                   RLS: ✅ ENABLED
-```
 
-### Designed (run before Session 5)
-
-```
 monthly_reports — id, user_id, month (YYYY-MM),
-                  narrative_lo, narrative_en, narrative_th,
-                  stats (jsonb), generated_at
+                  narrative_lo, narrative_th, narrative_en (text per language),
+                  stats (jsonb), generation_model, generated_at
                   UNIQUE(user_id, month)
-                  RLS: ✅ (will be enabled at creation)
+                  RLS: ✅ ENABLED
+                  Live since Session 5 Day 1 (2026-04-09). Frontend (MonthlyWrapModal)
+                  caches narratives here; worker `/monthly-report` is a pure AI proxy
+                  and does NOT touch this table.
 ```
+
+### Schema drift notes
+
+The `supabase/migrations/` baseline (4 files) is **stale** and no longer authoritative. Most schema changes since Session 2 were applied via the Supabase dashboard SQL editor and never back-ported to git. The only authoritative current schema lives in production Supabase. Specific known drifts:
+
+- `categories` table — declared in migration `002_categories.sql`, **zero production code references**. The app uses hardcoded defaults from `src/lib/categories.js` plus per-user JSONB overrides on `profiles.custom_categories` / `exp_cats` / `inc_cats`. Effectively dead.
+- `recurring_rules` table — declared in migration `003_remaining_tables.sql`, **zero production code references**. Vestigial placeholder for the recurring-transactions feature (still 🔜 Phase 5).
+- `transactions.recurring_id` — FK column declared in migration `003`, never read or written by live code.
+- `transactions.category_id` (uuid FK) — declared in migration `003`, superseded by `category_name` + `category_emoji` text columns. May still physically exist in prod as a deprecated column.
+- `ai_memory` migration declares `category_id` (uuid FK) and `currency` columns — neither is touched by live code. Live code uses `category_name` (text) instead.
 
 ---
 
@@ -291,6 +323,8 @@ if (currency === "LAK" && n > 0 && n < 1000) return n * 1000;
 
 ## 11. PHASED ROADMAP
 
+> **Updated [2026-04-13]:** Sessions 5, 6, and 7 advanced Phase 3 substantially. Monthly Wrap shipped (Session 5). The Phajot rename + DNS migration, OCR bank statement scanning, dedicated TransactionsScreen, analytics heatmap, and clickable donut drill-down all shipped (Session 6). The src/App.jsx refactor (deferred from Session 5 plan) finally landed (Session 7, 5,480 → 340 lines, 26 pure-move commits). Real device testing happened during Session 6 (BCEL screenshots verified). Lao translation review confirmed natural by wife — no formal review needed (Session 5 Day 1). RLS security fix and recurring transactions remain pending.
+>
 > **Updated [2026-04-07]:** Phases 1–2 complete. Phase 3 revised. Phases 4–5 added.
 
 ### ✅ Phase 1 — Foundation MVP
@@ -299,12 +333,16 @@ Auth, onboarding, quick-add, wallet cards, transaction list, budget bars, multi-
 ### ✅ Phase 2 — Pro Features (Core)
 OCR, AI Advisor, Analytics, Goals, Streaks/XP, Safe-to-Spend, PIN security. **DONE (family testing).**
 
-### 🔨 Phase 3 — Stability + Monthly Wrap (Current)
-1. Monthly Wrap Pro feature (Session 5)
-2. RLS security fix
-3. Recurring transactions
-4. Real device testing
-5. Lao translation review with wife
+### 🔨 Phase 3 — Stability + Monthly Wrap + Refactor (Current)
+1. Monthly Wrap Pro feature — ✅ Done (Session 5, Claude Haiku 4.5 backend, validated by wife)
+2. Phajot rename + DNS migration — ✅ Done (Session 6, 12 commits)
+3. OCR bank statement scanning — ✅ Done (Session 6, LDB/JDB/BCEL via Gemini Vision)
+4. Dedicated Transactions screen + analytics heatmap + drill-down — ✅ Done (Session 6)
+5. src/App.jsx refactor — ✅ Done (Session 7, 5,480 → 340 lines, 26 pure-move commits, multi-layer src/ structure)
+6. Real device testing — ✅ Done (Session 6, BCEL screenshots verified)
+7. Lao translation review — ✅ Done (Session 5, wife confirmed natural)
+8. RLS security fix — 🔜 Still pending, blocking public launch
+9. Recurring transactions — 🔜 Deferred to Session 8+
 
 ### 🔜 Phase 4 — LINE Bot + Payments
 - LINE bot webhook (`/line` endpoint)
@@ -406,6 +444,7 @@ OCR, AI Advisor, Analytics, Goals, Streaks/XP, Safe-to-Spend, PIN security. **DO
 | RLS disabled causes data leak | High if launched now | Critical | Block on public launch |
 | Bigger player enters Laos market | Medium (3–5yr) | High | Speed + cultural depth moat; launch fast |
 | Low willingness to pay in Laos | Medium | Medium | Thai market + LINE bot pays better; keep free tier generous |
+| wrangler.toml dashboard drift | Low | High | Document dashboard-bound api.phajot.com Custom Domain in a wrangler.toml comment, or migrate the Custom Domain into the routes array so the toml is the single source of truth. |
 
 ---
 
@@ -446,6 +485,9 @@ OCR, AI Advisor, Analytics, Goals, Streaks/XP, Safe-to-Spend, PIN security. **DO
 | v1.2 | 2026-04-05 | Session 3: OCR, AI Advisor, Analytics, Streaks live; switched to Claude-only AI |
 | v1.3 | 2026-04-06 | Session 3: PIN security, Safe-to-Spend, Guide screen |
 | v1.4 | 2026-04-07 | Session 4: 24 categories, AI stack reverted to Gemini+Claude, phanote.com live, keyboard fixes, Monthly Wrap designed, strategic review complete |
+| v1.5 | 2026-04-11 | Session 5: Monthly Wrap backend (Pro), worker v4.3.0 with /monthly-report endpoint and monthly_reports cache table, new Phajot logo, Thai removed from onboarding LANGS, landing page refresh, first real wife validation (would pay yearly), Lao naturalness confirmed |
+| v1.6 | 2026-04-11 | Session 6: Phajot rename (Phanote -> Phajot, brand + domains), OCR bank statement scan (/parse-statement endpoint, LDB/JDB/BCEL detection), dedicated TransactionsScreen with search + 3-axis filter + pagination, analytics heatmap calendar + clickable donut drill-down, cross-session import dedup, batch undo, worker v4.4.0 |
+| v1.7 | 2026-04-13 | Session 7: App.jsx decomposition (5,480 -> 340 lines, -93.8%, 26 pure-move commits), new multi-layer structure across src/lib/ src/hooks/ src/components/ src/modals/ src/screens/, cleanup sweep (orphan headers, dead files, 4 unused npm deps, dead lib symbols), 2 pre-existing latent bugs discovered and flagged for Session 8 |
 
 ---
 
