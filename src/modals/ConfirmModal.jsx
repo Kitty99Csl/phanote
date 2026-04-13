@@ -1,6 +1,7 @@
 // Confirm transaction parse modal. Shows AI-parsed result with 'Did you mean?' prompt. Extracted from App.jsx in Session 7.
 
 import { useState } from "react";
+import { useClickGuard } from "../hooks/useClickGuard";
 import Sheet from "../components/Sheet";
 import { T, fmt } from "../lib/theme";
 import { t } from "../lib/i18n";
@@ -11,11 +12,13 @@ export function ConfirmModal({parsed,lang,onConfirm,onEdit}){
   const cat=findCat(parsed.category||parsed.categoryId);
   const aiDone=parsed._aiDone;
   const aiUpdated=parsed._aiUpdated;
+  const { busy, run } = useClickGuard();
+  const confirm = () => run(async () => { await onConfirm({...parsed,note:note.trim()}); });
   return(
     <Sheet open={true} onClose={onEdit} showCloseButton={false} footer={
       <div style={{display:"flex",gap:10}}>
         <button onClick={onEdit} style={{flex:1,padding:"14px",borderRadius:16,border:"none",cursor:"pointer",background:"rgba(155,155,173,0.12)",color:T.muted,fontWeight:700,fontSize:14,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"confirm_edit")}</button>
-        <button onClick={()=>onConfirm({...parsed,note:note.trim()})} style={{flex:2,padding:"14px",borderRadius:16,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",color:"#1A4020",fontWeight:800,fontSize:14,fontFamily:"'Noto Sans',sans-serif",boxShadow:"0 4px 16px rgba(172,225,175,0.4)"}}>{t(lang,"confirm_yes")}</button>
+        <button onClick={confirm} disabled={busy} style={{flex:2,padding:"14px",borderRadius:16,border:"none",cursor:busy?"default":"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",color:"#1A4020",fontWeight:800,fontSize:14,fontFamily:"'Noto Sans',sans-serif",boxShadow:"0 4px 16px rgba(172,225,175,0.4)",opacity:busy?0.5:1}}>{t(lang,"confirm_yes")}</button>
       </div>
     }>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14,paddingTop:20}}>

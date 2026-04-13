@@ -6,19 +6,22 @@
 import { useState } from "react";
 import { T, CURR, fmt, fmtCompact } from "../lib/theme";
 import Sheet from "../components/Sheet";
+import { useClickGuard } from "../hooks/useClickGuard";
 
 export function AddSavingsModal({ goal, onSave, onClose }) {
   const [amount, setAmount] = useState("");
   const remaining = Math.max(0, goal.target_amount - goal.saved_amount);
   const QUICK = { LAK:[500000,1000000,2000000], THB:[500,1000,2000], USD:[50,100,200] };
-  const save = () => {
+  const { busy, run } = useClickGuard();
+  const save = () => run(async () => {
     const a = parseFloat(String(amount).replace(/,/g,""));
     if (!a || a <= 0) return;
-    onSave(Math.min(a, remaining));
-  };
+    await onSave(Math.min(a, remaining));
+    onClose();
+  });
   return (
     <Sheet open={true} onClose={onClose} showCloseButton={false} footer={
-      <button onClick={save} style={{width:"100%",padding:"15px",borderRadius:16,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",color:"#1A4020",fontWeight:800,fontSize:15,fontFamily:"'Noto Sans',sans-serif",boxShadow:"0 4px 16px rgba(172,225,175,0.4)"}}>Add Savings 💚</button>
+      <button onClick={save} disabled={busy} style={{width:"100%",padding:"15px",borderRadius:16,border:"none",cursor:busy?"wait":"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",color:"#1A4020",fontWeight:800,fontSize:15,fontFamily:"'Noto Sans',sans-serif",boxShadow:"0 4px 16px rgba(172,225,175,0.4)",opacity:busy?0.6:1}}>Add Savings 💚</button>
     }>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,paddingTop:8}}>
         <div>

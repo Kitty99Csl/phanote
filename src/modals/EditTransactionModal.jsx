@@ -10,6 +10,7 @@ import { useState } from "react";
 import { T, CURR } from "../lib/theme";
 import { DEFAULT_EXPENSE_CATS, DEFAULT_INCOME_CATS, catLabel } from "../lib/categories";
 import { useKeyboardOffset } from "../hooks/useKeyboardOffset";
+import { useClickGuard } from "../hooks/useClickGuard";
 
 export function EditTransactionModal({tx,lang,onSave,onClose,customCategories=[]}){
   const[amount,setAmount]=useState(String(tx.amount));
@@ -18,6 +19,7 @@ export function EditTransactionModal({tx,lang,onSave,onClose,customCategories=[]
   const[editCurrency,setEditCurrency]=useState(tx.currency||"LAK");
   const[editType,setEditType]=useState(tx.type||"expense");
   const kbOffset=useKeyboardOffset();
+  const { busy, run } = useClickGuard();
   const cats=editType==="income"
     ?[...DEFAULT_INCOME_CATS,...customCategories.filter(c=>c.type==="income")]
     :[...DEFAULT_EXPENSE_CATS,...customCategories.filter(c=>c.type==="expense")];
@@ -28,7 +30,12 @@ export function EditTransactionModal({tx,lang,onSave,onClose,customCategories=[]
       :[...DEFAULT_EXPENSE_CATS,...customCategories.filter(c=>c.type==="expense")];
     if(!newCats.find(c=>c.id===catId)) setCatId(newCats[0].id);
   };
-  const save=()=>{const a=parseFloat(String(amount).replace(/,/g,""));if(!a||a<=0)return;onSave({...tx,amount:a,categoryId:catId,description:desc.trim()||tx.description,currency:editCurrency,type:editType});};
+  const save=()=>run(async()=>{
+    const a=parseFloat(String(amount).replace(/,/g,""));
+    if(!a||a<=0)return;
+    await onSave({...tx,amount:a,categoryId:catId,description:desc.trim()||tx.description,currency:editCurrency,type:editType});
+    onClose();
+  });
   const pillBtn=(active,label,onClick,color)=>(<button onClick={onClick} style={{flex:1,padding:"8px 0",borderRadius:12,border:"none",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"'Noto Sans',sans-serif",background:active?(color||"rgba(172,225,175,0.25)"):"rgba(45,45,58,0.06)",color:active?T.dark:T.muted,transition:"all .15s"}}>{label}</button>);
   return(
     <div style={{position:"fixed",inset:0,zIndex:2000,background:"rgba(30,30,40,0.6)",backdropFilter:"blur(4px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}}
@@ -82,7 +89,7 @@ export function EditTransactionModal({tx,lang,onSave,onClose,customCategories=[]
           <div style={{height:8}}/>
         </div>
         <div style={{padding:"12px 20px",paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 12px)",borderTop:"0.5px solid rgba(45,45,58,0.06)",flexShrink:0,background:"#fff"}}>
-          <button onClick={save} style={{width:"100%",padding:"15px",borderRadius:16,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",color:"#1A4020",fontWeight:800,fontSize:15,fontFamily:"'Noto Sans',sans-serif",boxShadow:"0 4px 16px rgba(172,225,175,0.4)"}}>Save Changes ✓</button>
+          <button onClick={save} disabled={busy} style={{width:"100%",padding:"15px",borderRadius:16,border:"none",cursor:busy?"wait":"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",color:"#1A4020",fontWeight:800,fontSize:15,fontFamily:"'Noto Sans',sans-serif",boxShadow:"0 4px 16px rgba(172,225,175,0.4)",opacity:busy?0.6:1}}>Save Changes ✓</button>
         </div>
       </div>
     </div>

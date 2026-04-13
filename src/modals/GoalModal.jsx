@@ -9,11 +9,13 @@ import { useState } from "react";
 import { T, CURR, fmt, fmtCompact } from "../lib/theme";
 import { GOAL_EMOJIS } from "../lib/constants";
 import { useKeyboardOffset } from "../hooks/useKeyboardOffset";
+import { useClickGuard } from "../hooks/useClickGuard";
 import { Flag } from "../components/Flag";
 
 export function GoalModal({ goal, profile, onSave, onClose }) {
   const { lang } = profile;
   const kbOffset = useKeyboardOffset();
+  const { busy, run } = useClickGuard();
   const [name,     setName]     = useState(goal?.name || "");
   const [emoji,    setEmoji]    = useState(goal?.emoji || "🎯");
   const [target,   setTarget]   = useState(goal ? String(goal.target_amount) : "");
@@ -37,12 +39,13 @@ export function GoalModal({ goal, profile, onSave, onClose }) {
     return Math.ceil((t - s) / m);
   };
 
-  const save = () => {
+  const save = () => run(async () => {
     const t = parseFloat(String(target).replace(/,/g,""));
     const s = parseFloat(String(saved).replace(/,/g,"")) || 0;
     if (!name.trim() || !t || t <= 0) return;
-    onSave({ name: name.trim(), emoji, target_amount: t, saved_amount: s, currency, deadline: deadline || null });
-  };
+    await onSave({ name: name.trim(), emoji, target_amount: t, saved_amount: s, currency, deadline: deadline || null });
+    onClose();
+  });
 
   const QUICK = { LAK:[1000000,5000000,10000000,50000000], THB:[1000,5000,10000,50000], USD:[100,500,1000,5000] };
   const sym = CURR[currency].symbol;
@@ -123,7 +126,7 @@ export function GoalModal({ goal, profile, onSave, onClose }) {
         </div>
         {/* Pinned save button */}
         <div style={{padding:"12px 20px",paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 12px)",borderTop:"0.5px solid rgba(45,45,58,0.06)",flexShrink:0,background:"#fff"}}>
-          <button onClick={save} style={{width:"100%",padding:"16px",borderRadius:16,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",color:"#1A4020",fontWeight:800,fontSize:15,fontFamily:"'Noto Sans',sans-serif",boxShadow:"0 4px 16px rgba(172,225,175,0.4)"}}>
+          <button onClick={save} disabled={busy} style={{width:"100%",padding:"16px",borderRadius:16,border:"none",cursor:busy?"wait":"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",color:"#1A4020",fontWeight:800,fontSize:15,fontFamily:"'Noto Sans',sans-serif",boxShadow:"0 4px 16px rgba(172,225,175,0.4)",opacity:busy?0.6:1}}>
             {isEdit ? "Save Changes ✓" : "Create Goal 🎯"}
           </button>
         </div>

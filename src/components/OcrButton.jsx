@@ -20,6 +20,7 @@ import { useState, useRef } from "react";
 import { T, fmt } from "../lib/theme";
 import { findCat, catLabel, normalizeCategory } from "../lib/categories";
 import Sheet from "./Sheet";
+import { useClickGuard } from "../hooks/useClickGuard";
 
 export function OcrButton({ profile, onAdd, lang, compact=false }) {
   const [status,     setStatus]     = useState("idle"); // idle | picker | scanning | confirm | error
@@ -27,6 +28,7 @@ export function OcrButton({ profile, onAdd, lang, compact=false }) {
   const [errMsg,     setErrMsg]     = useState("");
   const cameraRef  = useRef(); // capture=environment
   const galleryRef = useRef(); // gallery pick
+  const { busy, run } = useClickGuard();
 
   const isPro = profile?.isPro || false;
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
@@ -81,14 +83,14 @@ export function OcrButton({ profile, onAdd, lang, compact=false }) {
     }
   };
 
-  const confirmAdd = () => {
+  const confirmAdd = () => run(async () => {
     if (!result) return;
     const catId = normalizeCategory(result.category || "other", "expense");
     // Store items as JSON in note if OCR extracted line items
     const noteVal = result.items && result.items.length > 0
       ? JSON.stringify({items: result.items, note: "", source: "ocr"})
       : JSON.stringify({items: [], note: "", source: "ocr"});
-    onAdd({
+    const tx = {
       id: `tx_${Date.now()}_${Math.random().toString(36).slice(2)}`,
       amount: result.amount,
       currency: result.currency || "LAK",
@@ -100,10 +102,11 @@ export function OcrButton({ profile, onAdd, lang, compact=false }) {
       confidence: result.confidence || 0.8,
       createdAt: new Date().toISOString(),
       rawInput: "OCR",
-    });
+    };
     setStatus("idle");
     setResult(null);
-  };
+    await onAdd(tx);
+  });
 
   // Pro gate — show lock if not Pro
   if (!isPro) {
@@ -211,8 +214,8 @@ export function OcrButton({ profile, onAdd, lang, compact=false }) {
                 style={{ flex:1, padding:"14px", borderRadius:16, border:"none", cursor:"pointer", background:"rgba(45,45,58,0.06)", color:T.muted, fontWeight:700, fontSize:14, fontFamily:"'Noto Sans',sans-serif" }}>
                 {lang==="lo"?"ຍົກເລີກ":lang==="th"?"ยกเลิก":"Cancel"}
               </button>
-              <button onClick={confirmAdd}
-                style={{ flex:2, padding:"14px", borderRadius:16, border:"none", cursor:"pointer", background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)", color:"#1A4020", fontWeight:800, fontSize:15, fontFamily:"'Noto Sans',sans-serif", boxShadow:"0 4px 16px rgba(172,225,175,0.4)" }}>
+              <button onClick={confirmAdd} disabled={busy}
+                style={{ flex:2, padding:"14px", borderRadius:16, border:"none", cursor:busy?"wait":"pointer", background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)", color:"#1A4020", fontWeight:800, fontSize:15, fontFamily:"'Noto Sans',sans-serif", boxShadow:"0 4px 16px rgba(172,225,175,0.4)", opacity:busy?0.6:1 }}>
                 {lang==="lo"?"ບັນທຶກ ✓":lang==="th"?"บันทึก ✓":"Save ✓"}
               </button>
             </div>

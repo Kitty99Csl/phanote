@@ -19,6 +19,7 @@
 //   - Bulk insert loops onAdd with 50ms throttle — slow for 100+ tx.
 
 import { useState, useEffect, useRef } from "react";
+import { useClickGuard } from "../hooks/useClickGuard";
 import { T, CURR, fmt } from "../lib/theme";
 import { t } from "../lib/i18n";
 import {
@@ -48,6 +49,7 @@ export function StatementScanFlow({ profile, lang, onClose, onAdd, customCategor
   const [viewBatchId, setViewBatchId] = useState(null);
   const fileRef = useRef();
   const imagesRef = useRef(images);
+  const { busy: importing, run: runImport } = useClickGuard();
 
   // ── Load batch import history ──
   useEffect(() => {
@@ -218,7 +220,7 @@ export function StatementScanFlow({ profile, lang, onClose, onAdd, customCategor
   };
 
   // ── Step 5: Bulk save ──
-  const handleImport = async () => {
+  const handleImport = () => runImport(async () => {
     const toSave = txs.filter((_, i) => selected.has(i));
     const batchId = crypto.randomUUID();
     setStep("saving");
@@ -246,7 +248,7 @@ export function StatementScanFlow({ profile, lang, onClose, onAdd, customCategor
       if (i % 5 === 4) await new Promise(r => setTimeout(r, 50));
     }
     setStep("done");
-  };
+  });
 
   // ── Shared styles ──
   const headerStyle = { display:"flex", alignItems:"center", gap:12, padding:"calc(env(safe-area-inset-top,8px) + 12px) 20px 12px" };
@@ -533,7 +535,7 @@ export function StatementScanFlow({ profile, lang, onClose, onAdd, customCategor
 
         {/* Import button */}
         <div style={{ padding:"16px 20px calc(env(safe-area-inset-bottom,0px) + 16px)", borderTop:"1px solid rgba(45,45,58,0.06)" }}>
-          {primaryBtn(tpl("statementImportButton", { n: selected.size }), handleImport, selected.size === 0)}
+          {primaryBtn(tpl("statementImportButton", { n: selected.size }), handleImport, selected.size === 0 || importing)}
         </div>
       </>)}
 
