@@ -3,8 +3,6 @@
 // transaction inputs. Extracted from App.jsx in Session 7.
 
 import { normalizeCategory } from "./categories";
-import { dbCheckMemory, dbSaveMemory } from "./db";
-
 // ─── LOCAL PARSER v4 — Combined best of Claude + Gemini + GPT ──
 // Handles: Lao (primary) · Thai (secondary) · English
 // Zero API calls — handles ~90% of real inputs instantly
@@ -407,46 +405,4 @@ export const localParse = (text) => {
     confidence: 0.92,
     items: sameC.map(p => ({ name: p.description, amount: p.amount })),
   };
-};
-
-export const parseWithAI=async(text,customCatIds=[],userId=null)=>{
-  if(userId){
-    try{
-      const memory=await dbCheckMemory(userId,text);
-      if(memory&&memory.usage_count>=2){
-        const local=localParse(text);
-        return{amount:local?.amount||0,currency:local?.currency||"LAK",type:memory.type||"expense",
-          category:normalizeCategory(memory.category_name,"expense"),
-          description:local?.description||text.slice(0,40),confidence:0.95,source:"memory"};
-      }
-    }catch{}
-  }
-  const local=localParse(text);
-  if(local&&local.confidence>=0.88){
-    return{...local,category:normalizeCategory(local.category,local.type),source:"local"};
-  }
-  try{
-    const controller=new AbortController();
-    const timeout=setTimeout(()=>controller.abort(),10000);
-    const res=await fetch("https://api.phajot.com/parse",{
-      method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({text,userId}),signal:controller.signal,
-    });
-    clearTimeout(timeout);
-    const parsed=await res.json();
-    if(parsed&&parsed.amount){
-      parsed.category=normalizeCategory(parsed.category,parsed.type);
-      parsed.source="haiku";
-      if(userId){dbSaveMemory(userId,text,parsed.category,parsed.type,parsed.confidence).catch(()=>{});}
-      return parsed;
-    }
-    throw new Error("No amount");
-  }catch{
-    if(local)return{...local,category:normalizeCategory(local.category,local.type),source:"local_fallback"};
-    const numMatch=text.match(/[\d,]+(?:\.\d+)?/);
-    const amount=numMatch?parseFloat(numMatch[0].replace(/,/g,"")):0;
-    const currency=/THB|baht|บาท/i.test(text)?"THB":/USD|dollar|\$/i.test(text)?"USD":"LAK";
-    const type=/income|salary|เงินเดือน|ເງິນເດືອນ/i.test(text)?"income":"expense";
-    return{amount,currency,type,category:type==="income"?"salary":"other",description:text.slice(0,40),confidence:0.35,source:"regex"};
-  }
 };

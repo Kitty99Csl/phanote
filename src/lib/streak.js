@@ -1,9 +1,9 @@
 // Streak and XP leveling system. Extracted from App.jsx in Session 7.
 import { supabase } from "./supabase";
 
-export const XP_PER_TX = 10;
-export const STREAK_BONUS = { 7:30, 14:60, 30:150, 100:500 };
-export const LEVELS = [
+const XP_PER_TX = 10;
+const STREAK_BONUS = { 7:30, 14:60, 30:150, 100:500 };
+const LEVELS = [
   {min:0,    label:"Seedling", emoji:"🌱"},
   {min:100,  label:"Sprout",   emoji:"🌿"},
   {min:300,  label:"Grower",   emoji:"🌳"},

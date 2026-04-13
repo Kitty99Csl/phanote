@@ -1,20 +1,6 @@
 // Supabase database helpers. Thin wrappers around client calls. Extracted from App.jsx in Session 7.
 import { supabase } from "./supabase";
 
-export const dbCheckMemory = async (userId, pattern) => {
-  const key = pattern.toLowerCase()
-    .replace(/[\d,]+(?:\.\d+)?(k|m)?/gi, "")
-    .replace(/lak|thb|usd|baht|บาท|กีบ|kip/gi, "")
-    .replace(/\s+/g, " ").trim().slice(0, 50);
-  if (!key) return null;
-  const { data } = await supabase.from("ai_memory")
-    .select("*")
-    .ilike("input_pattern", `%${key}%`)
-    .order("usage_count", { ascending: false })
-    .limit(1);
-  return data?.[0] || null;
-};
-
 export const dbSaveMemory = async (userId, pattern, categoryName, type, confidence) => {
   const key = pattern.toLowerCase()
     .replace(/[\d,]+(?:\.\d+)?(k|m)?/gi, "")
