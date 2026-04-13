@@ -86,8 +86,8 @@ export function QuickAddBar({lang,onAdd,customCategories=[],userId=null,onShowAd
       return;
     }
 
-    // No local result → wait for AI fully then show confirm
-    const result=await aiPromise;
+    // No local result → wait for AI up to 8s then show confirm
+    const result=await Promise.race([aiPromise, new Promise(r=>setTimeout(()=>r(null),8000))]);
     if(!result||!result.amount||result.amount<=0){setStatus("error");setTimeout(()=>setStatus("idle"),2500);return;}
     result.type=mode;
     result.category=normalizeCategory(result.category,mode);
