@@ -21,11 +21,13 @@
 | **Brand Pronunciation** | pha-jot |
 | **Primary Domain (PWA)** | `app.phajot.com` |
 | **Marketing Domain** | `phajot.com` ✅ LIVE |
-| **Current Version** | v0.6.0 — Phase 2 Stable + Session 7 Refactor |
+| **Current Version** | v0.6.1 — Session 7 Refactor + Session 8 Sprint A Ext (stability) |
 | **Status** | 🟡 Family Testing |
-| **Last Codex Update** | April 13, 2026 · Session 7 |
+| **Last Codex Update** | April 13, 2026 · Session 8 Sprint A + Ext |
 
-> **Updated [2026-04-13]:** Back-filled Sessions 5, 6, and 7 in a single codex update. Session 5 shipped Monthly Wrap (Pro). Session 6 shipped Phajot rename + OCR statement scanning + dedicated TransactionsScreen + analytics heatmap. Session 7 decomposed src/App.jsx from 5,480 lines to 340 lines across 45 extracted files (-93.8%, 26 pure-move commits, zero regressions).
+> **Updated [2026-04-13] (Session 8 Sprint A + Ext):** Post-refactor stabilization + credential remediation in 5 commits. Fixed 5 critical bugs from real-device testing (2 latent ReferenceErrors from Session 7's pure-move refactor, 1 parse hang, 2 iOS keyboard bugs). Swept the codebase for two anti-patterns and shipped shared infrastructure for both: `useClickGuard` hook (applied to 7 action buttons eliminating zombie-modal duplicate saves) and `fetchWithTimeout` helper (applied to 4 endpoints with per-endpoint timeouts: `/ocr` 20s, `/advise` 30s, `/monthly-report` 30s, `/parse-statement` 60s). Migrated GoalModal to Sheet (last high-priority raw-div modal; Sheet now used by 6 modals). Remediated leaked Gemini API key committed in scaffold commit `209370c` — rotated on Cloudflare, tightened `.gitignore` to canonical Vite patterns, forensic audit of history confirmed only the Gemini key was exposed. Phone-tested 5/5 on iOS Safari. See `docs/session-8/SUMMARY.md`.
+
+> **Updated [2026-04-13] (Session 7):** Back-filled Sessions 5, 6, and 7 in a single codex update. Session 5 shipped Monthly Wrap (Pro). Session 6 shipped Phajot rename + OCR statement scanning + dedicated TransactionsScreen + analytics heatmap. Session 7 decomposed src/App.jsx from 5,480 lines to 340 lines across 45 extracted files (-93.8%, 26 pure-move commits, zero regressions).
 
 > **Updated [2026-04-10]:** Renamed Phanote → Phajot (trademark conflict). All domains migrated: phajot.com, app.phajot.com, api.phajot.com. Legacy phanote.com 301-redirects to phajot.com.
 

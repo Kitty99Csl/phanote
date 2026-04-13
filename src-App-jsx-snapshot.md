@@ -1,12 +1,22 @@
 # src/App.jsx — Component Snapshot
 
-**Generated:** 2026-04-12 (post Session 6)
-**Total lines:** 5,480
+> ⚠️ **SUPERSEDED — Do not use this document.**
+>
+> Session 7 refactored `src/App.jsx` from **5,480 lines → 345 lines** across 45 extracted files in `src/lib/`, `src/hooks/`, `src/components/`, `src/modals/`, `src/screens/`. The breakdown below describes the pre-Session-7 monolith and is no longer accurate. Kept for historical reference only.
+>
+> For the current App.jsx structure: just `cat src/App.jsx` (345 lines, thin root shell).
+> For the refactor motivation + commit list: see Session 7 merge commit `0935ddf` and its branch history.
+> For Session 8 Sprint A Ext changes on top of the refactor: see `docs/session-8/SUMMARY.md`.
+
+---
+
+**Generated:** 2026-04-12 (post Session 6, PRE Session 7 refactor)
+**Total lines:** 5,480 (historical — now 345)
 **Commit:** 9311d94
 **Prior snapshot:** 3,381 lines (pre Session 6)
 **Growth:** +2,099 lines across Session 6
 
-> **Refactor watch:** The project rule is "any file > 800 lines must be split before adding features" — App.jsx is 6.8× over. Session 5 planned a multi-layer refactor that has been deferred through every session. Several components below are now >300 lines and are primary split candidates.
+> **Refactor watch:** The project rule is "any file > 800 lines must be split before adding features" — App.jsx was 6.8× over. ~~Session 5 planned a multi-layer refactor that has been deferred through every session.~~ **Shipped in Session 7 (commit `0935ddf`) — 5,480 → 345 lines, -93.8%, zero regressions.**
 
 ## Module-level (lines 1 – 1108)
 
