@@ -21,9 +21,11 @@
 | **Brand Pronunciation** | pha-jot |
 | **Primary Domain (PWA)** | `app.phajot.com` |
 | **Marketing Domain** | `phajot.com` ✅ LIVE |
-| **Current Version** | v0.6.1 — Session 7 Refactor + Session 8 Sprint A Ext (stability) |
+| **Current Version** | v0.6.2 — Session 9 RLS hardening + CF Pages deploy pipeline fix |
 | **Status** | 🟡 Family Testing |
-| **Last Codex Update** | April 13, 2026 · Session 8 Sprint A + Ext |
+| **Last Codex Update** | April 14, 2026 · Session 9 |
+
+> **Updated [2026-04-14] (Session 9):** CF Pages deploy pipeline fix (Node 24.13.1 exact pinning + `engines` field + lockfile regeneration under matching npm 11.8.0) unblocks 2 days of stuck commits — Session 8 Sprint A + Ext had merged to main but was never actually deployed to `app.phajot.com` due to silent CF Pages build failures. RLS hardening complete: `ai_memory` data leak (USING(true) permissive SELECT policy) dropped, `goals` RLS enabled (was rowsecurity=false with inert policy), `profiles` policies deduped 6→1 canonical, `transactions` policies deduped 7→1 canonical. Adversarial verification with second test user (User B, `5e3629a1-aa60-4c25-a013-11bf40b8e6b9`) proves cross-user SELECT/INSERT are blocked while self-access still works. See `docs/session-9/SUMMARY.md`, `docs/session-9/RLS-HARDENING.md`, `docs/RISKS.md`. Two new CLAUDE.md non-negotiable rules (11 + 12) capture the Session 9 lessons: verify production bundle hash after merge, pin exact Node version.
 
 > **Updated [2026-04-13] (Session 8 Sprint A + Ext):** Post-refactor stabilization + credential remediation in 5 commits. Fixed 5 critical bugs from real-device testing (2 latent ReferenceErrors from Session 7's pure-move refactor, 1 parse hang, 2 iOS keyboard bugs). Swept the codebase for two anti-patterns and shipped shared infrastructure for both: `useClickGuard` hook (applied to 7 action buttons eliminating zombie-modal duplicate saves) and `fetchWithTimeout` helper (applied to 4 endpoints with per-endpoint timeouts: `/ocr` 20s, `/advise` 30s, `/monthly-report` 30s, `/parse-statement` 60s). Migrated GoalModal to Sheet (last high-priority raw-div modal; Sheet now used by 6 modals). Remediated leaked Gemini API key committed in scaffold commit `209370c` — rotated on Cloudflare, tightened `.gitignore` to canonical Vite patterns, forensic audit of history confirmed only the Gemini key was exposed. Phone-tested 5/5 on iOS Safari. See `docs/session-8/SUMMARY.md`.
 

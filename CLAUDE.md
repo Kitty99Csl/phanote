@@ -5,7 +5,7 @@ Phajot (ພາຈົດ) — multi-currency personal finance PWA for Laos (LAK, 
 
 - Repo: Kitty99Csl/phanote (repo name intentionally preserved post-rename)
 - Main branch: main
-- Working branch: main (Session 8 Sprint A + Ext merged 2026-04-13 at `ac9bd77`, no working branch cut)
+- Working branch: main (Session 9 deploy fix + RLS hardening merged 2026-04-14 at `aa78f9e`, no working branch cut)
 - Live: app.phajot.com, api.phajot.com, phajot.com (legacy phanote.com domains 301 redirect)
 
 ## Brand Identity
@@ -62,23 +62,30 @@ telling you about your money over coffee, not a bank dashboard.
 8. All new modals must use the shared `Sheet` component — keyboard-aware, safe-area-aware, button-always-visible
 9. All new async action buttons (save/confirm/submit) must wrap their handler in `useClickGuard` — prevents zombie-modal duplicate saves. See `src/hooks/useClickGuard.js`.
 10. All new `fetch()` calls to worker endpoints must use `fetchWithTimeout` from `src/lib/fetchWithTimeout.js` with an endpoint-appropriate timeout. Never bare `fetch()` to `api.phajot.com`.
-11. No console.log with sensitive data
-12. Ask Kitty before architectural decisions. Don't guess.
+11. **After merging user-visible changes to main, always `curl` production to verify the bundle hash changed.** "Merged to main" is NOT "shipped to users." CF Pages can fail silently and keep serving the previous build. Run: `curl -s https://app.phajot.com/ | grep -oE 'index-[A-Za-z0-9_-]+\.js'` and confirm the hash differs from what the previous session saw. Do not claim "shipped" until the hash is confirmed different.
+12. **`.nvmrc` must pin exact Node version** (e.g. `24.13.1`, not just `24`). Lockfile must be regenerated under the same Node version CF Pages uses. Verify with `npm ci` (strict mode, same as CF Pages) before pushing lockfile changes. Major-version-only pinning caused 2 days of silent deploy failures in Session 9 (Node 24.11.1 vs 24.13.1 npm resolver drift).
+13. No console.log with sensitive data
+14. Ask Kitty before architectural decisions. Don't guess.
 
 ## Known bugs to fix
-- (none active — Session 8 Sprint A + Ext fixes all shipped, phone-tested 5/5)
+- (none active — Session 9 RLS hardening + deploy pipeline fix shipped, adversarially verified)
 
-## Current state: Session 8 Sprint A + Ext complete, Sprint B open
+## Current state: Session 9 complete (RLS + deploy fix), Sprint B open
 
-**Session 8 Sprint A + Ext shipped (April 13, 2026)** — 5 commits. See `docs/session-8/SUMMARY.md` for full details.
+**Session 9 shipped (April 14, 2026)** — 3 commits (2 infra + 1 docs wrap-up). See `docs/session-9/SUMMARY.md` for full details, `docs/session-9/RLS-HARDENING.md` for the SQL-level database work, and `docs/RISKS.md` for the current prioritized risk ledger.
 
-### Major deliverables
-- **Credential leak remediation**: `.env.local.bak` untracked + rotated Gemini key, `.gitignore` hardened to canonical Vite patterns, forensic audit confirmed only the Gemini key was ever in history
-- **5 critical bugs fixed**: 2 latent silent `ReferenceError`s from Session 7 extraction, parse hang on no-local-result path (8s `Promise.race`), 2 modals migrated to `Sheet` to fix iOS keyboard hiding save buttons
-- **Click-guard sweep**: new `useClickGuard` hook (ref-based synchronous re-entry block + `useState` visual feedback), applied to 7 action buttons across 6 files. Eliminates the entire class of "zombie modal" duplicate-save bugs
-- **fetchWithTimeout sweep**: new helper + `FetchTimeoutError` class, applied to 4 endpoints with per-endpoint timeouts (`/ocr` 20s, `/advise` 30s, `/monthly-report` 30s, `/parse-statement` 60s) + localized timeout messages
-- **GoalModal Sheet migration**: last raw-div modal from the top-priority Sheet list, -860 bytes
-- **6 modals now on Sheet**: ConfirmModal, MonthlyWrapModal, OcrButton, AddSavingsModal, AiAdvisorModal, GoalModal
+### Session 9 deliverables
+- **CF Pages deploy pipeline fix** (`aa78f9e`): pinned `.nvmrc` to exact `24.13.1`, added `engines` field to package.json, regenerated `package-lock.json` under Node 24.13.1 + npm 11.8.0. Root cause was Node minor version drift between local (24.11.1) and CF Pages (24.13.1) — different bundled npm versions wrote different optional-dep entries in the lockfile. Unblocked 8 commits that had been stuck on `origin/main` without deploying since Session 7 merge.
+- **RLS hardening** (live SQL, no git commits): dropped a critical `USING(true)` permissive SELECT policy on `ai_memory` (data leak), enabled RLS on `goals` (was `rowsecurity=false` with an inert policy), deduped `profiles` policies 6→1 canonical, deduped `transactions` policies 7→1 canonical. All applied via Supabase SQL Editor as `postgres` role.
+- **Adversarial verification**: created test user B (`5e3629a1-aa60-4c25-a013-11bf40b8e6b9`), impersonated via `SET LOCAL role = 'authenticated'; SET LOCAL request.jwt.claims = '...'` in SQL Editor, ran 3 probes:
+  - Cross-user SELECT on transactions → 0 rows (blocked ✓)
+  - Cross-user INSERT on transactions → ERROR 42501 (blocked ✓)
+  - Self SELECT → 1 row (not over-blocking ✓)
+  All passed. **Cross-user isolation proven at the database level.**
+- **The critical lesson**: "merged to main" ≠ "shipped to users". 8 commits sat on `origin/main` for 2 days while production served a 2-day-old bundle. Now non-negotiable rule 11: always `curl` production bundle hash after user-visible merge.
+
+### Session 8 Sprint A + Ext (shipped April 13, 2026, reached production April 14)
+5 commits. Security fix + 5 critical bugs from post-refactor device test + click-guard sweep (7 buttons) + fetchWithTimeout sweep (4 endpoints) + GoalModal Sheet migration. See `docs/session-8/SUMMARY.md`.
 
 ### Session 7 (shipped April 12, 2026) — App.jsx refactor
 Multi-layer decomposition: src/App.jsx 5,480 → 345 lines, 45 extracted files, -93.8%, 26 pure-move commits, zero regressions. See git history before `0935ddf`.
@@ -87,16 +94,25 @@ Multi-layer decomposition: src/App.jsx 5,480 → 345 lines, 45 extracted files, 
 See `TOMORROW-START-HERE.md` for priorities and `docs/session-8/SPRINT-A-EXT-BACKLOG.md` for follow-ups from the sweep.
 
 ### Still on the backlog
-- ⏳ RLS on Supabase (profiles, transactions) — **STILL BLOCKING public launch**
 - ⏳ 3 remaining raw-div modals for Sheet migration: EditTransactionModal, SetBudgetModal, StreakModal
 - ⏳ 5 parent-side wrapper bugs flagged in docs/session-8/SPRINT-A-EXT-BACKLOG.md (fire-and-forget async, missing try/catch, silent error swallowing)
 - ⏳ Error-surfacing toasts for silent insert failures
-- ⏳ Native `window.confirm` → shared `ConfirmDialog`
 - ⏳ Thai translation gap for `statementError*` keys (Sprint D i18n marathon)
 - ⏳ Budget progress bars, top merchants, advanced filters
 - ⏳ Family/shared accounts
 
-## Recent key learnings (from Session 8 Sprint A + Ext)
+**See `docs/RISKS.md` for the full prioritized risk list (updated every session).**
+
+## Recent key learnings (from Session 9)
+
+1. **"Merged to main" ≠ "shipped to users".** 8 commits sat on `origin/main` for 2 days while CF Pages silently failed every build and kept serving the 2-day-old bundle. No notification, no dashboard warning visible without explicitly opening the Deployments tab. Always verify production bundle hash after a user-visible merge.
+2. **Node minor version drift propagates through the bundled npm.** `.nvmrc = 24` let CF Pages auto-resolve to 24.13.1 while Codespace was on 24.11.1. The minor bump shipped a new npm (11.6.2 → 11.8.0) which writes more `@emnapi` optional-dep entries in the lockfile. `npm ci` on the old lockfile passed locally, failed on CF Pages.
+3. **Three-layer Node pinning is belt-and-braces, not redundant.** `.nvmrc` (exact), `package.json` `engines` field, and regenerated lockfile each guard a different failure mode. Remove any one and the failure reopens.
+4. **`USING(true)` is the worst shape of an RLS policy.** Looks like a policy, shows up in `pg_policies`, makes the table look protected. Allows everyone to read everything. Only caught by reading every policy's `qual` column during an audit. Session 9 found this on `ai_memory`.
+5. **Adversarial SQL in the production database is the strongest RLS test.** `SET LOCAL role = 'authenticated'; SET LOCAL request.jwt.claims = '{"sub":"..."}'` impersonates a real user's auth.uid() resolution and proves policy enforcement end-to-end in under a minute. See `docs/session-9/RLS-HARDENING.md` for the template.
+6. **Empty commits are legitimate diagnostic tools.** The `741ae93` webhook probe was essential to isolate the failure to the build step rather than the webhook. Don't be afraid to ship zero-change commits when the goal is to probe the pipeline.
+
+### Session 8 Sprint A + Ext learnings still apply
 
 1. **Silent `ReferenceError`s in React event handlers are the worst latent bug class** — build passes, app doesn't crash, failing feature just silently does nothing. Session 7 pure-move refactor introduced 2 of these because setter closures weren't rewired. Only real-device usage + careful audit catches them.
 2. **`useRef` + `useState` for click guarding — they solve different problems and both are needed.** Ref blocks synchronous re-entry (tap-2 in the same event-loop tick before React re-renders). State drives the `disabled={busy}` visual feedback. Neither alone is enough.
