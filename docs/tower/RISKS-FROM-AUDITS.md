@@ -32,15 +32,15 @@ This recommendation aligns exactly with the roadmap in `docs/tower/ROADMAP.md`. 
 | 1 | Replace pseudo-phone-auth with safer auth model | P0 | 🔴 **Still open** — the derived `{phone}@phanote.app` pattern is still live | **Sprint C** — see `docs/tower/AUTH-DESIGN.md` |
 | 2 | Fix statement import navigation end-state | P1 | 🟡 **Likely still open** — not mentioned in Session 5–9 summaries. Needs verification. | Backlog — flag for a future sprint |
 | 3 | Finish i18n — hardcoded strings in login, onboarding, settings, wallet cards, modals | P1 | 🔴 **Still open** — marked as Sprint D marathon | **Sprint D** |
-| 4 | Centralized modal / gate patterns (Pro + guest) | P1 | 🟡 **Partially addressed** — `Sheet` component is now used by 6 modals (Session 8). 3 raw-div modals remain. Pro/guest gate logic is still scattered inline. | **Sprint B Priority A** (Sheet migration finish) + Sprint K (Pro gate refactor) |
-| 5 | Error handling for optimistic writes | P1 | 🔴 **Still open** — multiple catch blocks swallow Supabase errors | **Sprint B Priority C** (toasts) |
+| 4 | Centralized modal / gate patterns (Pro + guest) | P1 | ✅ **Resolved in Session 10** · commits `05f8f7d` (Sheet migration) + `b6b2598` (ConfirmSheet for Pro gate) · 2026-04-15 — 9 modals now use Sheet, zero raw-div modals remain, Pro gate uses ConfirmSheet variant="upgrade". | ~~Sprint B Priority A + Sprint K~~ — **done** |
+| 5 | Error handling for optimistic writes | P1 | ✅ **Resolved in Session 10** · commit `2e99fad` (toast system) · 2026-04-15 — 5 catch sites wired with multilingual toasts. 4 deferred sites documented in `docs/session-10/SUMMARY.md`. | ~~Sprint B Priority C~~ — **done** |
 | 6 | Analytics render-time calculations (memoization) | P2 | 🟡 **Unknown** — Session 7 extracted AnalyticsScreen but memoization status not verified | Backlog — low priority, flag for Session 15 (Engine Room work) |
 | 7 | Settings overload (control center feeling) | P2 | 🔴 **Still open** — audit recommends 5 clear sections | **Sprint D** |
-| 8 | Native `alert()` / `window.confirm()` for OCR Pro lock + delete | P1 | 🔴 **Still open** — not addressed in any session | **Sprint C** (replace with Sheet-based modals) |
+| 8 | Native `alert()` / `window.confirm()` for OCR Pro lock + delete | P1 | ✅ **Resolved in Session 10** · commit `b6b2598` · 2026-04-15 — new `ConfirmSheet` component replaces all 6 sites (5 from initial grep + 1 bare `confirm()` in StatementScanFlow that the first grep missed). 9 i18n keys added (lo/th/en). | ~~Sprint C~~ — **done ahead of schedule** |
 
 ### Summary
 
-**6 of 8 audit findings are still open as of April 14, 2026.** All 6 are assigned to Sprints B, C, or D. None require net-new engineering thinking — the fixes are understood. The roadmap in `docs/tower/ROADMAP.md` is specifically structured to close these in order.
+**3 of 8 audit findings closed as of April 15, 2026.** Rows 4 (modal/gate patterns), 5 (error handling), and 8 (native alert/confirm) all resolved in Session 10. **5 of 8 remain open**: row 1 (auth P0, Sprint C), row 2 (statement import nav, backlog), row 3 (i18n hardcoded strings, Sprint D), row 6 (analytics memoization, backlog), row 7 (settings overload, Sprint D). None require net-new engineering thinking — the fixes are understood. The roadmap in `docs/tower/ROADMAP.md` is specifically structured to close these in order.
 
 **The audit's spirit matches the roadmap:** tighten what exists before adding anything new. Sprints B/C/D are the tightening phase.
 

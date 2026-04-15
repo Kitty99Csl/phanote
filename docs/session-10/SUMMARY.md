@@ -235,13 +235,95 @@ There is no UI element in the codebase that renders between `zIndex:1000` and `z
 - **`handleUpdateProfile`, `handleUpdateNote`, `handleDeleteTransaction`, `StatementScanFlow` delete batch** — 4 catch sites flagged but not wired with toasts. Deferred to Sprint C's native-dialog replacement pass or Sprint D.
 - **Priority F (wife testing)** — Sprint B plan included this as optional. Not executed in Session 10; can be a standalone check-in with wife at any point, doesn't need its own session.
 
+## Native dialog replacement (bonus)
+
+After Sprint B wrap-up and the schema drift capture migration, a further bonus priority shipped in the same Session 10: replacing every native `window.confirm()` / `alert()` call with a shared `ConfirmSheet` component. This was originally scoped as a Sprint C item. Closing it in Session 10 reduces Sprint C from 2 priorities to 1 (auth only).
+
+Commit: `b6b2598`. Bundle: `index-CiaE2sAV.js` → `index-CewyGnUw.js` → `index-BeOPC5lm.js` (flipped ~90s after push, confirmed stable across two checks).
+
+### Audit
+
+Six sites identified in the frontend. The initial grep from the task prompt was `window\.confirm\|^[^/]*alert(` which correctly caught 5 sites but **missed one**: `StatementScanFlow.jsx:346` uses **bare `confirm()`** without the `window.` prefix, which slipped the pattern. A second grep caught it.
+
+| # | Site | Call | Notes |
+|---|---|---|---|
+| 1 | `OcrButton.jsx:120` | `alert(...)` | Pro gate, hardcoded lo/th/en ternary: "ຟີເຈີ Pro — ຕິດຕໍ່ເຈົ້າຂອງແອັບ" / "ฟีเจอร์ Pro — ติดต่อผู้ดูแลแอป" / "Pro feature — contact the app admin to enable" |
+| 2 | `GoalsScreen.jsx:43` | `alert(...)` | Error path on `createGoal` Supabase failure. Replaced with `showToast` (Priority C consistency rule: errors → toast, decisions → sheet). NOT replaced with ConfirmSheet. |
+| 3 | `GoalsScreen.jsx:76` | `window.confirm(...)` | Delete goal confirmation |
+| 4 | `App.jsx:257` | `window.confirm(...)` | Delete transaction confirmation |
+| 5 | `App.jsx:270` | `window.confirm(...)` | Reset & clear all data confirmation (already had an i18n key for the message body via `reset_confirm`) |
+| 6 | `StatementScanFlow.jsx:346` | `confirm(...)` (bare, missed by initial grep) | Delete batch of statement-scanned transactions |
+
+### ConfirmSheet component
+
+New file [src/components/ConfirmSheet.jsx](src/components/ConfirmSheet.jsx), 92 lines. Built on top of the shared `Sheet` wrapper — inherits safe-area-inset, keyboard offset, backdrop click-to-close, slide-up animation byte-identical. Three variants:
+
+- **`variant="confirm"`** — cancel (grey) + confirm (celadon). Used for generic decisions.
+- **`variant="confirm"` + `destructive=true`** — cancel (grey) + confirm (coral/red gradient `#E74C3C → #C0392B` with white text). Used for all 4 delete flows.
+- **`variant="alert"`** (or any call with `onConfirm` omitted) — ONE full-width button. Not used in Session 10's 6 sites but available for Sprint C+ when one-button info dialogs are needed.
+- **`variant="upgrade"`** — cancel (grey) + confirm (celadon with ✨ sparkle suffix on the label). Used for the OCR Pro gate as a warm "See Pro ✨" / "Not now" dialog.
+
+Props API: `{ open, onClose, onConfirm?, title, message?, confirmLabel?, cancelLabel?, destructive?, variant? }`. `message` is optional — when omitted, the title alone is shown with no body text, which works well for simple delete confirms like "Delete this transaction?" that don't need additional explanation.
+
+### i18n keys
+
+Nine keys added to all three language dicts (en/lo/th) in [src/lib/i18n.js](src/lib/i18n.js):
+
+- `confirmDeleteTransaction`, `confirmDeleteGoal`, `confirmDeleteBatchWithCount` (uses `{n}` placeholder, interpolated via `.replace("{n}", batch.tx_count)` at the call site)
+- `confirmCancel`, `confirmDelete`
+- `proLockTitle`, `proLockMessage`, `proLockUpgrade`, `proLockNotNow`
+
+**`confirmDeleteGoal` was added beyond the original spec** — the task prompt listed 8 keys, but site #3 (GoalsScreen delete goal) needs a title distinct from "Delete this transaction?", so a ninth key was added as a natural extension. Flagged in the commit message.
+
+**Lao/Thai copy review** — same Sprint B flag applies. Notable idiomatic choices:
+
+- **`proLockNotNow` in Lao** → `ເອົາໄວ້ກ່ອນ` (more natural "keep it for later" than the literal "not now"). Lao idiom for gently declining without hard refusal.
+- **`proLockNotNow` in Thai** → `ไว้ก่อน` (same "keep it for later" idiom, concise colloquial form).
+- **`confirmDeleteBatchWithCount`** uses `{n}` interpolation. The `t()` helper doesn't have a built-in interpolation function, so the call site does manual `.replace("{n}", count)`. This matches the pattern already used by existing keys like `heatmapSummary` and `txCount`.
+
+Claude wrote direct translations. Flagged for wife review before Sprint D's i18n marathon codifies all string coverage.
+
+### Shared confirm state pattern in App.jsx
+
+Two sites in App.jsx (#4 delete transaction, #5 reset app) needed confirm state. Instead of two separate `useState` hooks, they share one:
+
+```js
+const [pendingConfirm, setPendingConfirm] = useState(null);
+// null | { kind: 'delete-tx', txId } | { kind: 'reset' }
+```
+
+Two `<ConfirmSheet>` instances render in the JSX, each with its own `open={pendingConfirm?.kind === "delete-tx"}` / `open={pendingConfirm?.kind === "reset"}` check. The `onClose` callback (`setPendingConfirm(null)`) is shared. Handlers split into two functions each:
+
+- `handleDeleteTransaction(txId)` → `setPendingConfirm({kind:'delete-tx', txId})` (just triggers the sheet)
+- `performDeleteTransaction()` → runs the actual Supabase delete, called from `onConfirm`
+- Same split for `handleReset` / `performReset`
+
+Cleaner than two separate state hooks, and scalable if future sessions add more confirm variants at the App root. GoalsScreen, StatementScanFlow, and OcrButton each kept local state because their confirm sites are isolated to that component and don't benefit from sharing.
+
+### Z-index design choice
+
+**Toast z-index `10001` > ConfirmSheet z-index `1000` is intentional.** If a Supabase write fails while the user has a ConfirmSheet open (e.g., delete transaction → confirm → DB write errors), the toast slides up above the open sheet rather than hiding behind it. Errors are always louder than decisions — the user sees the failure immediately, even mid-flow.
+
+Conversely, a ConfirmSheet opening doesn't cover existing toasts (it slides up and renders below). The toast stays visible and either auto-dismisses or the user can tap it away.
+
+### Closes audit P1 finding
+
+Row 8 of the 8-finding audit table in `docs/tower/RISKS-FROM-AUDITS.md` ("Native `alert()` / `window.confirm()` for OCR Pro lock + delete") is now closed. Additionally, two other P1 findings in the same table were also already closed by earlier Session 10 work but hadn't been flipped yet:
+
+- **Row 4 — Centralized modal / gate patterns** — closed by Priority A (commit `05f8f7d`, Sheet migration to 9 modals + zero raw-divs) combined with today's ConfirmSheet Pro gate (`b6b2598`).
+- **Row 5 — Error handling for optimistic writes** — closed by Priority C (commit `2e99fad`, toast system wired into 5 catch blocks).
+
+All three P1 findings are flipped to Resolved in this docs commit. After this commit, the audit findings table shows **3 of 8 closed, 5 of 8 still open** (down from 6 still open at start of day).
+
 ## Post-state
 
-- **Local `main`**: `05f8f7d` (will become `<docs commit>` after this file is committed)
-- **`origin/main`**: `05f8f7d`
-- **Production `app.phajot.com`**: serving `index-CewyGnUw.js` (Sprint B code, deployed via CF Pages under Node 24.13.1)
+- **Local `main`**: `b6b2598` (will become `<docs commit>` after this file is committed)
+- **`origin/main`**: `b6b2598`
+- **Production `app.phajot.com`**: serving `index-BeOPC5lm.js` (native dialog replacement, deployed via CF Pages under Node 24.13.1)
 - **Supabase RLS**: all 7 user-data tables adversarially verified. Canonical single-policy-per-table shape across profiles, transactions, budgets, ai_memory, goals, app_events, monthly_reports.
 - **Worker**: `api.phajot.com` at v4.4.0, unchanged in Session 10
 - **Sheet coverage**: 9 modals total, zero raw-div modals remaining
-- **Toast system**: live, wired into 5 catch blocks
+- **ConfirmSheet coverage**: 6 sites, zero native `alert()` / `window.confirm()` / bare `confirm()` calls remaining in the frontend
+- **Toast system**: live, wired into 6 catch blocks (5 from Priority C + 1 from GoalsScreen createGoal error path in this bonus)
+- **Schema drift**: captured in `supabase/migrations/004_capture_current_schema.sql` (289 lines), replay-safe
 - **Working tree**: clean except `.claude/` untracked

@@ -15,8 +15,9 @@
 | A — Sheet migration | `05f8f7d` | 3 remaining raw-div modals (Edit Transaction, Set Budget, Streak) migrated to `Sheet`. Zero raw-div modals remain. |
 | RLS cleanup | (Supabase SQL, no commit) | Speaker ran 6 adversarial probes against `app_events` + `monthly_reports`. All passed. 7 user-data tables now RLS-verified. |
 | Bonus: schema drift capture | `2ac2897` | Originally a Sprint C line item — shipped early. `supabase/migrations/004_capture_current_schema.sql` (289 lines) captures all post-003 drift + missing tables + canonical RLS. Closes the HIGH "schema drift" risk from RISKS.md. |
+| Bonus: native dialog replacement | `b6b2598` | Also originally a Sprint C line item — shipped early. New `ConfirmSheet` component replaces 6 sites (OCR Pro gate, delete transaction/goal/batch, reset app, plus GoalsScreen error alert → toast). Closes audit P1 row 8 in `docs/tower/RISKS-FROM-AUDITS.md`. Bonus: also flips audit rows 4 (modal patterns) and 5 (error handling) to Resolved — 3 of 8 audit P1s now closed. |
 
-**Production bundle hash progression:** `CWOl1l1h` → `CZZVjtlT` → `CiaE2sAV` → `CewyGnUw`. All 3 code commits flipped the hash cleanly; the two docs commits and the migration commit did not touch the bundle. See `docs/session-10/SUMMARY.md` for the full session wrap-up.
+**Production bundle hash progression:** `CWOl1l1h` → `CZZVjtlT` → `CiaE2sAV` → `CewyGnUw` → `BeOPC5lm`. All 4 code commits flipped the hash cleanly; the docs commits and the migration commit did not touch the bundle. See `docs/session-10/SUMMARY.md` for the full session wrap-up.
 
 **Sprint B definition of done — all boxes checked:**
 - [x] 5 parent-wrapper bugs fixed
@@ -40,16 +41,14 @@
 
 ## What's shipping in Sprint C (Session 11)
 
+Sprint C scope is now **auth replacement only**. Schema drift capture and native-dialog replacement both shipped in Session 10 ahead of plan. Estimated time: **3–4 hours** (down from the original 4–5h when Sprint C had 3 priorities).
+
 Open `docs/tower/AUTH-DESIGN.md` for the full step-by-step. Summary:
 
-### Priority 1 — Real auth replacement
+### Priority 1 — Real auth replacement (the only Sprint C priority)
 Replace the phone-to-email auth trick (`{countryCode}{phone}@phanote.app` + `Ph4n0te{phone}X` password) with proper phone OTP via Supabase's native phone auth provider or LINE LIFF login. The current scheme is intentionally preserved in CLAUDE.md's "don't touch" list because existing users depend on it — Sprint C's job is to build the new auth path alongside the old, provide a legacy migration flow, and eventually retire the `@phanote.app` email trick without breaking existing accounts.
 
-### Priority 2 — Native-dialog replacement
-Replace all `window.confirm()` and `alert()` calls with the shared toast system (for alerts) and a new `ConfirmDialog` component (for confirmations). Scope includes:
-- `App.jsx:248` `handleDeleteTransaction` — uses `window.confirm("Delete this transaction?")`
-- Any other `window.confirm` / `alert` calls found in a grep sweep
-- Wire the 4 catch sites deferred from Sprint B (`handleUpdateProfile`, `handleUpdateNote`, `handleDeleteTransaction`, `StatementScanFlow` delete batch) into the toast system as part of this pass
+This is audit row 1 (P0 severity), the last remaining P0 finding. After Sprint C closes it, only 4 P1 findings remain across the full audit: rows 2 (statement import nav, backlog), 3 (i18n hardcoded strings, Sprint D), 6 (analytics memoization, backlog), 7 (settings overload, Sprint D).
 
 ## How to start Session 11
 
@@ -112,8 +111,6 @@ Before marking Sprint C complete:
 
 - [ ] New phone auth path works end-to-end (signup, login, session restore)
 - [ ] Legacy `@phanote.app` trick still works for existing users (no forced migration yet)
-- [ ] All `window.confirm()` / `alert()` calls replaced with toast or `ConfirmDialog`
-- [ ] 4 remaining catch sites from Sprint B wired into toast system
 - [ ] Production bundle hash different from session start (Rule 11)
 - [ ] Wife's account still works after deploy
 - [ ] `docs/session-11/SUMMARY.md` created
@@ -122,17 +119,17 @@ Before marking Sprint C complete:
 
 ## If Sprint C slips
 
-If Session 11 only completes auth replacement:
-- Move native-dialog replacement to Session 12
-- Sprint D (i18n marathon) shifts to Session 13, compressing Sprint E or slipping Tower launch by one session
+Sprint C is now scoped to a single priority (auth), so there's no meaningful "partial" state:
 
-If Session 11 only completes native-dialog replacement:
-- Auth replacement moves to Session 12
-- Sprint D stays in Session 13
-- Tower launch timeline unchanged
+If Session 11 completes auth replacement:
+- Sprint D (i18n marathon) starts in Session 12. Tower launch timeline unchanged from the 10-week plan.
 
-If Session 11 runs out of time entirely:
-- Stop and ask. The plan is probably wrong somewhere.
+If Session 11 does NOT complete auth replacement:
+- Carry over to Session 12. Sprint D shifts to Session 13. Tower launch slips by one session.
+- Consider whether auth can be split (new path first, legacy migration second) across two sessions to land something shippable in Session 11 while deferring the migration pass.
+
+If Session 11 runs out of time entirely before any auth work:
+- Stop and ask. The AUTH-DESIGN plan is probably wrong somewhere.
 
 ## 💚 Remember
 
