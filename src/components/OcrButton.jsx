@@ -20,13 +20,16 @@ import { useState, useRef } from "react";
 import { T, fmt } from "../lib/theme";
 import { findCat, catLabel, normalizeCategory } from "../lib/categories";
 import Sheet from "./Sheet";
+import { ConfirmSheet } from "./ConfirmSheet";
 import { useClickGuard } from "../hooks/useClickGuard";
 import { fetchWithTimeout, FetchTimeoutError } from "../lib/fetchWithTimeout";
+import { t } from "../lib/i18n";
 
 export function OcrButton({ profile, onAdd, lang, compact=false }) {
   const [status,     setStatus]     = useState("idle"); // idle | picker | scanning | confirm | error
   const [result,     setResult]     = useState(null);
   const [errMsg,     setErrMsg]     = useState("");
+  const [showProLock, setShowProLock] = useState(false);
   const cameraRef  = useRef(); // capture=environment
   const galleryRef = useRef(); // gallery pick
   const { busy, run } = useClickGuard();
@@ -116,11 +119,23 @@ export function OcrButton({ profile, onAdd, lang, compact=false }) {
   // Pro gate — show lock if not Pro
   if (!isPro) {
     return (
-      <button
-        onClick={() => alert(lang === "lo" ? "ຟີເຈີ Pro — ຕິດຕໍ່ເຈົ້າຂອງແອັບ" : lang === "th" ? "ฟีเจอร์ Pro — ติดต่อผู้ดูแลแอป" : "Pro feature — contact the app admin to enable")}
-        style={{ width:compact?32:36, height:compact?32:36, borderRadius:compact?10:11, border:"1px dashed rgba(45,45,58,0.2)", cursor:"pointer", background:"rgba(45,45,58,0.04)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:compact?13:16, flexShrink:0 }}>
-        🔒
-      </button>
+      <>
+        <button
+          onClick={() => setShowProLock(true)}
+          style={{ width:compact?32:36, height:compact?32:36, borderRadius:compact?10:11, border:"1px dashed rgba(45,45,58,0.2)", cursor:"pointer", background:"rgba(45,45,58,0.04)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:compact?13:16, flexShrink:0 }}>
+          🔒
+        </button>
+        <ConfirmSheet
+          open={showProLock}
+          onClose={()=>setShowProLock(false)}
+          onConfirm={()=>{ /* Sprint K+: navigate to Pro upgrade flow */ }}
+          title={t(lang,"proLockTitle")}
+          message={t(lang,"proLockMessage")}
+          confirmLabel={t(lang,"proLockUpgrade")}
+          cancelLabel={t(lang,"proLockNotNow")}
+          variant="upgrade"
+        />
+      </>
     );
   }
 

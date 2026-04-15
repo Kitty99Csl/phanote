@@ -32,6 +32,7 @@ import {
 import { txDedupKey } from "../lib/constants";
 import { supabase } from "../lib/supabase";
 import { Flag } from "../components/Flag";
+import { ConfirmSheet } from "../components/ConfirmSheet";
 
 export function StatementScanFlow({ profile, lang, onClose, onAdd, customCategories=[], onImportDone=()=>{}, onDeleteBatch=()=>{}, transactions=[] }) {
   const [step, setStep] = useState("currency"); // currency | upload | loading | review | saving | done
@@ -47,6 +48,7 @@ export function StatementScanFlow({ profile, lang, onClose, onAdd, customCategor
   const [currencyMismatch, setCurrencyMismatch] = useState(false);
   const [batchHistory, setBatchHistory] = useState([]);
   const [viewBatchId, setViewBatchId] = useState(null);
+  const [pendingDeleteBatch, setPendingDeleteBatch] = useState(null);
   const fileRef = useRef();
   const imagesRef = useRef(images);
   const { busy: importing, run: runImport } = useClickGuard();
@@ -343,7 +345,7 @@ export function StatementScanFlow({ profile, lang, onClose, onAdd, customCategor
                   <button onClick={() => setViewBatchId(null)} style={{ flex:1, padding:"14px", borderRadius:16, border:"none", background:"rgba(45,45,58,0.08)", color:T.dark, fontWeight:700, fontSize:14, cursor:"pointer", fontFamily:"'Noto Sans',sans-serif" }}>
                     {lang === "lo" ? "ປິດ" : "Close"}
                   </button>
-                  <button onClick={() => { if (confirm(lang === "lo" ? `ລົບ ${batch.tx_count} ທຸລະກຳ?` : `Delete ${batch.tx_count} transactions?`)) deleteBatch(batch.batch_id); }}
+                  <button onClick={() => setPendingDeleteBatch(batch)}
                     style={{ flex:1, padding:"14px", borderRadius:16, border:"none", background:"rgba(192,57,43,0.1)", color:"#C0392B", fontWeight:700, fontSize:14, cursor:"pointer", fontFamily:"'Noto Sans',sans-serif" }}>
                     {lang === "lo" ? `ລົບທັງໝົດ (${batch.tx_count})` : `Delete all (${batch.tx_count})`}
                   </button>
@@ -565,6 +567,15 @@ export function StatementScanFlow({ profile, lang, onClose, onAdd, customCategor
           </div>
         </div>
       )}
+      <ConfirmSheet
+        open={!!pendingDeleteBatch}
+        onClose={()=>setPendingDeleteBatch(null)}
+        onConfirm={()=>{ if (pendingDeleteBatch) deleteBatch(pendingDeleteBatch.batch_id); }}
+        title={t(lang,"confirmDeleteBatchWithCount").replace("{n}", pendingDeleteBatch?.tx_count ?? 0)}
+        confirmLabel={t(lang,"confirmDelete")}
+        cancelLabel={t(lang,"confirmCancel")}
+        destructive
+      />
     </div>
   );
 }

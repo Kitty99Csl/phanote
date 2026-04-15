@@ -12,6 +12,7 @@ import { t } from "./lib/i18n";
 import { showToast } from "./lib/toast";
 import { Logo } from "./components/Logo";
 import { ToastContainer } from "./components/Toast";
+import { ConfirmSheet } from "./components/ConfirmSheet";
 import { PinLock } from "./screens/PinLock";
 import { LoginScreen } from "./screens/LoginScreen";
 import { OnboardingScreen } from "./screens/OnboardingScreen";
@@ -25,6 +26,7 @@ export default function App(){
   const [userId, setUserId]             = useState(null);
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [streakToast, setStreakToast]   = useState(null);
+  const [pendingConfirm, setPendingConfirm] = useState(null); // null | {kind:'delete-tx', txId} | {kind:'reset'}
 
   // ── PIN state ──────────────────────────────────────────────
   const [pinConfig, setPinConfig] = useState(() => {
@@ -253,8 +255,11 @@ export default function App(){
     }
   };
 
-  const handleDeleteTransaction = async (txId) => {
-    if (!window.confirm("Delete this transaction?")) return;
+  const handleDeleteTransaction = (txId) => setPendingConfirm({ kind: "delete-tx", txId });
+
+  const performDeleteTransaction = async () => {
+    const txId = pendingConfirm?.txId;
+    if (!txId) return;
     setTransactions(prev => prev.filter(tx => tx.id !== txId));
     try {
       await dbUpdateTransaction(txId, { is_deleted: true, deleted_at: new Date().toISOString() });
@@ -266,8 +271,9 @@ export default function App(){
     setTransactions(prev => prev.filter(tx => tx.batchId !== batchId && tx.batch_id !== batchId));
   };
 
-  const handleReset = async () => {
-    if (!window.confirm(t(profile?.lang||"lo","reset_confirm"))) return;
+  const handleReset = () => setPendingConfirm({ kind: "reset" });
+
+  const performReset = async () => {
     setProfile(null); setTransactions([]);
     store.del(`phanote_extra_${userId}`);
     await supabase.auth.signOut(); setUserId(null);
@@ -351,6 +357,25 @@ export default function App(){
         />
       )}
       <ToastContainer />
+      <ConfirmSheet
+        open={pendingConfirm?.kind === "delete-tx"}
+        onClose={()=>setPendingConfirm(null)}
+        onConfirm={performDeleteTransaction}
+        title={t(profile?.lang || "lo", "confirmDeleteTransaction")}
+        confirmLabel={t(profile?.lang || "lo", "confirmDelete")}
+        cancelLabel={t(profile?.lang || "lo", "confirmCancel")}
+        destructive
+      />
+      <ConfirmSheet
+        open={pendingConfirm?.kind === "reset"}
+        onClose={()=>setPendingConfirm(null)}
+        onConfirm={performReset}
+        title={t(profile?.lang || "lo", "reset_all")}
+        message={t(profile?.lang || "lo", "reset_confirm")}
+        confirmLabel={t(profile?.lang || "lo", "confirmDelete")}
+        cancelLabel={t(profile?.lang || "lo", "confirmCancel")}
+        destructive
+      />
     </>
   );
 }

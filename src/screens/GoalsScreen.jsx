@@ -14,6 +14,7 @@ import { showToast } from "../lib/toast";
 import { DEFAULT_EXPENSE_CATS, catLabel } from "../lib/categories";
 import { supabase } from "../lib/supabase";
 import { Flag } from "../components/Flag";
+import { ConfirmSheet } from "../components/ConfirmSheet";
 import { GoalModal } from "../modals/GoalModal";
 import { AddSavingsModal } from "../modals/AddSavingsModal";
 
@@ -24,6 +25,7 @@ export function GoalsScreen({ profile, transactions }) {
   const [showCreate, setShowCreate] = useState(false);
   const [editGoal,   setEditGoal]   = useState(null);
   const [addToGoal,  setAddToGoal]  = useState(null);
+  const [pendingDeleteGoalId, setPendingDeleteGoalId] = useState(null);
 
   // Load goals from Supabase
   useEffect(() => {
@@ -40,7 +42,11 @@ export function GoalsScreen({ profile, transactions }) {
   const createGoal = async (data) => {
     const { data: saved, error } = await supabase.from("goals")
       .insert({ user_id: userId, ...data }).select().single();
-    if (error) { console.error("Goal create error:", error); alert("Could not save goal: " + error.message); return; }
+    if (error) {
+      console.error("Goal create error:", error);
+      showToast(t(lang, "toastGoalError"), "error");
+      return;
+    }
     if (saved) setGoals(prev => [...prev, saved]);
     setShowCreate(false);
   };
@@ -72,8 +78,11 @@ export function GoalsScreen({ profile, transactions }) {
     setAddToGoal(null);
   };
 
-  const deleteGoal = async (id) => {
-    if (!window.confirm("Delete this goal?")) return;
+  const deleteGoal = (id) => setPendingDeleteGoalId(id);
+
+  const performDeleteGoal = async () => {
+    const id = pendingDeleteGoalId;
+    if (!id) return;
     await supabase.from("goals").delete().eq("id", id);
     setGoals(prev => prev.filter(g => g.id !== id));
   };
@@ -260,6 +269,15 @@ export function GoalsScreen({ profile, transactions }) {
       {showCreate && <GoalModal profile={profile} onSave={createGoal} onClose={()=>setShowCreate(false)}/>}
       {editGoal   && <GoalModal goal={editGoal} profile={profile} onSave={d=>updateGoal(editGoal.id,d)} onClose={()=>setEditGoal(null)}/>}
       {addToGoal  && <AddSavingsModal goal={addToGoal} onSave={amt=>addSavings(addToGoal.id,amt)} onClose={()=>setAddToGoal(null)}/>}
+      <ConfirmSheet
+        open={!!pendingDeleteGoalId}
+        onClose={()=>setPendingDeleteGoalId(null)}
+        onConfirm={performDeleteGoal}
+        title={t(lang,"confirmDeleteGoal")}
+        confirmLabel={t(lang,"confirmDelete")}
+        cancelLabel={t(lang,"confirmCancel")}
+        destructive
+      />
     </div>
   );
 }
