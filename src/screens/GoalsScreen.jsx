@@ -45,9 +45,15 @@ export function GoalsScreen({ profile, transactions }) {
   };
 
   const updateGoal = async (id, data) => {
-    await supabase.from("goals").update(data).eq("id", id);
-    setGoals(prev => prev.map(g => g.id === id ? { ...g, ...data } : g));
-    setEditGoal(null);
+    try {
+      const { error } = await supabase.from("goals").update(data).eq("id", id);
+      if (error) throw error;
+      setGoals(prev => prev.map(g => g.id === id ? { ...g, ...data } : g));
+      setEditGoal(null);
+    } catch (e) {
+      console.error("Goal update error:", e);
+      throw e;
+    }
   };
 
   const addSavings = async (goalId, amount) => {

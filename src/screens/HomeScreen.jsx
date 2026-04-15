@@ -68,12 +68,21 @@ export function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,o
     // Scroll list to top so new transaction is visible
     setTimeout(()=>scrollRef.current?.scrollTo({top:scrollRef.current.scrollHeight,behavior:"smooth"}),120);
   };
-  const handleEditSave=(updated)=>{
+  const handleEditSave=async(updated)=>{
     if(!editTx)return;
-    setShowEdit(false);setEditTx(null);
-    onUpdateCategory(editTx.id,updated.categoryId,updated.amount,updated.description,updated.currency,updated.type);
+    try {
+      await onUpdateCategory(editTx.id,updated.categoryId,updated.amount,updated.description,updated.currency,updated.type);
+    } catch (e) {
+      console.error("Edit transaction error:", e);
+      throw e;
+    }
     const cat=findCat(updated.categoryId,customCategories);
-    if(profile?.userId){dbSaveMemory(profile.userId,updated.description||editTx.description||"",cat.id,updated.type||editTx.type,0.99).catch(()=>{});}
+    if(profile?.userId){
+      dbSaveMemory(profile.userId,updated.description||editTx.description||"",cat.id,updated.type||editTx.type,0.99)
+        .catch(e=>console.error("dbSaveMemory error:",e));
+    }
+    setShowEdit(false);
+    setEditTx(null);
   };
   return(
     <div style={{height:"100dvh",background:T.bg,display:"flex",flexDirection:"column",maxWidth:430,margin:"0 auto",position:"relative",overflow:"hidden"}}>

@@ -39,13 +39,17 @@ export function BudgetScreen({ profile, transactions }) {
       ? { ...prev, [key]: amount }
       : Object.fromEntries(Object.entries(prev).filter(([k]) => k !== key))
     );
-    if (amount > 0) {
-      await supabase.from("budgets").upsert({
-        user_id: userId, category_id: catId, currency, monthly_limit: amount,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: "user_id,category_id,currency" });
-    } else {
-      await supabase.from("budgets").delete().eq("user_id", userId).eq("category_id", catId).eq("currency", currency);
+    try {
+      const res = amount > 0
+        ? await supabase.from("budgets").upsert({
+            user_id: userId, category_id: catId, currency, monthly_limit: amount,
+            updated_at: new Date().toISOString(),
+          }, { onConflict: "user_id,category_id,currency" })
+        : await supabase.from("budgets").delete().eq("user_id", userId).eq("category_id", catId).eq("currency", currency);
+      if (res.error) throw res.error;
+    } catch (e) {
+      console.error("Budget save error:", e);
+      throw e;
     }
   };
 
@@ -156,7 +160,7 @@ export function BudgetScreen({ profile, transactions }) {
         <SetBudgetModal cat={editCat} currency={selectedCur}
           currentLimit={budgets[`${editCat.id}_${selectedCur}`] || 0}
           spent={spentByCat[editCat.id] || 0} lang={lang}
-          onSave={amount => { saveBudget(editCat.id, selectedCur, amount); setEditCat(null); }}
+          onSave={amount => saveBudget(editCat.id, selectedCur, amount)}
           onClose={() => setEditCat(null)} />
       )}
     </div>
