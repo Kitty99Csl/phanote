@@ -8,12 +8,11 @@
 import { useState } from "react";
 import { T, CURR, fmt, fmtCompact } from "../lib/theme";
 import { catLabel } from "../lib/categories";
-import { useKeyboardOffset } from "../hooks/useKeyboardOffset";
 import { useClickGuard } from "../hooks/useClickGuard";
+import Sheet from "../components/Sheet";
 
 export function SetBudgetModal({ cat, currency, currentLimit, spent, lang, onSave, onClose }) {
   const [amount, setAmount] = useState(currentLimit > 0 ? String(currentLimit) : "");
-  const kbOffset = useKeyboardOffset();
   const { busy, run } = useClickGuard();
   const sym = CURR[currency].symbol;
   const pct = currentLimit > 0 ? Math.min((spent / currentLimit) * 100, 100) : 0;
@@ -34,14 +33,20 @@ export function SetBudgetModal({ cat, currency, currentLimit, spent, lang, onSav
     USD: [50, 100, 200, 500],
   };
   return (
-    <div style={{ position:"fixed", inset:0, zIndex:2000, background:"rgba(30,30,40,0.6)",
-      backdropFilter:"blur(4px)", display:"flex", alignItems:"flex-end", justifyContent:"center" }}
-      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div style={{ background:"#fff", borderRadius:"28px 28px 0 0",
-        width:"100%", maxWidth:430, animation:"slideUp .3s ease", maxHeight:"88dvh", display:"flex", flexDirection:"column",
-        transform: kbOffset > 0 ? `translateY(-${kbOffset}px)` : undefined, transition:"transform .25s ease" }}>
-        {/* Scrollable content */}
-        <div style={{overflowY:"auto",flex:1,minHeight:0,padding:"20px 20px 8px",WebkitOverflowScrolling:"touch"}}>
+    <Sheet open={true} onClose={onClose} showCloseButton={false} footer={
+      <div style={{display:"flex",gap:10}}>
+        {currentLimit > 0 && (
+          <button onClick={remove} disabled={busy} style={{ flex:1, padding:"14px", borderRadius:16,
+            border:"none", cursor:busy?"wait":"pointer", background:"rgba(255,179,167,0.15)", color:"#C0392B",
+            fontWeight:700, fontSize:13, fontFamily:"'Noto Sans',sans-serif", opacity:busy?0.6:1 }}>Remove</button>
+        )}
+        <button onClick={save} disabled={busy} style={{ flex:2, padding:"14px", borderRadius:16, border:"none",
+          cursor:busy?"wait":"pointer", background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)", color:"#1A4020",
+          fontWeight:800, fontSize:15, fontFamily:"'Noto Sans',sans-serif",
+          boxShadow:"0 4px 16px rgba(172,225,175,0.4)", opacity:busy?0.6:1 }}>Save Budget ✓</button>
+      </div>
+    }>
+      <div style={{paddingTop:20,paddingBottom:8}}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
           <div style={{ display:"flex", alignItems:"center", gap:10 }}>
             <span style={{ fontSize:30 }}>{cat.emoji}</span>
@@ -86,23 +91,7 @@ export function SetBudgetModal({ cat, currency, currentLimit, spent, lang, onSav
             }}>{fmtCompact(v, currency)}</button>
           ))}
         </div>
-        </div>{/* end scroll */}
-        {/* Pinned buttons — always above keyboard */}
-        <div style={{padding:"12px 20px", paddingBottom:"calc(env(safe-area-inset-bottom,0px) + 12px)",
-          borderTop:"0.5px solid rgba(45,45,58,0.06)", flexShrink:0, background:"#fff"}}>
-          <div style={{display:"flex",gap:10}}>
-            {currentLimit > 0 && (
-              <button onClick={remove} disabled={busy} style={{ flex:1, padding:"14px", borderRadius:16,
-                border:"none", cursor:busy?"wait":"pointer", background:"rgba(255,179,167,0.15)", color:"#C0392B",
-                fontWeight:700, fontSize:13, fontFamily:"'Noto Sans',sans-serif", opacity:busy?0.6:1 }}>Remove</button>
-            )}
-            <button onClick={save} disabled={busy} style={{ flex:2, padding:"14px", borderRadius:16, border:"none",
-              cursor:busy?"wait":"pointer", background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)", color:"#1A4020",
-              fontWeight:800, fontSize:15, fontFamily:"'Noto Sans',sans-serif",
-              boxShadow:"0 4px 16px rgba(172,225,175,0.4)", opacity:busy?0.6:1 }}>Save Budget ✓</button>
-          </div>
-        </div>
       </div>
-    </div>
+    </Sheet>
   );
 }

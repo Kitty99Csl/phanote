@@ -8,10 +8,9 @@
 
 import { T } from "../lib/theme";
 import { getLevel, getNextLevel, getLevelProgress } from "../lib/streak";
-import { useKeyboardOffset } from "../hooks/useKeyboardOffset";
+import Sheet from "../components/Sheet";
 
 export function StreakModal({ profile, onClose }) {
-  const kbOffset = useKeyboardOffset();
   const { streakCount = 0, xp = 0, name = "" } = profile;
   const level    = getLevel(xp);
   const nextLevel = getNextLevel(xp);
@@ -27,12 +26,8 @@ export function StreakModal({ profile, onClose }) {
   ];
 
   return (
-    <div style={{position:"fixed",inset:0,zIndex:3000,background:"rgba(30,30,40,0.6)",
-      backdropFilter:"blur(4px)",display:"flex",alignItems:"flex-end",justifyContent:"center"}}
-      onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
-      <div style={{background:"#fff",borderRadius:"28px 28px 0 0",width:"100%",maxWidth:430,animation:"slideUp .3s ease",maxHeight:"88dvh",display:"flex",flexDirection:"column",
-        transform:kbOffset>0?`translateY(-${kbOffset}px)`:undefined,transition:"transform .25s ease"}}>
-        <div style={{overflowY:"auto",flex:1,minHeight:0,padding:"24px 24px 24px",WebkitOverflowScrolling:"touch"}}>
+    <Sheet open={true} onClose={onClose} showCloseButton={false}>
+      <div style={{paddingTop:24,paddingBottom:24}}>
 
         {/* Header */}
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
@@ -106,8 +101,7 @@ export function StreakModal({ profile, onClose }) {
             </div>
           ))}
         </div>
-        </div>{/* end scroll */}
       </div>
-    </div>
+    </Sheet>
   );
 }
