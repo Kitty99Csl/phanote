@@ -9,7 +9,9 @@ import {
 import { updateStreak } from "./lib/streak";
 import { DEFAULT_EXPENSE_CATS, DEFAULT_INCOME_CATS, findCat } from "./lib/categories";
 import { t } from "./lib/i18n";
+import { showToast } from "./lib/toast";
 import { Logo } from "./components/Logo";
+import { ToastContainer } from "./components/Toast";
 import { PinLock } from "./screens/PinLock";
 import { LoginScreen } from "./screens/LoginScreen";
 import { OnboardingScreen } from "./screens/OnboardingScreen";
@@ -209,7 +211,10 @@ export default function App(){
       await dbTrackEvent(userId, "transaction_added", { type: tx.type, currency: tx.currency, category: tx.categoryId, amount: tx.amount });
       const bonusToast = await updateStreak(userId, profile, setProfile);
       if (bonusToast) setStreakToast(bonusToast);
-    } catch (e) { console.error("Save tx error:", e); }
+    } catch (e) {
+      console.error("Save tx error:", e);
+      showToast(t(profile?.lang || "en", "toastSaveError"), "error");
+    }
   };
 
   const handleUpdateProfile = async (changes) => {
@@ -241,7 +246,11 @@ export default function App(){
       if (newCurrency) updates.currency = newCurrency;
       if (newType) updates.type = newType;
       await dbUpdateTransaction(txId, updates);
-    } catch (e) { console.error("Update error:", e); }
+    } catch (e) {
+      console.error("Update error:", e);
+      showToast(t(profile?.lang || "en", "toastSaveError"), "error");
+      throw e;
+    }
   };
 
   const handleDeleteTransaction = async (txId) => {
@@ -341,6 +350,7 @@ export default function App(){
           setPinSetupMode={(mode)=>{ setPinSetupMode(mode); setPinInput(""); setPinSetupStep("enter"); setPinSetupFirst(""); }}
         />
       )}
+      <ToastContainer />
     </>
   );
 }

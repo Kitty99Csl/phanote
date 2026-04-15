@@ -83,6 +83,10 @@ export const i18n={
     biggestDays:"Biggest days",viewTransactionsBtn:"View transactions",txCount:"{n} txs",dayPopoverTop:"Top:",
     todayLabel:"Today",recentLabel:"Recent",
     months:["January","February","March","April","May","June","July","August","September","October","November","December"],
+    toastSaveError:"Hmm, couldn't save that. Try again?",
+    toastBudgetError:"Budget didn't save. Try again in a moment?",
+    toastGoalError:"Goal didn't update. Try again?",
+    toastGenericError:"Something didn't go through. Try again?",
   },
   lo:{
     welcome:"ຍິນດີຕ້ອນຮັບ Phajot",tagline:"ພາຈົດ — ຕິດຕາມການເງິນຂອງທ່ານ",
@@ -165,6 +169,10 @@ export const i18n={
     biggestDays:"ວັນໃຊ້ຈ່າຍຫຼາຍສຸດ",viewTransactionsBtn:"ເບິ່ງທຸລະກຳ",txCount:"{n} ທຸລະກຳ",dayPopoverTop:"ສູງສຸດ:",
     todayLabel:"ມື້ນີ້",recentLabel:"ລ່າສຸດ",
     months:["ມັງກອນ","ກຸມພາ","ມີນາ","ເມສາ","ພຶດສະພາ","ມິຖຸນາ","ກໍລະກົດ","ສິງຫາ","ກັນຍາ","ຕຸລາ","ພະຈິກ","ທັນວາ"],
+    toastSaveError:"ບໍ່ສາມາດບັນທຶກໄດ້. ລອງໃໝ່ແດ່?",
+    toastBudgetError:"ງົບປະມານບໍ່ໄດ້ບັນທຶກ. ລອງໃໝ່ໃນອີກໜ່ອຍ?",
+    toastGoalError:"ເປົ້າໝາຍບໍ່ໄດ້ອັບເດດ. ລອງໃໝ່ແດ່?",
+    toastGenericError:"ມີບາງຢ່າງຜິດພາດ. ລອງໃໝ່ແດ່?",
   },
   th:{
     welcome:"ยินดีต้อนรับสู่ Phajot",tagline:"Phajot — ติดตามการเงินของคุณ",
@@ -226,6 +234,10 @@ export const i18n={
     biggestDays:"วันที่จ่ายมากสุด",viewTransactionsBtn:"ดูรายการ",txCount:"{n} รายการ",dayPopoverTop:"สูงสุด:",
     todayLabel:"วันนี้",recentLabel:"ล่าสุด",
     months:["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"],
+    toastSaveError:"อุ๊ย บันทึกไม่สำเร็จ ลองใหม่อีกครั้งนะ",
+    toastBudgetError:"งบประมาณยังไม่ได้บันทึก ลองใหม่อีกสักครู่นะ",
+    toastGoalError:"เป้าหมายยังไม่ได้อัปเดต ลองใหม่นะ",
+    toastGenericError:"มีบางอย่างไม่สำเร็จ ลองใหม่นะ",
   },
 };
 export const t=(lang,key)=>i18n[lang]?.[key]||i18n.en[key]||key;

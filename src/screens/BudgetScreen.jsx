@@ -10,6 +10,8 @@ import { useState, useEffect } from "react";
 import { T, fmt } from "../lib/theme";
 import { DEFAULT_EXPENSE_CATS, catLabel } from "../lib/categories";
 import { supabase } from "../lib/supabase";
+import { t } from "../lib/i18n";
+import { showToast } from "../lib/toast";
 import { Flag } from "../components/Flag";
 import { SetBudgetModal } from "../modals/SetBudgetModal";
 
@@ -49,6 +51,7 @@ export function BudgetScreen({ profile, transactions }) {
       if (res.error) throw res.error;
     } catch (e) {
       console.error("Budget save error:", e);
+      showToast(t(lang, "toastBudgetError"), "error");
       throw e;
     }
   };

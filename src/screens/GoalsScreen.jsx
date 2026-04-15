@@ -10,6 +10,7 @@
 import { useState, useEffect } from "react";
 import { T, fmt, fmtCompact } from "../lib/theme";
 import { t } from "../lib/i18n";
+import { showToast } from "../lib/toast";
 import { DEFAULT_EXPENSE_CATS, catLabel } from "../lib/categories";
 import { supabase } from "../lib/supabase";
 import { Flag } from "../components/Flag";
@@ -52,6 +53,7 @@ export function GoalsScreen({ profile, transactions }) {
       setEditGoal(null);
     } catch (e) {
       console.error("Goal update error:", e);
+      showToast(t(lang, "toastGoalError"), "error");
       throw e;
     }
   };
