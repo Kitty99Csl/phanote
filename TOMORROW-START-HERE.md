@@ -14,8 +14,9 @@
 | C — Toast system | `2e99fad` | Shared `useSyncExternalStore` toast store + `ToastContainer`, wired into 5 catch blocks, 4 i18n keys lo/th/en |
 | A — Sheet migration | `05f8f7d` | 3 remaining raw-div modals (Edit Transaction, Set Budget, Streak) migrated to `Sheet`. Zero raw-div modals remain. |
 | RLS cleanup | (Supabase SQL, no commit) | Speaker ran 6 adversarial probes against `app_events` + `monthly_reports`. All passed. 7 user-data tables now RLS-verified. |
+| Bonus: schema drift capture | `2ac2897` | Originally a Sprint C line item — shipped early. `supabase/migrations/004_capture_current_schema.sql` (289 lines) captures all post-003 drift + missing tables + canonical RLS. Closes the HIGH "schema drift" risk from RISKS.md. |
 
-**Production bundle hash progression:** `CWOl1l1h` → `CZZVjtlT` → `CiaE2sAV` → `CewyGnUw`. All 3 commits flipped the hash cleanly. See `docs/session-10/SUMMARY.md` for the full session wrap-up.
+**Production bundle hash progression:** `CWOl1l1h` → `CZZVjtlT` → `CiaE2sAV` → `CewyGnUw`. All 3 code commits flipped the hash cleanly; the two docs commits and the migration commit did not touch the bundle. See `docs/session-10/SUMMARY.md` for the full session wrap-up.
 
 **Sprint B definition of done — all boxes checked:**
 - [x] 5 parent-wrapper bugs fixed
@@ -44,23 +45,7 @@ Open `docs/tower/AUTH-DESIGN.md` for the full step-by-step. Summary:
 ### Priority 1 — Real auth replacement
 Replace the phone-to-email auth trick (`{countryCode}{phone}@phanote.app` + `Ph4n0te{phone}X` password) with proper phone OTP via Supabase's native phone auth provider or LINE LIFF login. The current scheme is intentionally preserved in CLAUDE.md's "don't touch" list because existing users depend on it — Sprint C's job is to build the new auth path alongside the old, provide a legacy migration flow, and eventually retire the `@phanote.app` email trick without breaking existing accounts.
 
-### Priority 2 — Schema drift capture
-Write `supabase/migrations/004_capture_current_schema.sql`. This is a mechanical transcription of the live Supabase schema into a repeatable migration file:
-
-**4 tables with column drift** (migration missing columns the live DB has):
-- `profiles` — 9 missing columns
-- `transactions` — 8 missing columns
-- `budgets` — column name drift (`amount`+`period` → `monthly_limit`)
-- `ai_memory` — 2 missing columns + 1 unused column
-
-**3 tables entirely missing from migrations** (created via Supabase dashboard only):
-- `goals`
-- `app_events`
-- `monthly_reports`
-
-Then `005_rls_policies_final.sql` to capture the Session 9 + Session 10 RLS state as code. After this, the repo can rebuild production state from migrations alone. Closes the "schema drift" HIGH risk from RISKS.md.
-
-### Priority 3 — Native-dialog replacement
+### Priority 2 — Native-dialog replacement
 Replace all `window.confirm()` and `alert()` calls with the shared toast system (for alerts) and a new `ConfirmDialog` component (for confirmations). Scope includes:
 - `App.jsx:248` `handleDeleteTransaction` — uses `window.confirm("Delete this transaction?")`
 - Any other `window.confirm` / `alert` calls found in a grep sweep
@@ -127,23 +112,21 @@ Before marking Sprint C complete:
 
 - [ ] New phone auth path works end-to-end (signup, login, session restore)
 - [ ] Legacy `@phanote.app` trick still works for existing users (no forced migration yet)
-- [ ] `supabase/migrations/004_capture_current_schema.sql` created and applied
-- [ ] `supabase/migrations/005_rls_policies_final.sql` created (optional if drift capture proves complex)
 - [ ] All `window.confirm()` / `alert()` calls replaced with toast or `ConfirmDialog`
 - [ ] 4 remaining catch sites from Sprint B wired into toast system
 - [ ] Production bundle hash different from session start (Rule 11)
 - [ ] Wife's account still works after deploy
 - [ ] `docs/session-11/SUMMARY.md` created
-- [ ] `docs/RISKS.md` updated — schema drift HIGH risk closed or downgraded
+- [ ] `docs/RISKS.md` updated
 - [ ] `TOMORROW-START-HERE.md` updated to point at Sprint D (i18n marathon)
 
 ## If Sprint C slips
 
 If Session 11 only completes auth replacement:
-- Move schema drift + native-dialog replacement to Session 12
+- Move native-dialog replacement to Session 12
 - Sprint D (i18n marathon) shifts to Session 13, compressing Sprint E or slipping Tower launch by one session
 
-If Session 11 only completes schema drift + native-dialog replacement:
+If Session 11 only completes native-dialog replacement:
 - Auth replacement moves to Session 12
 - Sprint D stays in Session 13
 - Tower launch timeline unchanged

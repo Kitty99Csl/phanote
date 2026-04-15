@@ -26,25 +26,6 @@ The build-break was fixed in commit `aa78f9e` (Session 9) via exact Node version
 2. Add a post-merge verification step to CLAUDE.md non-negotiables — always `curl` the production bundle hash after a user-visible merge. **DONE** (rules 11 and 12 in CLAUDE.md).
 3. Longer term: master control room (Kitty's planned Session 10+ feature) with deploy health monitoring.
 
-### [HIGH] Schema drift between migration files and live Supabase
-**Discovered:** Session 9 RLS investigation
-**Status:** Unfixed — flagged for future session
-
-The repo's `supabase/migrations/001-003 + seed.sql` reflect the **Phase 1 original schema** (April 2026). Since then, columns and tables have been added via the Supabase dashboard without corresponding migration files. The repo therefore **cannot rebuild production state** from migrations alone.
-
-**4 tables with column drift** (migration file is missing columns the live DB has):
-- `profiles` — missing 9 columns: `phone`, `phone_country_code`, `avatar`, `custom_categories`, `exp_cats`, `inc_cats`, `last_seen_at`, `app_version`, `pin_config`
-- `transactions` — missing 8 columns: `note`, `category_name`, `category_emoji`, `raw_input`, `is_deleted`, `deleted_at`, `batch_id`, `edited_at`
-- `budgets` — column name drift: migration has `amount` + `period`, live DB uses `monthly_limit` (no period column)
-- `ai_memory` — missing `input_pattern` and `type` columns; migration has `category_id` which is not referenced in current code
-
-**3 tables entirely missing from migration files** (created via Supabase dashboard only):
-- `goals` (actively used by GoalsScreen, SafeToSpend, AiAdvisorModal)
-- `app_events` (actively used by `dbTrackEvent` in `src/lib/db.js`)
-- `monthly_reports` (actively used by MonthlyWrapModal as a narrative cache)
-
-**Mitigation:** Write `supabase/migrations/004_capture_current_schema.sql` with `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` for drift and `CREATE TABLE IF NOT EXISTS` for missing tables. Then `005_rls_policies_final.sql` to capture the Session 9 RLS work. Deferred because it's not on the critical path for Sprint B priorities, but this is a real disaster-recovery gap — if the Supabase project were ever lost or needed to be rebuilt, we could not restore it from the repo alone.
-
 ### [HIGH] No automated RLS regression tests
 **Discovered:** Session 9
 **Status:** Unmitigated
@@ -170,3 +151,7 @@ Shared toast system built with `useSyncExternalStore` (`src/lib/toast.js` + `Toa
 ### ~~[MEDIUM] `app_events` and `monthly_reports` RLS not adversarially verified~~
 **Resolved:** Session 10 RLS cleanup (no git commit — direct Supabase SQL) · 2026-04-15
 Speaker ran 3 adversarial probes against each table in the Supabase SQL Editor using User B's identity (`5e3629a1-aa60-4c25-a013-11bf40b8e6b9`). All 6 probes passed: cross-user SELECT blocked, cross-user INSERT errored with 42501, self SELECT returned correctly. All 7 user-data tables now have adversarially-verified RLS. See `docs/session-9/RLS-HARDENING.md` Session 10 addendum and `docs/session-10/SUMMARY.md`.
+
+### ~~[HIGH] Schema drift between migration files and live Supabase~~
+**Resolved:** Session 10 commit `2ac2897` · 2026-04-15
+`supabase/migrations/004_capture_current_schema.sql` (289 lines) captures all post-003 drift: 9 profiles columns, 8 transactions columns, budgets `monthly_limit` + unique index, ai_memory `category_name` + `type` + unique index, and full `CREATE TABLE IF NOT EXISTS` blocks for `goals`, `app_events`, `monthly_reports`. Canonical Session 9 RLS policies applied to all 7 user-data tables with `DROP POLICY IF EXISTS` enumerating every legacy name so the file is fully replay-safe. Vestigial columns from 003 (category_id FKs, recurring_id, is_recurring, amount/period, currency) documented but not dropped per Session 10 policy: capture, don't drop. Not run against live production in the authoring commit — file exists for disaster recovery + fresh-instance rebuilds. Closes the disaster-recovery gap: the repo can now rebuild production-equivalent schema from `001 → 004`. See `docs/session-10/SUMMARY.md`.
