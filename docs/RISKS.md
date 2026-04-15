@@ -7,7 +7,7 @@ Living document. Updated at the end of each session.
 - **MEDIUM** — quality issue, user-visible but recoverable, or latent failure mode
 - **LOW** — tech debt, nice-to-have, or documentation gap
 
-**Last updated:** 2026-04-14 (Session 9)
+**Last updated:** 2026-04-15 (Session 10)
 
 ---
 
@@ -59,43 +59,6 @@ Session 9 verified RLS **manually** with an adversarial SQL test in the Supabase
 
 ## MEDIUM
 
-### [MEDIUM] Parent-side wrapper hygiene bugs
-**Discovered:** Session 8 Sprint A Ext click-guard sweep
-**Status:** Unfixed — Session 10 Priority B
-
-5 items flagged in `docs/session-8/SPRINT-A-EXT-BACKLOG.md`. Each is a 5-line fix; the whole sweep is ~1 hour. They make the `useClickGuard` visual busy state actually visible on the 5 affected modals (currently the busy state flashes 0ms because the parent wrappers return undefined instantly).
-
-1. **`BudgetScreen.jsx:159`** — fire-and-forget `onSave` wrapper. `saveBudget(...)` is async but the wrapper doesn't await it. Fix: `onSave={async amount => { await saveBudget(...); setEditCat(null); }}`.
-2. **`BudgetScreen.jsx:36`** — `saveBudget` has no try/catch. On Supabase failure, throws unhandled rejection. Fix: wrap + toast.
-3. **`HomeScreen.jsx:71`** — `handleEditSave` is sync, fires async `onUpdateCategory(...)` without awaiting. Same pattern as BudgetScreen:159.
-4. **`dbSaveMemory`** fire-and-forget in `HomeScreen.handleEditSave` — `.catch(()=>{})` swallows errors silently.
-5. **`GoalsScreen.jsx:47`** — `updateGoal` has no try/catch. On Supabase failure, optimistic state update still runs, leaving local state out of sync with the database.
-
-**Positive template:** `GoalsScreen.jsx:252-253` does it right — both `createGoal` and `updateGoal` wrappers properly return Promises and close after await. Use as the reference shape.
-
-### [MEDIUM] Silent DB write failures not surfaced to users
-**Discovered:** Session 8 Sprint A Ext click-guard sweep, Session 9 RLS investigation
-**Status:** Unfixed — Session 10 Priority C
-
-Multiple catch blocks swallow errors without surfacing to the user:
-- `dbInsertTransaction` catch in `handleAddTransaction` (App.jsx:212) — `console.error("Save tx error:", e);` only
-- `dbSaveMemory` .catch(()=>{}) — completely silent
-- `saveBudget` no try/catch — unhandled rejection
-- `updateGoal` no try/catch — same
-- `dbTrackEvent` .catch(()=>{}) — silent (acceptable for an event log, but flags a pattern)
-
-User sees **no indication** when a write fails. A partial Supabase outage or an RLS regression could cause writes to fail for hours before any user notices their data isn't saving.
-
-**Mitigation:** Add a shared `useToast` or similar and surface errors at the App.jsx handler layer. Session 10 Priority C, estimated 2-3 hours.
-
-### [MEDIUM] 3 raw-div modals with hand-rolled keyboard offset
-**Discovered:** Session 8 Sprint A Ext
-**Status:** Unfixed — Session 10 Priority A
-
-`EditTransactionModal`, `SetBudgetModal`, `StreakModal` still use raw `<div>` overlays + manual `useKeyboardOffset` + `transform:translateY(-kbOffset)` math. Session 8 migrated `AddSavingsModal`, `AiAdvisorModal`, and `GoalModal` to the shared `Sheet` component. Hand-rolled math is fragile across iOS/Android — specific keyboard variants (hardware keyboard, search-enabled keyboards, Thai script keyboards with prediction bars) can mis-offset.
-
-**Mitigation:** Session 10 Priority A Sheet migration, estimated 4-5 hours total. Follow the pattern proven on GoalModal in commit `bacdf06`. Preserves `useClickGuard` wiring byte-identical (verified path).
-
 ### [MEDIUM] Thai translations missing for 4 statementError* keys
 **Discovered:** Session 8 Sprint A Ext fetchWithTimeout sweep
 **Status:** Unfixed — Sprint D i18n marathon
@@ -103,18 +66,6 @@ User sees **no indication** when a write fails. A partial Supabase outage or an 
 `statementErrorParse`, `statementErrorNetwork`, `statementErrorRateLimit`, `statementErrorTimeout` all have EN + LO entries but no TH. Thai users fall back to English via the `t()` helper's implicit fallback. This is a **pre-existing gap from Session 6** — Session 9 added one more key (`statementErrorTimeout`) following the same partial pattern.
 
 **Mitigation:** Sprint D i18n marathon. Planned, not scheduled. Low urgency because English fallback is functional, just off-brand.
-
-### [MEDIUM] `app_events` and `monthly_reports` RLS not adversarially verified
-**Discovered:** Session 9 RLS hardening
-**Status:** Partially mitigated — tables have policies, but not verified with second user
-
-Session 9's RLS sweep focused on the user-data tables: `profiles`, `transactions`, `budgets`, `ai_memory`, `goals`. The two remaining tables with user data (`app_events` as a write log, `monthly_reports` as a read cache) were not adversarially tested because of time pressure. Both are lower-risk:
-- `app_events` — write-only event log, users never read their own events in-app, minimal data leak surface
-- `monthly_reports` — read cache, worst case is cross-user narrative exposure (PII minor, not financial)
-
-But both should still get canonical single-policy coverage and adversarial verification before public launch.
-
-**Mitigation:** Run the 3 probes from `docs/session-9/RLS-HARDENING.md` against both tables in Session 10 cleanup. ~15 minutes.
 
 ---
 
@@ -203,3 +154,19 @@ Policy dropped in Supabase SQL Editor, replaced with canonical `auth.uid() = use
 ### ~~[HIGH] CF Pages build failing on `.nvmrc` major-version mismatch~~
 **Resolved:** Session 9 commit `aa78f9e`
 Pinned `.nvmrc` to `24.13.1`, added `engines` field to package.json, regenerated `package-lock.json` under Node 24.13.1 + npm 11.8.0. See `docs/session-9/SUMMARY.md`.
+
+### ~~[MEDIUM] Parent-side wrapper hygiene bugs~~
+**Resolved:** Session 10 Priority B · commit `6b4911f` · 2026-04-15
+5 fire-and-forget `onSave` sites fixed using `GoalsScreen.jsx:253`'s implicit-return Promise pattern as template. Supabase `{ error }` now destructured and thrown where relevant, wrapped in try/catch that logs + rethrows so modals stay open on failure. Click-guard busy state now visible for the full save duration. See `docs/session-10/SUMMARY.md`.
+
+### ~~[MEDIUM] Silent DB write failures not surfaced to users~~
+**Resolved:** Session 10 Priority C · commit `2e99fad` · 2026-04-15
+Shared toast system built with `useSyncExternalStore` (`src/lib/toast.js` + `ToastContainer` export in `src/components/Toast.jsx`). Wired into 5 catch blocks: `saveBudget`, `updateGoal`, `handleAddTransaction`, `handleUpdateCategory` (with added rethrow from Priority B follow-up), and `dbSaveMemory` (console.error only, background). 4 i18n keys added (lo/th/en) with warm brand-voice copy. 4 more catch sites (`handleUpdateProfile`, `handleUpdateNote`, `handleDeleteTransaction`, `StatementScanFlow` delete batch) intentionally deferred to Sprint C's native-dialog pass. See `docs/session-10/SUMMARY.md`.
+
+### ~~[MEDIUM] 3 raw-div modals with hand-rolled keyboard offset~~
+**Resolved:** Session 10 Priority A · commit `05f8f7d` · 2026-04-15
+`EditTransactionModal`, `SetBudgetModal`, `StreakModal` all migrated to the shared `Sheet` component, following the `GoalModal` pattern from commit `bacdf06`. `useKeyboardOffset` imports + hooks removed from all 3 files. Zero raw-div modals remain in the codebase. Sheet now covers 9 modals total. See `docs/session-10/SUMMARY.md`.
+
+### ~~[MEDIUM] `app_events` and `monthly_reports` RLS not adversarially verified~~
+**Resolved:** Session 10 RLS cleanup (no git commit — direct Supabase SQL) · 2026-04-15
+Speaker ran 3 adversarial probes against each table in the Supabase SQL Editor using User B's identity (`5e3629a1-aa60-4c25-a013-11bf40b8e6b9`). All 6 probes passed: cross-user SELECT blocked, cross-user INSERT errored with 42501, self SELECT returned correctly. All 7 user-data tables now have adversarially-verified RLS. See `docs/session-9/RLS-HARDENING.md` Session 10 addendum and `docs/session-10/SUMMARY.md`.

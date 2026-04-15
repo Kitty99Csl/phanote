@@ -359,3 +359,67 @@ BEGIN;
   VALUES ('<user-a-uuid>', 1.00, 'USD', 'expense', 'should fail', CURRENT_DATE);
 ROLLBACK;
 ```
+
+---
+
+## Session 10 addendum — `app_events` + `monthly_reports` verification
+
+**Date:** 2026-04-15
+**Run by:** Speaker (Kitty) in Supabase SQL Editor, direct
+**Status:** Complete. Both tables passed all 3 probes. 7-table RLS coverage now complete.
+
+Session 9 left two user-data tables unverified because of time pressure: `app_events` (write-only event log) and `monthly_reports` (Monthly Wrap narrative cache). Both were lower-risk than the Session 9 scope but still needed adversarial verification before public launch. Flagged as a MEDIUM risk in `docs/RISKS.md` and as a ~15-minute Sprint B cleanup priority in `docs/tower/SPRINT-B-PLAN.md`.
+
+During Sprint B, the Speaker ran the probes directly in the Supabase SQL Editor using the same User B identity from Session 9 (`5e3629a1-aa60-4c25-a013-11bf40b8e6b9`) and the same 3-probe pattern. Claude Code did not run any of this SQL — all 6 probes were executed by the Speaker through the Supabase dashboard.
+
+### Impersonation setup (identical to Session 9)
+
+```sql
+BEGIN;
+  SET LOCAL role = 'authenticated';
+  SET LOCAL request.jwt.claims = '{"sub":"5e3629a1-aa60-4c25-a013-11bf40b8e6b9","role":"authenticated"}';
+```
+
+### Probes run against `app_events`
+
+| # | Probe | Expected | Actual |
+|---|---|---|---|
+| 1 | `SELECT count(*) FROM app_events WHERE user_id != '5e3629a1-...'` | 0 rows | **0 rows** ✓ |
+| 2 | `INSERT INTO app_events (user_id, event_type, event_data) VALUES ('00000000-0000-0000-0000-000000000000', 'test', '{}'::jsonb)` | ERROR 42501 | **ERROR 42501**: `new row violates row-level security policy for table "app_events"` ✓ |
+| 3 | `SELECT count(*) FROM app_events WHERE user_id = '5e3629a1-...'` | ≥ 0 rows, no error | **4 rows** ✓ |
+
+### Probes run against `monthly_reports`
+
+| # | Probe | Expected | Actual |
+|---|---|---|---|
+| 1 | `SELECT count(*) FROM monthly_reports WHERE user_id != '5e3629a1-...'` | 0 rows | **0 rows** ✓ |
+| 2 | `INSERT INTO monthly_reports (user_id, ...) VALUES ('<other-uuid>', ...)` | ERROR 42501 | **ERROR 42501** ✓ (confirmed by Speaker screenshot of the red error banner) |
+| 3 | `SELECT count(*) FROM monthly_reports WHERE user_id = '5e3629a1-...'` | ≥ 0 rows, no error | **0 rows** ✓ (User B has no Monthly Wrap cache yet — correct, they haven't generated one) |
+
+### Why "self SELECT returns 0 rows" is still a pass
+
+For `monthly_reports` specifically, Probe 3 returned 0 rows for User B. This is **correct** and counts as a pass — the probe is checking whether RLS is over-blocking (preventing a user from reading their own rows). "0 rows, no error" is the expected shape when a user legitimately has no data in a table; the test failure shape would be an RLS-violation error, not an empty result set. User B is a throwaway test account that has never generated a Monthly Wrap, so the `monthly_reports` table simply has no rows for them. The probe proves: "the SELECT ran successfully at the Postgres level without RLS complaining, and returned the correct empty set."
+
+**All 6 probes passed. Cross-user isolation proven for both tables.**
+
+### Updated RLS coverage table
+
+| Table | Canonical policy shape | Verified in | User B probes passed |
+|---|---|---|---|
+| `profiles` | `auth.uid() = id` (FOR ALL) | Session 9 | 3/3 ✓ |
+| `transactions` | `auth.uid() = user_id` (FOR ALL) | Session 9 | 3/3 ✓ |
+| `budgets` | `auth.uid() = user_id` (FOR ALL) | Session 9 | 3/3 ✓ |
+| `ai_memory` | `auth.uid() = user_id` (FOR ALL) | Session 9 (dropped `USING(true)` leak) | 3/3 ✓ |
+| `goals` | `auth.uid() = user_id` (FOR ALL) | Session 9 (enabled RLS on table) | 3/3 ✓ |
+| `app_events` | `auth.uid() = user_id` (FOR ALL) | **Session 10** | **3/3 ✓** |
+| `monthly_reports` | `auth.uid() = user_id` (FOR ALL) | **Session 10** | **3/3 ✓** |
+
+**21 probes run across 7 user-data tables. 21 passed. Zero cross-user leaks at the database level.**
+
+### What's still deferred
+
+- **Automated test suite** — all 21 probes above were run manually in the Supabase dashboard. There is no git-tracked test harness that can re-run them before future deploys. Still flagged as HIGH in `docs/RISKS.md`. **Owner assigned: Osiris (QA Sentinel). Target sprint: Sprint E (Session 13).** Osiris' charter includes building Phajot's first automated test surface, and RLS regression is the first target because it's the highest-leverage coverage (one broken policy = silent data leak across all users).
+
+- **Schema drift capture** — `004_capture_current_schema.sql` still needed. Covers `app_events` and `monthly_reports` both of which are entirely missing from migration files. Unchanged from Session 9's plan. Separate HIGH in RISKS.md.
+
+- **Dead migrations** (`categories`, `recurring_rules`) — unchanged since Session 9. LOW in RISKS.md.
