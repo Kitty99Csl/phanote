@@ -1,0 +1,95 @@
+-- ============================================================================
+-- 005: Add legacy_auth flag to profiles (Session 11, 2026-04-15)
+-- ============================================================================
+--
+-- Purpose: support Sprint C's password-auth replacement. Marks every profile
+-- that existed before Sprint C deployed as "legacy" so the frontend can
+-- detect them on first login post-deploy and route them through the
+-- one-time MigrationScreen that lets them set a real password.
+--
+-- Design reference: docs/tower/AUTH-DESIGN.md §3.3 (migration flow),
+-- §4.1 (database changes), §11 (deploy & verify protocol), §12 (wife
+-- migration protocol).
+--
+-- ----------------------------------------------------------------------------
+-- REPLAY-SAFETY
+-- ----------------------------------------------------------------------------
+--
+-- Both statements are idempotent:
+--
+--   ALTER TABLE ... ADD COLUMN IF NOT EXISTS       — no-op if column exists
+--   UPDATE profiles SET legacy_auth = true
+--     WHERE created_at < NOW()                     — no-op for future users
+--                                                    (their created_at will be
+--                                                    in the future relative to
+--                                                    this file's NOW() at the
+--                                                    time it was written,
+--                                                    but once they exist and
+--                                                    have legacy_auth=false
+--                                                    from the column default,
+--                                                    the UPDATE either re-sets
+--                                                    them to true — which the
+--                                                    frontend treats correctly
+--                                                    by routing them to
+--                                                    MigrationScreen — or, if
+--                                                    run a second time later,
+--                                                    re-sets them from already
+--                                                    true to true, a no-op)
+--
+-- Critically: if this file is re-run AFTER Sprint C has shipped and some
+-- users have already migrated (legacy_auth=false via MigrationScreen), the
+-- UPDATE statement will RE-FLAG those migrated users as legacy_auth=true
+-- if their created_at is before NOW() at re-run time. That would force them
+-- through MigrationScreen a second time. DO NOT re-run this file after the
+-- initial Sprint C deploy. This is a one-shot capture-and-flag migration.
+--
+-- If a future session needs to add a similar column, write a new migration
+-- file (006+) instead of re-running this one.
+--
+-- ----------------------------------------------------------------------------
+-- ROLLBACK
+-- ----------------------------------------------------------------------------
+--
+-- Rolling back Sprint C does NOT require removing the legacy_auth column.
+-- The reverted frontend simply ignores it — the current code in
+-- src/lib/supabase.js uses the derived-password pattern and never SELECTs
+-- legacy_auth. The column can stay in place indefinitely without affecting
+-- the old code path. See docs/tower/AUTH-DESIGN.md §9 for the full
+-- rollback plan.
+--
+-- If a hard rollback is needed (e.g., this migration itself caused a
+-- problem), the reversal is:
+--
+--   ALTER TABLE profiles DROP COLUMN IF EXISTS legacy_auth;
+--
+-- This is non-destructive to user data because the flag itself is not
+-- user data — it's a migration-state marker.
+--
+-- ----------------------------------------------------------------------------
+-- NOT RUN AGAINST PRODUCTION IN THIS COMMIT
+-- ----------------------------------------------------------------------------
+--
+-- This file follows the same policy as 004_capture_current_schema.sql:
+-- the authoring commit creates the file as a record; the Speaker runs it
+-- manually in the Supabase SQL Editor between commits 4 and 5 of Sprint C,
+-- after reviewing the diff and confirming both Kitty + wife accounts get
+-- flagged correctly.
+--
+-- Expected verification query after running:
+--
+--   SELECT id, display_name, legacy_auth, created_at
+--   FROM profiles
+--   ORDER BY created_at;
+--
+-- Expected result: every pre-existing row shows legacy_auth = true.
+-- New rows created after this migration will show legacy_auth = false
+-- (the column default), which is the correct state for post-Sprint-C users.
+-- ============================================================================
+
+
+ALTER TABLE profiles
+  ADD COLUMN IF NOT EXISTS legacy_auth boolean NOT NULL DEFAULT false;
+
+UPDATE profiles
+SET legacy_auth = true
+WHERE created_at < NOW();
