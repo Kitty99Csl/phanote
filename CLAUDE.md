@@ -8,6 +8,29 @@ Phajot (ພາຈົດ) — multi-currency personal finance PWA for Laos (LAK, 
 - Working branch: main (Session 9 deploy fix + RLS hardening merged 2026-04-14 at `aa78f9e`, no working branch cut)
 - Live: app.phajot.com, api.phajot.com, phajot.com (legacy phanote.com domains 301 redirect)
 
+## Second product: Tower
+
+Phajot now has a sister product called **Tower** — an internal operator dashboard for Kitty (the Speaker) to oversee Phajot's health, chat with AI departments (Sentinels), investigate users, and plan work. Tower is being built in Sprints F–J (Sessions 14–18). Before Tower can be built, Sprints B, C, D, and E must ship the prerequisites.
+
+- **Domain:** `tower.phajot.com` (not yet live)
+- **Access:** Solo — Speaker (Kitty) only in v1
+- **Location in repo:** `tower/` folder (sibling to `src/` and `landing/`)
+- **Deployment:** Separate Cloudflare Pages project
+- **Single source of truth:** `docs/tower/CHARTER.md`
+
+**The 7 Sentinels** (AI departments, each a separate Claude Project):
+- **Sentinel** — Health & Protection (uptime, errors, security)
+- **Vanguard** — Product & Sprint Leadership
+- **Osiris** — QA (parser accuracy, regression, bug hunting)
+- **Banshee** — DevOps & Infrastructure
+- **Hawthorne** — Support (user feedback, FAQ)
+- **Iron Wolf** — Growth (content, social, launch)
+- **Ikora** — Archivist (legal, decisions, memory)
+
+**The Speaker** — Kitty, the human who decides. All Sentinels report to the Speaker.
+
+See `docs/tower/CHARTER.md` for the full mission and `docs/tower/ROADMAP.md` for the sprint plan.
+
 ## Brand Identity
 
 > **Rename history:** Renamed from "Phanote" to "Phajot" in April 2026 due to trademark conflict with AIDC Laos. Code + UI + logo migrated in commit 608fe5c. DNS migration completed 2026-04-10 across 8 staged steps — phajot.com, app.phajot.com, api.phajot.com are now primary. Legacy phanote.com domains 301 redirect cleanly. Auth identifiers (email domain, password prefix, localStorage keys, repo name, worker filename) intentionally preserved to avoid breaking existing users.
@@ -47,9 +70,14 @@ telling you about your money over coffee, not a bank dashboard.
 - Snapshot for chat Claude: docs/snapshots/phanote-api-worker.js (read-only, refresh at session end)
 
 ## Required reading before editing
-1. project_codex.md (the bible — design rules, UX, architecture)
-2. PHAJOT-PROJECT.md (feature scope)
-3. PHAJOT-ACTION-PLAN.md (screen-by-screen plan)
+
+1. `project_codex.md` (the bible — design rules, UX, architecture)
+2. `PHAJOT-PROJECT.md` (feature scope)
+3. `PHAJOT-ACTION-PLAN.md` (screen-by-screen plan)
+4. `docs/tower/CHARTER.md` (Tower's mission and structure)
+5. `docs/tower/ROADMAP.md` (current sprint plan, Sprints B→K)
+6. `docs/tower/SPRINT-B-PLAN.md` (if working in Session 10)
+7. `docs/tower/AUTH-DESIGN.md` (if working in Session 11 Sprint C)
 
 ## Non-negotiable rules
 1. Never edit worker in Cloudflare web editor — always local + wrangler deploy
@@ -66,42 +94,28 @@ telling you about your money over coffee, not a bank dashboard.
 12. **`.nvmrc` must pin exact Node version** (e.g. `24.13.1`, not just `24`). Lockfile must be regenerated under the same Node version CF Pages uses. Verify with `npm ci` (strict mode, same as CF Pages) before pushing lockfile changes. Major-version-only pinning caused 2 days of silent deploy failures in Session 9 (Node 24.11.1 vs 24.13.1 npm resolver drift).
 13. No console.log with sensitive data
 14. Ask Kitty before architectural decisions. Don't guess.
+15. **No hardcoded user-facing strings.** All text shown to users must go through `src/lib/i18n.js` with keys for `lo`, `th`, and `en`. Sprint D enforces this retroactively; new code must follow it immediately. Hardcoded strings fail code review.
+16. **Tower code lives in `tower/`, Phajot code lives in `src/`.** These are separate Vite apps in the same repo. They share `supabase/migrations/`, `docs/`, and `CLAUDE.md`, but do not import from each other. Never let a Phajot component import from `tower/`, and never let a Tower component import from `src/` — extract to `shared/` if needed.
+17. **Tower is a viewer, not a writer.** Tower v1 can read everything and write almost nothing. Any write privilege must be explicitly discussed with the Speaker before being added. Default to read-only for new Tower features.
 
 ## Known bugs to fix
 - (none active — Session 9 RLS hardening + deploy pipeline fix shipped, adversarially verified)
 
-## Current state: Session 9 complete (RLS + deploy fix), Sprint B open
+## Current state: Session 9 complete, Sprint B starting Session 10
 
-**Session 9 shipped (April 14, 2026)** — 3 commits (2 infra + 1 docs wrap-up). See `docs/session-9/SUMMARY.md` for full details, `docs/session-9/RLS-HARDENING.md` for the SQL-level database work, and `docs/RISKS.md` for the current prioritized risk ledger.
+**Session 9 shipped (April 14, 2026)** — CF Pages deploy pipeline fix + RLS hardening. See `docs/session-9/SUMMARY.md`, `docs/session-9/RLS-HARDENING.md`, `docs/RISKS.md`.
 
-### Session 9 deliverables
-- **CF Pages deploy pipeline fix** (`aa78f9e`): pinned `.nvmrc` to exact `24.13.1`, added `engines` field to package.json, regenerated `package-lock.json` under Node 24.13.1 + npm 11.8.0. Root cause was Node minor version drift between local (24.11.1) and CF Pages (24.13.1) — different bundled npm versions wrote different optional-dep entries in the lockfile. Unblocked 8 commits that had been stuck on `origin/main` without deploying since Session 7 merge.
-- **RLS hardening** (live SQL, no git commits): dropped a critical `USING(true)` permissive SELECT policy on `ai_memory` (data leak), enabled RLS on `goals` (was `rowsecurity=false` with an inert policy), deduped `profiles` policies 6→1 canonical, deduped `transactions` policies 7→1 canonical. All applied via Supabase SQL Editor as `postgres` role.
-- **Adversarial verification**: created test user B (`5e3629a1-aa60-4c25-a013-11bf40b8e6b9`), impersonated via `SET LOCAL role = 'authenticated'; SET LOCAL request.jwt.claims = '...'` in SQL Editor, ran 3 probes:
-  - Cross-user SELECT on transactions → 0 rows (blocked ✓)
-  - Cross-user INSERT on transactions → ERROR 42501 (blocked ✓)
-  - Self SELECT → 1 row (not over-blocking ✓)
-  All passed. **Cross-user isolation proven at the database level.**
-- **The critical lesson**: "merged to main" ≠ "shipped to users". 8 commits sat on `origin/main` for 2 days while production served a 2-day-old bundle. Now non-negotiable rule 11: always `curl` production bundle hash after user-visible merge.
+**Session 10 is Sprint B** — the first sprint of the Tower roadmap. Before Tower can be built, 4 prerequisite sprints must complete:
+- **Sprint B (Session 10)** — Trust & safety round 1: parent wrappers, error toasts, RLS cleanup, Sheet migration. See `docs/tower/SPRINT-B-PLAN.md`.
+- **Sprint C (Session 11)** — Real auth, schema drift captured, native dialogs replaced. See `docs/tower/AUTH-DESIGN.md`.
+- **Sprint D (Session 12)** — i18n marathon + Settings reorganization.
+- **Sprint E (Session 13)** — Observability floor (Sentry, AI cost log, `/health` enrichment, `docs/tower/` skeleton). **This sprint is what unlocks Tower.**
 
-### Session 8 Sprint A + Ext (shipped April 13, 2026, reached production April 14)
-5 commits. Security fix + 5 critical bugs from post-refactor device test + click-guard sweep (7 buttons) + fetchWithTimeout sweep (4 endpoints) + GoalModal Sheet migration. See `docs/session-8/SUMMARY.md`.
+**Sprint F (Session 14) onward** builds Tower itself, one room per session through Session 18.
 
-### Session 7 (shipped April 12, 2026) — App.jsx refactor
-Multi-layer decomposition: src/App.jsx 5,480 → 345 lines, 45 extracted files, -93.8%, 26 pure-move commits, zero regressions. See git history before `0935ddf`.
+**Sprint K+ (Session 19+)** is public launch readiness — landing page rewrite, Pro gating, PDPA, LINE OTP, payments, LINE bot.
 
-### Next session: Sprint B (open)
-See `TOMORROW-START-HERE.md` for priorities and `docs/session-8/SPRINT-A-EXT-BACKLOG.md` for follow-ups from the sweep.
-
-### Still on the backlog
-- ⏳ 3 remaining raw-div modals for Sheet migration: EditTransactionModal, SetBudgetModal, StreakModal
-- ⏳ 5 parent-side wrapper bugs flagged in docs/session-8/SPRINT-A-EXT-BACKLOG.md (fire-and-forget async, missing try/catch, silent error swallowing)
-- ⏳ Error-surfacing toasts for silent insert failures
-- ⏳ Thai translation gap for `statementError*` keys (Sprint D i18n marathon)
-- ⏳ Budget progress bars, top merchants, advanced filters
-- ⏳ Family/shared accounts
-
-**See `docs/RISKS.md` for the full prioritized risk list (updated every session).**
+See `docs/tower/ROADMAP.md` for the full timeline.
 
 ## Recent key learnings (from Session 9)
 
