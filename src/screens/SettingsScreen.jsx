@@ -37,7 +37,7 @@ function CategoryManager({lang,customCategories,onAdd,onRemove}){
     <div>
       <div style={{fontSize:10,fontWeight:700,letterSpacing:1.4,color:T.muted,textTransform:"uppercase",marginBottom:10,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"manage_cats")}</div>
       <div style={{background:T.surface,backdropFilter:"blur(20px)",borderRadius:20,overflow:"hidden",boxShadow:T.shadow,marginBottom:12}}>
-        {customCategories.length===0&&!adding&&(<div style={{padding:"16px 18px",fontSize:13,color:T.muted,fontFamily:"'Noto Sans',sans-serif"}}>No custom categories yet</div>)}
+        {customCategories.length===0&&!adding&&(<div style={{padding:"16px 18px",fontSize:13,color:T.muted,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"settingsCatsEmpty")}</div>)}
         {customCategories.map((cat,i)=>(
           <div key={cat.id} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 18px",borderTop:i>0?"1px solid rgba(45,45,58,0.05)":"none"}}>
             <span style={{fontSize:22}}>{cat.emoji}</span>
@@ -87,19 +87,19 @@ export function SettingsScreen({profile,transactions,onUpdateProfile,onReset,pin
         <div style={{background:"#1A4020",borderRadius:18,padding:"13px 16px",marginBottom:20,display:"flex",alignItems:"center",gap:12}}>
           <div style={{width:40,height:40,borderRadius:12,background:"rgba(172,225,175,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>⭐</div>
           <div style={{flex:1}}>
-            <div style={{fontSize:14,fontWeight:700,color:"#fff",fontFamily:"'Noto Sans',sans-serif"}}>Pro plan</div>
-            <div style={{fontSize:11,color:"rgba(255,255,255,0.55)",marginTop:1}}>All features unlocked</div>
+            <div style={{fontSize:14,fontWeight:700,color:"#fff",fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"settingsProPlan")}</div>
+            <div style={{fontSize:11,color:"rgba(255,255,255,0.55)",marginTop:1}}>{t(lang,"settingsProUnlocked")}</div>
           </div>
-          <div style={{fontSize:10,fontWeight:700,padding:"4px 10px",borderRadius:9999,background:"rgba(172,225,175,0.25)",color:"#ACE1AF"}}>Active</div>
+          <div style={{fontSize:10,fontWeight:700,padding:"4px 10px",borderRadius:9999,background:"rgba(172,225,175,0.25)",color:"#ACE1AF"}}>{t(lang,"settingsProActive")}</div>
         </div>
       ) : (
         <div style={{background:T.surface,backdropFilter:"blur(20px)",borderRadius:18,padding:"13px 16px",marginBottom:20,display:"flex",alignItems:"center",gap:12,boxShadow:T.shadow}}>
           <div style={{width:40,height:40,borderRadius:12,background:"rgba(45,45,58,0.06)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>🌱</div>
           <div style={{flex:1}}>
-            <div style={{fontSize:14,fontWeight:700,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>Free plan</div>
-            <div style={{fontSize:11,color:T.muted,marginTop:1}}>Upgrade to unlock AI Advisor & more</div>
+            <div style={{fontSize:14,fontWeight:700,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"settingsFreePlan")}</div>
+            <div style={{fontSize:11,color:T.muted,marginTop:1}}>{t(lang,"settingsFreeUpgrade")}</div>
           </div>
-          <button onClick={onShowUpgrade} style={{fontSize:11,fontWeight:700,padding:"7px 13px",borderRadius:9999,border:"none",background:"#ACE1AF",color:"#1A4020",cursor:"pointer",fontFamily:"'Noto Sans',sans-serif",whiteSpace:"nowrap",flexShrink:0}}>Upgrade →</button>
+          <button onClick={onShowUpgrade} style={{fontSize:11,fontWeight:700,padding:"7px 13px",borderRadius:9999,border:"none",background:"#ACE1AF",color:"#1A4020",cursor:"pointer",fontFamily:"'Noto Sans',sans-serif",whiteSpace:"nowrap",flexShrink:0}}>{t(lang,"settingsUpgradeBtn")}</button>
         </div>
       )}
       {/* ────────────────── */}
@@ -111,15 +111,15 @@ export function SettingsScreen({profile,transactions,onUpdateProfile,onReset,pin
           </button>
           <div>
             <div style={{fontWeight:800,fontSize:18,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{name}</div>
-            <div style={{fontSize:12,color:T.muted,marginTop:2}}>{transactions.length} transactions logged</div>
+            <div style={{fontSize:12,color:T.muted,marginTop:2}}>{t(lang,"settingsTxCount").replace("{n}",transactions.length)}</div>
             <div style={{fontSize:11,color:"#5aae5f",marginTop:3,fontWeight:700}}>
-              {(()=>{const lv=getLevel(profile.xp||0);return`${lv.emoji} Level ${lv.index} · ${profile.xp||0} XP · 🔥 ${profile.streakCount||0} day streak`;})()}
+              {(()=>{const lv=getLevel(profile.xp||0);return t(lang,"settingsLevelInfo").replace("{emoji}",lv.emoji).replace("{level}",lv.index).replace("{xp}",profile.xp||0).replace("{streak}",profile.streakCount||0);})()}
             </div>
-            <div style={{fontSize:11,color:"#5aae5f",marginTop:2,cursor:"pointer"}} onClick={()=>setShowAvatar(!showAvatar)}>Tap avatar to change</div>
+            <div style={{fontSize:11,color:"#5aae5f",marginTop:2,cursor:"pointer"}} onClick={()=>setShowAvatar(!showAvatar)}>{t(lang,"settingsTapAvatar")}</div>
           </div>
         </div>
         {showAvatar&&(<div style={{marginTop:14,animation:"slideDown .2s ease"}}>
-          <div style={{fontSize:11,color:T.muted,marginBottom:8,fontFamily:"'Noto Sans',sans-serif"}}>Choose your companion</div>
+          <div style={{fontSize:11,color:T.muted,marginBottom:8,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"settingsChooseCompanion")}</div>
           <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
             {AVATARS.map(a=><button key={a} onClick={()=>{onUpdateProfile({avatar:a});setShowAvatar(false);}} style={{width:48,height:48,borderRadius:14,border:"none",cursor:"pointer",fontSize:24,background:avatar===a?"rgba(172,225,175,0.3)":"rgba(45,45,58,0.05)",transform:avatar===a?"scale(1.15)":"scale(1)",boxShadow:avatar===a?"0 3px 10px rgba(172,225,175,0.4)":"none",transition:"all .2s ease"}}>{a}</button>)}
           </div>
@@ -163,31 +163,31 @@ export function SettingsScreen({profile,transactions,onUpdateProfile,onReset,pin
       </div>
 
       {/* ─── Security / PIN ─── */}
-      <div style={{fontSize:10,fontWeight:700,letterSpacing:1.4,color:T.muted,textTransform:"uppercase",marginBottom:10,fontFamily:"'Noto Sans',sans-serif"}}>Security / ຄວາມປອດໄພ</div>
+      <div style={{fontSize:10,fontWeight:700,letterSpacing:1.4,color:T.muted,textTransform:"uppercase",marginBottom:10,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"settingsSecurity")}</div>
       <div style={{background:T.surface,backdropFilter:"blur(20px)",borderRadius:20,boxShadow:T.shadow,marginBottom:20,overflow:"hidden"}}>
         <div style={{display:"flex",alignItems:"center",gap:12,padding:"16px 18px"}}>
           <div style={{width:40,height:40,borderRadius:12,background:"rgba(172,225,175,0.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>🔐</div>
           <div style={{flex:1}}>
-            <div style={{fontSize:14,fontWeight:600,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>Owner PIN</div>
-            <div style={{fontSize:12,color:T.muted}}>{pinConfig.owner ? "PIN is set · Full access" : "Not set — no PIN required"}</div>
+            <div style={{fontSize:14,fontWeight:600,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"settingsOwnerPin")}</div>
+            <div style={{fontSize:12,color:T.muted}}>{pinConfig.owner ? t(lang,"settingsPinSet") : t(lang,"settingsPinNotSet")}</div>
           </div>
           <button onClick={()=>setPinSetupMode("set-owner")} style={{fontSize:12,fontWeight:700,color:"#2A7A40",background:"rgba(172,225,175,0.2)",border:"none",borderRadius:9999,padding:"6px 14px",cursor:"pointer",fontFamily:"'Noto Sans',sans-serif",whiteSpace:"nowrap"}}>
-            {pinConfig.owner ? "Change" : "Set up"}
+            {pinConfig.owner ? t(lang,"settingsPinChange") : t(lang,"settingsPinSetup")}
           </button>
         </div>
         <div style={{height:1,background:"rgba(45,45,58,0.05)"}}/>
         <div style={{display:"flex",alignItems:"center",gap:12,padding:"16px 18px"}}>
           <div style={{width:40,height:40,borderRadius:12,background:"rgba(255,179,167,0.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>🔑</div>
           <div style={{flex:1}}>
-            <div style={{fontSize:14,fontWeight:600,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>Guest PIN</div>
-            <div style={{fontSize:12,color:T.muted}}>{pinConfig.guest ? "Set · Hides settings from guests" : "Not set"}</div>
+            <div style={{fontSize:14,fontWeight:600,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"settingsGuestPin")}</div>
+            <div style={{fontSize:12,color:T.muted}}>{pinConfig.guest ? t(lang,"settingsGuestPinSet") : t(lang,"settingsGuestPinNotSet")}</div>
           </div>
           <div style={{display:"flex",gap:6,flexShrink:0}}>
             {pinConfig.guest && (
-              <button onClick={()=>savePinConfig({...pinConfig,guest:null})} style={{fontSize:12,fontWeight:700,color:"#C0392B",background:"rgba(255,179,167,0.2)",border:"none",borderRadius:9999,padding:"6px 12px",cursor:"pointer",fontFamily:"'Noto Sans',sans-serif"}}>Remove</button>
+              <button onClick={()=>savePinConfig({...pinConfig,guest:null})} style={{fontSize:12,fontWeight:700,color:"#C0392B",background:"rgba(255,179,167,0.2)",border:"none",borderRadius:9999,padding:"6px 12px",cursor:"pointer",fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"settingsPinRemove")}</button>
             )}
             <button onClick={()=>setPinSetupMode("set-guest")} style={{fontSize:12,fontWeight:700,color:"#2A7A40",background:"rgba(172,225,175,0.2)",border:"none",borderRadius:9999,padding:"6px 14px",cursor:"pointer",fontFamily:"'Noto Sans',sans-serif",whiteSpace:"nowrap"}}>
-              {pinConfig.guest ? "Change" : "Set up"}
+              {pinConfig.guest ? t(lang,"settingsPinChange") : t(lang,"settingsPinSetup")}
             </button>
           </div>
         </div>
@@ -196,21 +196,21 @@ export function SettingsScreen({profile,transactions,onUpdateProfile,onReset,pin
           <button onClick={()=>setPinRole(null)} style={{width:"100%",padding:"14px 18px",display:"flex",alignItems:"center",gap:12,background:"none",border:"none",cursor:"pointer",fontFamily:"'Noto Sans',sans-serif",textAlign:"left"}}>
             <div style={{width:40,height:40,borderRadius:12,background:"rgba(45,45,58,0.06)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>🔒</div>
             <div>
-              <div style={{fontSize:14,fontWeight:600,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>Lock app now</div>
-              <div style={{fontSize:12,color:T.muted}}>Requires PIN to unlock</div>
+              <div style={{fontSize:14,fontWeight:600,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"settingsLockNow")}</div>
+              <div style={{fontSize:12,color:T.muted}}>{t(lang,"settingsLockNowSub")}</div>
             </div>
             <div style={{marginLeft:"auto",fontSize:12,color:T.muted}}>›</div>
           </button>
         </>)}
       </div>
       {/* ─── Help ─── */}
-      <div style={{fontSize:10,fontWeight:700,letterSpacing:1.4,color:T.muted,textTransform:"uppercase",marginBottom:10,fontFamily:"'Noto Sans',sans-serif"}}>Help</div>
+      <div style={{fontSize:10,fontWeight:700,letterSpacing:1.4,color:T.muted,textTransform:"uppercase",marginBottom:10,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"settingsHelp")}</div>
       <div style={{background:T.surface,backdropFilter:"blur(20px)",borderRadius:20,boxShadow:T.shadow,marginBottom:20,overflow:"hidden"}}>
         <button onClick={()=>onShowGuide&&onShowGuide()} style={{width:"100%",padding:"16px 18px",border:"none",cursor:"pointer",background:"transparent",display:"flex",alignItems:"center",gap:12,textAlign:"left"}}>
           <div style={{width:40,height:40,borderRadius:12,background:"rgba(26,64,32,0.1)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><Logo size={36} /></div>
           <div style={{flex:1}}>
-            <div style={{fontSize:14,fontWeight:600,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>Phajot guide</div>
-            <div style={{fontSize:12,color:T.muted,marginTop:1}}>How every feature works</div>
+            <div style={{fontSize:14,fontWeight:600,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"settingsGuide")}</div>
+            <div style={{fontSize:12,color:T.muted,marginTop:1}}>{t(lang,"settingsGuideSub")}</div>
           </div>
           <div style={{fontSize:12,color:T.muted}}>›</div>
         </button>
