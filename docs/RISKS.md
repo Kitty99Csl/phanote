@@ -7,7 +7,7 @@ Living document. Updated at the end of each session.
 - **MEDIUM** — quality issue, user-visible but recoverable, or latent failure mode
 - **LOW** — tech debt, nice-to-have, or documentation gap
 
-**Last updated:** 2026-04-16 (Session 11)
+**Last updated:** 2026-04-16 (Session 12)
 
 ---
 
@@ -42,7 +42,7 @@ Session 9 verified RLS **manually** with an adversarial SQL test in the Supabase
 
 ### [MEDIUM] Thai translations missing for 4 statementError* keys
 **Discovered:** Session 8 Sprint A Ext fetchWithTimeout sweep
-**Status:** Unfixed — Sprint D i18n marathon
+**Status:** Unfixed — Sprint D i18n marathon (40% done in Session 12, continues Session 13)
 
 `statementErrorParse`, `statementErrorNetwork`, `statementErrorRateLimit`, `statementErrorTimeout` all have EN + LO entries but no TH. Thai users fall back to English via the `t()` helper's implicit fallback. This is a **pre-existing gap from Session 6** — Session 9 added one more key (`statementErrorTimeout`) following the same partial pattern.
 

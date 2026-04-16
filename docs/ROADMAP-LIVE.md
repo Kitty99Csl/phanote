@@ -1,12 +1,12 @@
 # PHAJOT — Live Roadmap
-> Last updated: 2026-04-16 · Session 11 · Commit 8be34f5
+> Last updated: 2026-04-16 · Session 12 · Commit 0695707
 
 ## Current State
-- **Active sprint:** C (auth replacement) — COMPLETE
-- **Session:** 11
-- **Commits today:** 7 + 1 hotfix
-- **Production hash:** index-CEFkIaIU.js
-- **Next action:** Sprint D (Session 12) — i18n marathon + Settings reorg
+- **Active sprint:** D (i18n + Settings) — 40% COMPLETE
+- **Session:** 12
+- **Commits today:** 6
+- **Production hash:** index-BLP-ChCs.js
+- **Next action:** Session 13 continues Sprint D — remaining i18n + Settings reorg
 
 ## Sprint Progress
 
@@ -34,20 +34,28 @@
 | 5 | 45db331 | MigrationScreen component | — | Done |
 | 6 | 770af58 | LoginScreen rewrite + App.jsx | Cz7dMZg6 | Done |
 | 7 | 8be34f5 | PinLock + migration flicker hotfix | CEFkIaIU | Done |
-**Manual gate:** legacy_auth SQL run (all 10 rows true)
 **Deploy-verify:** Tests A/B/C passed on phone + desktop
-**Security audit:** loginWithPassword is signup-safe, dead code flagged
 **Status:** COMPLETE
 
-### Sprint D — i18n + Settings (Session 12, ~Apr 21)
-- Sweep all hardcoded strings (lo/th/en) — closes audit P1 #3
-- Settings reorganization (5 sections) — closes audit P2 #7
-- Delete `signInWithPhone` dead code
-- localStorage `phanote_pins` namespace per-user
-- PIN UX clarity
-**Status:** NOT STARTED
+### Sprint D — i18n + Settings (Sessions 12-13, Apr 16+)
+| # | Commit | What | Hash | Status |
+|---|--------|------|------|--------|
+| 1 | 932a8bc | Delete signInWithPhone dead code | — | Done |
+| 2 | c3b74a0 | Namespace phanote_pins per-user | BkevNGeM | Done |
+| 3 | 6dcb578 | i18n LoginScreen (3 strings) | — | Done |
+| 4 | e0804ef | i18n PinLock (8 strings + lang prop) | — | Done |
+| 5 | b5cd68b | i18n OnboardingScreen (4 strings) | — | Done |
+| 6 | 0695707 | i18n SettingsScreen (23 strings) | BLP-ChCs | Done |
+| 7 | — | i18n modals (6 files, ~39 strings) | — | Session 13 |
+| 8 | — | i18n StatementScanFlow + Thai keys | — | Session 13 |
+| 9 | — | i18n WalletCards + small gaps | — | Session 13 |
+| 10 | — | Settings reorganization (5 sections) | — | Session 13 |
+| 11 | — | PIN UX clarity copy | — | Session 13 |
+| 12 | — | i18n GuideScreen + ProUpgradeScreen | — | Session 13 (if time) |
+**Progress:** 38 strings i18n'd across 4 screens + 2 infra cleanups
+**Status:** IN PROGRESS (40%)
 
-### Sprint E — Observability (Session 13, ~Apr 28) — UNLOCKS TOWER
+### Sprint E — Observability (Session 14, ~Apr 28) — UNLOCKS TOWER
 - Sentry (frontend + worker)
 - AI cost tracking (ai_call_log table)
 - Worker /health enrichment
@@ -56,7 +64,7 @@
 - External uptime monitor
 **Status:** NOT STARTED
 
-### Sprint F — Tower Lobby (Session 14, ~May 5)
+### Sprint F — Tower Lobby (Session 15, ~May 5)
 - Create tower/ Vite app
 - CF Pages project for tower.phajot.com
 - Hard-gate to Speaker
@@ -64,14 +72,14 @@
 - Dark mode
 **Status:** NOT STARTED
 
-### Sprints G-J — Tower Rooms (Sessions 15-18)
+### Sprints G-J — Tower Rooms (Sessions 16-19)
 - G: Engine Room (technical health)
 - H: Admin Panel (user investigation)
 - I: Command Center (Sentinel chat)
 - J: Workshop + Archive
 **Status:** NOT STARTED
 
-### Sprint K+ — Public Launch (Session 19+)
+### Sprint K+ — Public Launch (Session 20+)
 - Landing page rewrite
 - LINE OTP at registration
 - Payment system (PromptPay -> BCEL QR -> Stripe)
@@ -84,19 +92,12 @@
 |---|---------|----------|--------|
 | 1 | Derived-password auth | P0 | Closed (770af58, Session 11) |
 | 2 | Statement import end-state | P1 | Open (backlog) |
-| 3 | i18n hardcoded strings | P1 | Open (Sprint D) |
+| 3 | i18n hardcoded strings | P1 | Open (Sprint D, 40% done — 4 screens complete, ~124 strings remain) |
 | 4 | Modal/gate patterns | P1 | Closed (05f8f7d + b6b2598, Session 10) |
 | 5 | Error handling | P1 | Closed (2e99fad, Session 10) |
 | 6 | Analytics memoization | P2 | Open (backlog) |
-| 7 | Settings overload | P2 | Open (Sprint D) |
+| 7 | Settings overload | P2 | Open (Sprint D, deferred to Session 13) |
 | 8 | Native dialogs | P1 | Closed (b6b2598, Session 10) |
-
-**Open:** 4 of 8 (0 P0, 2 P1, 2 P2)
-**Closed:** 4 of 8 (1 P0, 2 P1, 1 P2... wait, recount)
-
-P0: 1 closed (row 1)
-P1: 3 closed (rows 4, 5, 8), 2 open (rows 2, 3)
-P2: 0 closed, 2 open (rows 6, 7)
 
 **Zero P0 open. Two P1 open. Two P2 open.**
 
@@ -106,6 +107,7 @@ P2: 0 closed, 2 open (rows 6, 7)
 | 9 | BCwqjvty | CWOl1l1h | Deploy pipeline fix |
 | 10 | CWOl1l1h | BeOPC5lm | Parent wrappers, toast, Sheet, ConfirmSheet |
 | 11 | BeOPC5lm | CEFkIaIU | Auth i18n, LoginScreen rewrite, hotfix |
+| 12 | CEFkIaIU | BLP-ChCs | Dead code deletion, localStorage fix, i18n sweep (4 screens) |
 
 ## The Tower Team
 | Name | Role |
