@@ -29,7 +29,7 @@ This recommendation aligns exactly with the roadmap in `docs/tower/ROADMAP.md`. 
 
 | # | Audit Finding | Priority | Status | Assigned To |
 |---|---|---|---|---|
-| 1 | Replace pseudo-phone-auth with safer auth model | P0 | 🔴 **Still open** — the derived `{phone}@phanote.app` pattern is still live | **Sprint C** — see `docs/tower/AUTH-DESIGN.md` |
+| 1 | Replace pseudo-phone-auth with safer auth model | P0 | ✅ **Resolved in Session 11** · commit `770af58` + hotfix `8be34f5` · 2026-04-16 — LoginScreen rewritten with password auth, MigrationScreen for legacy accounts, deploy-verified on phone + desktop. Old `signInWithPhone` is dead code (zero callers). See `docs/session-11/SUMMARY.md`. | ~~Sprint C~~ — **done** |
 | 2 | Fix statement import navigation end-state | P1 | 🟡 **Likely still open** — not mentioned in Session 5–9 summaries. Needs verification. | Backlog — flag for a future sprint |
 | 3 | Finish i18n — hardcoded strings in login, onboarding, settings, wallet cards, modals | P1 | 🔴 **Still open** — marked as Sprint D marathon | **Sprint D** |
 | 4 | Centralized modal / gate patterns (Pro + guest) | P1 | ✅ **Resolved in Session 10** · commits `05f8f7d` (Sheet migration) + `b6b2598` (ConfirmSheet for Pro gate) · 2026-04-15 — 9 modals now use Sheet, zero raw-div modals remain, Pro gate uses ConfirmSheet variant="upgrade". | ~~Sprint B Priority A + Sprint K~~ — **done** |
@@ -40,7 +40,7 @@ This recommendation aligns exactly with the roadmap in `docs/tower/ROADMAP.md`. 
 
 ### Summary
 
-**3 of 8 audit findings closed as of April 15, 2026.** Rows 4 (modal/gate patterns), 5 (error handling), and 8 (native alert/confirm) all resolved in Session 10. **5 of 8 remain open**: row 1 (auth P0, Sprint C), row 2 (statement import nav, backlog), row 3 (i18n hardcoded strings, Sprint D), row 6 (analytics memoization, backlog), row 7 (settings overload, Sprint D). None require net-new engineering thinking — the fixes are understood. The roadmap in `docs/tower/ROADMAP.md` is specifically structured to close these in order.
+**4 of 8 audit findings closed as of April 16, 2026.** Rows 1 (auth P0), 4 (modal/gate patterns), 5 (error handling), and 8 (native alert/confirm) all resolved across Sessions 10–11. **4 of 8 remain open**: row 2 (statement import nav, backlog), row 3 (i18n hardcoded strings, Sprint D), row 6 (analytics memoization, backlog), row 7 (settings overload, Sprint D). **Zero P0 findings remain open.** The remaining 4 are P1/P2. None require net-new engineering thinking — the fixes are understood. The roadmap in `docs/tower/ROADMAP.md` is specifically structured to close these in order.
 
 **The audit's spirit matches the roadmap:** tighten what exists before adding anything new. Sprints B/C/D are the tightening phase.
 
@@ -137,3 +137,5 @@ All four of these are addressed in the roadmap (`docs/tower/ROADMAP.md`) but non
 | Version | Date | Change |
 |---|---|---|
 | v1.0 | 2026-04-14 | Initial cross-check. 6 of 8 QA audit findings mapped to Sprints B/C/D. All 5 homepage findings deferred to Sprint K. Two findings (statement import, analytics memoization) flagged as needing verification. |
+| v1.1 | 2026-04-15 | Session 10: rows 4, 5, 8 closed. 3 of 8 resolved. |
+| v1.2 | 2026-04-16 | Session 11: row 1 (P0 auth) closed. 4 of 8 resolved. Zero P0 findings remain. |

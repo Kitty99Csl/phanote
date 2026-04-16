@@ -1,144 +1,146 @@
 # Next Session Start Here
 
-**Last session:** Session 10 — Sprint B shipped (Trust & Safety Round 1) · April 15, 2026
-**Next session:** Session 11 — Sprint C (Real auth + schema drift + native-dialog replacement)
-**Plan:** `docs/tower/AUTH-DESIGN.md`
+**Last session:** Session 11 — Sprint C shipped (Auth Replacement) · April 16, 2026
+**Next session:** Session 12 — Sprint D (i18n marathon + Settings reorg)
+**Production hash:** `index-CEFkIaIU.js`
 
 ## Quick context
 
-**Sprint B is complete.** Four priorities shipped in Session 10, all on `main`, all Rule-11 verified:
+**Sprint C is complete.** Seven commits + 1 hotfix shipped in Session 11, all on `main`, all Rule-11 verified:
 
-| Priority | Commit | What landed |
+| # | Commit | What landed |
 |---|---|---|
-| B — Parent wrappers | `6b4911f` | 5 fire-and-forget `onSave` sites fixed using `GoalsScreen.jsx:253` as template |
-| C — Toast system | `2e99fad` | Shared `useSyncExternalStore` toast store + `ToastContainer`, wired into 5 catch blocks, 4 i18n keys lo/th/en |
-| A — Sheet migration | `05f8f7d` | 3 remaining raw-div modals (Edit Transaction, Set Budget, Streak) migrated to `Sheet`. Zero raw-div modals remain. |
-| RLS cleanup | (Supabase SQL, no commit) | Speaker ran 6 adversarial probes against `app_events` + `monthly_reports`. All passed. 7 user-data tables now RLS-verified. |
-| Bonus: schema drift capture | `2ac2897` | Originally a Sprint C line item — shipped early. `supabase/migrations/004_capture_current_schema.sql` (289 lines) captures all post-003 drift + missing tables + canonical RLS. Closes the HIGH "schema drift" risk from RISKS.md. |
-| Bonus: native dialog replacement | `b6b2598` | Also originally a Sprint C line item — shipped early. New `ConfirmSheet` component replaces 6 sites (OCR Pro gate, delete transaction/goal/batch, reset app, plus GoalsScreen error alert → toast). Closes audit P1 row 8 in `docs/tower/RISKS-FROM-AUDITS.md`. Bonus: also flips audit rows 4 (modal patterns) and 5 (error handling) to Resolved — 3 of 8 audit P1s now closed. |
+| 1 | `59f35be` | Deploy-verify + wife migration protocols in AUTH-DESIGN.md |
+| 2 | `53208a9` | `legacy_auth` column migration (005) |
+| 3 | `c3d4a24` | Auth i18n keys (21 keys, lo/th/en) |
+| 4 | `45162b0` | `src/lib/auth.js` helpers with derived-password fallback |
+| 5 | `45db331` | MigrationScreen component |
+| 6 | `770af58` | LoginScreen rewrite + App.jsx legacy detection wiring |
+| 7 | `8be34f5` | PinLock + migration flicker hotfix |
 
-**Production bundle hash progression:** `CWOl1l1h` → `CZZVjtlT` → `CiaE2sAV` → `CewyGnUw` → `BeOPC5lm`. All 4 code commits flipped the hash cleanly; the docs commits and the migration commit did not touch the bundle. See `docs/session-10/SUMMARY.md` for the full session wrap-up.
+**Deploy-verify protocol passed** on phone + desktop:
+- Test A: new user register + onboarding
+- Test B: log out + log in with set password
+- Test C: legacy account migration (55616161 throwaway, no PIN)
 
-**Sprint B definition of done — all boxes checked:**
-- [x] 5 parent-wrapper bugs fixed
-- [x] Toast system catches Supabase write failures with multilingual messages
-- [x] `app_events` + `monthly_reports` RLS adversarially verified
-- [x] Sheet migration finished on 3 modals
-- [x] Production bundle hash different from session start (Rule 11)
-- [x] `docs/session-10/SUMMARY.md` created
-- [x] `docs/RISKS.md` updated (4 MEDIUM risks moved to Resolved)
-- [x] `TOMORROW-START-HERE.md` updated (this file)
+**Security audit clean:** `loginWithPassword` only calls `signInWithPassword` — never `signUp`. The old `signInWithPhone` auto-signup function is dead code (exported, zero callers).
 
-## What's in `docs/tower/` (read before starting Session 11)
+**Bundle hash progression:** `BeOPC5lm` → `DiF26egM` → `Cz7dMZg6` → `CEFkIaIU`
 
-| File | Purpose |
-|---|---|
-| `docs/tower/CHARTER.md` | Tower's mission, team, architecture. The founding doc. |
-| `docs/tower/ROADMAP.md` | Sprints B → K with estimates, dependencies, and timeline. |
-| `docs/tower/AUTH-DESIGN.md` | **Step-by-step plan for Session 11 Sprint C.** Start here. |
-| `docs/tower/SPRINT-B-PLAN.md` | Reference — Sprint B is now shipped, but the plan doc remains as a pattern for future sprints. |
-| `docs/tower/RISKS-FROM-AUDITS.md` | Cross-check between the two external audit PDFs and current state. |
+**Audit findings:** 0 P0 open, 2 P1 open (statement import nav, i18n), 2 P2 open (analytics memo, settings overload). 4 of 8 closed across Sessions 10-11.
 
-## What's shipping in Sprint C (Session 11)
+## What's shipping in Sprint D (Session 12)
 
-Sprint C scope is now **auth replacement only**. Schema drift capture and native-dialog replacement both shipped in Session 10 ahead of plan. Estimated time: **3–4 hours** (down from the original 4–5h when Sprint C had 3 priorities).
+Sprint D scope is **i18n marathon + Settings reorganization**. Estimated time: **5–6 hours**.
 
-Open `docs/tower/AUTH-DESIGN.md` for the full step-by-step. Summary:
+### Priority 1 — Hardcoded string sweep (Rule 15)
 
-### Priority 1 — Real auth replacement (the only Sprint C priority)
-Replace the phone-to-email auth trick (`{countryCode}{phone}@phanote.app` + `Ph4n0te{phone}X` password) with proper phone OTP via Supabase's native phone auth provider or LINE LIFF login. The current scheme is intentionally preserved in CLAUDE.md's "don't touch" list because existing users depend on it — Sprint C's job is to build the new auth path alongside the old, provide a legacy migration flow, and eventually retire the `@phanote.app` email trick without breaking existing accounts.
+Sweep all user-facing strings through `src/lib/i18n.js` with keys for `lo`, `th`, `en`. Screens to audit:
+- LoginScreen (partially done in Sprint C — mode toggle, password fields, errors all use i18n. Some structural text like phone placeholder may remain.)
+- OnboardingScreen
+- SettingsScreen
+- HomeScreen greeting/header
+- WalletCards
+- All modals
+- StatementScanFlow (4 missing Thai `statementError*` keys from Session 8)
 
-This is audit row 1 (P0 severity), the last remaining P0 finding. After Sprint C closes it, only 4 P1 findings remain across the full audit: rows 2 (statement import nav, backlog), 3 (i18n hardcoded strings, Sprint D), 6 (analytics memoization, backlog), 7 (settings overload, Sprint D).
+This closes audit P1 finding #3.
 
-## How to start Session 11
+### Priority 2 — Settings reorganization into 5 sections
+
+Audit recommended 5 clear sections instead of the current "control center" feeling:
+1. Profile (name, avatar, language, currency)
+2. Security (PIN, password change)
+3. Data (export, reset)
+4. About (version, legal)
+5. Support (contact, feedback)
+
+This closes audit P2 finding #7.
+
+### Priority 3 — Sprint D additions from Session 11 findings
+
+| Item | Source | Effort |
+|---|---|---|
+| Delete `signInWithPhone` dead code | Security audit | 5 min |
+| localStorage namespace `phanote_pins` per-user | Hotfix follow-up | 30 min |
+| PIN UX clarity (password recommended, PIN opt-out) | Deploy-verify | 30 min |
+| Lao/Thai wife review for auth i18n keys | Sprint C follow-up | Wife task, not code |
+
+## How to start Session 12
 
 1. Open Codespace (remember: stop when done to save quota)
-2. `git pull origin main` — should be at the Session 10 docs wrap-up commit or newer
+2. `git pull origin main` — should be at the Session 11 docs commit or newer
 3. `nvm use 24.13.1` (verify `node --version` matches `.nvmrc`)
 4. `npm ci` — verify lockfile is clean
 5. `npm run build` — confirm bundle builds
-6. `curl -s https://app.phajot.com/ | grep -oE 'index-[A-Za-z0-9_-]+\.js'` — **should return `index-CewyGnUw.js` or newer. Write down the hash.** You'll verify it changed after Sprint C merges.
-7. Read `docs/session-10/SUMMARY.md` for full Session 10 context
-8. Read `docs/tower/AUTH-DESIGN.md` for the Sprint C plan
-9. Read `docs/RISKS.md` for the current prioritized risk list
-10. Tell Claude "start Sprint C priority [1/2/3]" OR describe a different priority order
+6. `curl -s https://app.phajot.com/ | grep -oE 'index-[A-Za-z0-9_-]+\.js'` — **should return `index-CEFkIaIU.js` or newer. Write down the hash.**
+7. Read `docs/session-11/SUMMARY.md` for full Session 11 context
+8. Read `docs/RISKS.md` for the current prioritized risk list
+9. Read `docs/ROADMAP-LIVE.md` for the full sprint timeline
+10. Tell Claude "start Sprint D priority [1/2/3]" OR describe a different priority order
 
-## Session 10 learnings to carry forward
+## Session 11 learnings to carry forward
 
-(full list in `docs/session-10/SUMMARY.md`)
+(full list in `docs/session-11/SUMMARY.md`)
 
-1. **Plan prose can lag real code.** The Sprint B plan's "positive template" description for `GoalsScreen.jsx:253` didn't match the actual (terser, implicit-return) code. Always verify the claim before writing a diff.
-2. **Supabase JS never throws on DB errors** — it resolves to `{ data, error }`. Every Supabase write site must destructure `{ error }` and explicitly throw. This is the root cause of every "silent write failure" in the codebase.
-3. **Rethrowing from a toast handler keeps the modal open** — which is correct UX. The instinct to "handle" the error silently is wrong: the user needs to see their form state intact and retry.
-4. **File-name collisions → augment, don't rename.** Sprint C will face this again when the new `ConfirmDialog` potentially collides with anything existing. Extend the existing file in place.
-5. **CF Pages deploy latency is non-deterministic** — can be instant or up to ~90s. Use the scheduled wakeup pattern when waiting for a hash flip.
+1. **Deploy-verify protocol caught bugs that static analysis missed.** The three-test protocol (new user, existing user, legacy user) is the minimum viable smoke test for auth changes. Do not skip it.
+2. **TOKEN_REFRESHED is a side-effect footgun.** Guard the `onAuthStateChange` handler with a ref when mid-operation state must not be disturbed.
+3. **Render gates mask bugs in later gates.** Test the full render chain, not just the gate you added.
+4. **localStorage is device-global, not per-user.** Test with multiple accounts on the same device to catch cross-account leakage.
+5. **Supabase intentionally conflates "wrong password" and "user not found".** Don't try to distinguish them on the login path — it's anti-enumeration by design.
 
 ## What's deferred
 
-Per Speaker directives across Sessions 9 and 10:
+Per Speaker directives across Sessions 9–11:
 
-- **New features** (LINE bot, recurring transactions, CSV export, bulk actions) — deferred until Tower ships. Will be revisited in Sprint K.
-- **Tower construction itself** — deferred until prerequisites ship (Sprints B, **C**, D, E). First Tower code lands in Session 14 (Sprint F).
-- **Landing page rewrite** — deferred to Sprint K. The homepage audit findings are preserved in `docs/tower/RISKS-FROM-AUDITS.md` for future Iron Wolf to pick up.
-- **Lao/Thai toast copy wife review** — non-blocking. Can happen any time between sessions; doesn't need its own session.
+- **New features** (LINE bot, recurring transactions, CSV export, bulk actions) — deferred until Tower ships. Revisited in Sprint K.
+- **Tower construction itself** — deferred until prerequisites ship (Sprints B ✅, C ✅, **D**, E). First Tower code lands in Session 14 (Sprint F).
+- **Landing page rewrite** — deferred to Sprint K.
+- **Lao/Thai auth copy wife review** — non-blocking. Can happen any time between sessions.
+- **LINE OTP / LIFF login** — deferred to Sprint K. Current auth is user-set passwords, which is sufficient for the family-use phase.
 
 ## Known things NOT to touch
 
 * `workers/phanote-api-worker.js` (filename preserved post-rename, content renamed)
-* `@phanote.app` email domain in auth **(Sprint C is building the replacement — but the old trick stays available for legacy account migration until Sprint C's cut-over step)**
-* `Ph4n0te` password prefix **(same — legacy migration target, don't delete until Sprint C's cut-over step)**
+* `@phanote.app` email domain in auth (legacy identifier, preserved per CLAUDE.md)
+* `Ph4n0te` password prefix (legacy derived password, used by `loginWithPassword` fallback until all 10 accounts migrate)
 * `localStorage phanote-*` keys (preserves user preferences)
-* Legacy phanote.com URLs in worker comment line 3 (historical marker)
-* `useClickGuard` + `fetchWithTimeout` + **`Sheet` + `toast` + `ToastContainer`** usage sites — Session 10 infrastructure, don't bypass
-* **`.nvmrc` exact pinning** — do not revert to major-only
-* **`package.json` `engines` field** — same reason
-* **User B test account** (`5e3629a1-aa60-4c25-a013-11bf40b8e6b9`) — permanent RLS regression test identity
-* **RLS policies on all 7 user-data tables** — canonical single-policy shape from Session 9 + 10, don't add overlapping policies
-* **Existing `Toast` export in `src/components/Toast.jsx`** — legacy streak/quick notification component, byte-identical, used by HomeScreen. The new `ToastContainer` lives alongside it.
+* `useClickGuard` + `fetchWithTimeout` + `Sheet` + `toast` + `ToastContainer` + `ConfirmSheet` usage sites — infrastructure, don't bypass
+* `.nvmrc` exact pinning + `package.json` `engines` field
+* User B test account (`5e3629a1-aa60-4c25-a013-11bf40b8e6b9`) — permanent RLS regression test identity
+* RLS policies on all 7 user-data tables — canonical single-policy shape
+* `migratingRef` in App.jsx — TOKEN_REFRESHED guard during legacy migration, do not remove until all 10 accounts have migrated
 
-## Tower-specific things NOT to touch yet
+## Session 12 definition of done
 
-These exist as documentation but should not be built in Session 11:
+Before marking Sprint D complete:
 
-* `tower/` folder — does not exist yet, will be created in Session 14 (Sprint F)
-* `tower.phajot.com` subdomain — not configured yet, Session 14 task
-* Cloudflare Pages project for Tower — does not exist yet, Session 14 task
-* Claude Projects for Sentinels — set up in Session 13 (Sprint E), not before
-
-## Session 11 definition of done
-
-Before marking Sprint C complete:
-
-- [ ] New phone auth path works end-to-end (signup, login, session restore)
-- [ ] Legacy `@phanote.app` trick still works for existing users (no forced migration yet)
+- [ ] All user-facing strings go through `src/lib/i18n.js` (Rule 15 enforced retroactively)
+- [ ] Settings reorganized into 5 sections
+- [ ] `signInWithPhone` dead code deleted
+- [ ] localStorage `phanote_pins` namespaced per-user
 - [ ] Production bundle hash different from session start (Rule 11)
-- [ ] Wife's account still works after deploy
-- [ ] `docs/session-11/SUMMARY.md` created
+- [ ] `docs/session-12/SUMMARY.md` created
 - [ ] `docs/RISKS.md` updated
-- [ ] `TOMORROW-START-HERE.md` updated to point at Sprint D (i18n marathon)
+- [ ] `docs/ROADMAP-LIVE.md` updated (Rule 18)
+- [ ] `TOMORROW-START-HERE.md` updated to point at Sprint E (observability)
 
-## If Sprint C slips
+## If Sprint D slips
 
-Sprint C is now scoped to a single priority (auth), so there's no meaningful "partial" state:
+Sprint D has 2 mandatory priorities (i18n sweep, Settings reorg) and 3 smaller additions. If time runs out:
 
-If Session 11 completes auth replacement:
-- Sprint D (i18n marathon) starts in Session 12. Tower launch timeline unchanged from the 10-week plan.
+- i18n sweep is the P1 audit finding — ship it even if Settings reorg defers.
+- Settings reorg is P2 — can carry to Session 13 without blocking Tower.
+- The 3 smaller additions are all low-priority — carry forward if needed.
 
-If Session 11 does NOT complete auth replacement:
-- Carry over to Session 12. Sprint D shifts to Session 13. Tower launch slips by one session.
-- Consider whether auth can be split (new path first, legacy migration second) across two sessions to land something shippable in Session 11 while deferring the migration pass.
+Sprint E (observability) is what unlocks Tower. It should not slip past Session 13.
 
-If Session 11 runs out of time entirely before any auth work:
-- Stop and ask. The AUTH-DESIGN plan is probably wrong somewhere.
+## Remember
 
-## 💚 Remember
-
-Sprint C is brick 2 of the Tower wall. Auth is the riskiest part of the 4 prerequisite sprints — it touches existing users, it requires a migration path, it has to coexist with the old system until the cut-over. Go slow on the migration flow, go fast on the new-user path.
+Sprint D is brick 3 of the Tower wall. i18n is the last user-facing cleanup before observability (Sprint E) and then Tower itself (Sprint F). The hardest sprints are behind you — auth is shipped and deploy-verified. Sprint D is tedious but low-risk: no migration paths, no security surfaces, no existing-user impact. Just strings and layout.
 
 - Take breaks. Drink water.
-- Wife is your best QA — test the legacy login path with her account before touching anything.
 - One commit per logical unit. Atomic, reversible.
 - Rule 11: "merged" ≠ "shipped." Always verify the bundle hash.
-- **Every Supabase write site: destructure `{ error }`, throw, catch, toast, rethrow.** The Sprint B pattern is now the house style.
-
-🐾
+- Rule 15: no hardcoded user-facing strings. This is what Sprint D enforces.
+- Rule 18: update `docs/ROADMAP-LIVE.md` in the wrap-up commit.

@@ -97,6 +97,7 @@ telling you about your money over coffee, not a bank dashboard.
 15. **No hardcoded user-facing strings.** All text shown to users must go through `src/lib/i18n.js` with keys for `lo`, `th`, and `en`. Sprint D enforces this retroactively; new code must follow it immediately. Hardcoded strings fail code review.
 16. **Tower code lives in `tower/`, Phajot code lives in `src/`.** These are separate Vite apps in the same repo. They share `supabase/migrations/`, `docs/`, and `CLAUDE.md`, but do not import from each other. Never let a Phajot component import from `tower/`, and never let a Tower component import from `src/` — extract to `shared/` if needed.
 17. **Tower is a viewer, not a writer.** Tower v1 can read everything and write almost nothing. Any write privilege must be explicitly discussed with the Speaker before being added. Default to read-only for new Tower features.
+18. **Update `docs/ROADMAP-LIVE.md` in every session wrap-up commit.** Move completed items to done, update commit hashes, update Current State section, update audit tracker. This is the living roadmap — it must always reflect the true project state.
 
 ## Known bugs to fix
 - (none active — Session 9 RLS hardening + deploy pipeline fix shipped, adversarially verified)

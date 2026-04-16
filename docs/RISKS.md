@@ -7,7 +7,7 @@ Living document. Updated at the end of each session.
 - **MEDIUM** — quality issue, user-visible but recoverable, or latent failure mode
 - **LOW** — tech debt, nice-to-have, or documentation gap
 
-**Last updated:** 2026-04-15 (Session 10)
+**Last updated:** 2026-04-16 (Session 11)
 
 ---
 
@@ -159,3 +159,7 @@ Speaker ran 3 adversarial probes against each table in the Supabase SQL Editor u
 ### ~~[MEDIUM] Native `alert()` / `window.confirm()` still used for OCR Pro lock + delete flows~~
 **Resolved:** Session 10 commit `b6b2598` · 2026-04-15
 New shared `ConfirmSheet` component (92 lines) built on top of the existing `Sheet` wrapper. Replaces 6 native dialog sites: OcrButton Pro gate (variant=upgrade), GoalsScreen delete-goal, App.jsx delete-transaction + reset-app, StatementScanFlow delete-batch, plus GoalsScreen createGoal error path (replaced with `showToast` per the errors-use-toast pattern from Priority C, not ConfirmSheet). Initial task-prompt grep missed one site (bare `confirm()` in StatementScanFlow without the `window.` prefix) — caught on second pass. 9 i18n keys added for all 3 languages with warm brand-voice copy; idiomatic Lao/Thai "keep it for later" translation chosen for `proLockNotNow` over literal "not now". App.jsx uses a shared `pendingConfirm = {kind, ...data}` discriminated union state pattern for its two confirm instances; other components use local state. Z-index toast 10001 > confirm 1000 is intentional so errors always render above decisions. Closes audit P1 row 8 in `docs/tower/RISKS-FROM-AUDITS.md` ahead of Sprint C schedule. See `docs/session-10/SUMMARY.md` "Native dialog replacement (bonus)" section.
+
+### ~~[HIGH] Derived-password auth (audit P0 #1)~~
+**Resolved:** Session 11 commit `770af58` · 2026-04-16
+Phone-to-email auth trick (`{countryCode}{phone}@phanote.app` + `Ph4n0te{phone}X`) replaced with user-set password auth via `src/lib/auth.js`. LoginScreen rewritten with login/register mode toggle. Legacy accounts (10 rows with `legacy_auth=true`) see MigrationScreen on first login post-deploy — pre-fills typed password, validates, calls `migrateLegacyAccount()` to update auth.users password + clear flag. Hotfix `8be34f5` fixed PinLock gate for no-PIN users and TOKEN_REFRESHED race during migration. Deploy-verified on phone + desktop (Tests A/B/C all pass). Old `signInWithPhone` function is dead code (exported, zero callers) — flagged for deletion in Sprint D. See `docs/session-11/SUMMARY.md`.
