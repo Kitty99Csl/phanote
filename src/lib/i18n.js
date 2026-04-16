@@ -174,6 +174,12 @@ export const i18n={
     budgetOver:"⚠️ Over budget",
     budgetAlmost:"⚡ Almost at limit",
     budgetPctOf:"{pct}% of {limit}",
+    editTxSave:"Save Changes ✓",
+    editTxType:"Type",
+    editTxExpense:"− Expense",
+    editTxIncome:"+ Income",
+    editTxCurrency:"Currency",
+    editTxAmount:"Amount ({currency})",
   },
   lo:{
     welcome:"ຍິນດີຕ້ອນຮັບ Phajot",tagline:"ພາຈົດ — ຕິດຕາມການເງິນຂອງທ່ານ",
@@ -347,6 +353,12 @@ export const i18n={
     budgetOver:"⚠️ ເກີນງົບ",
     budgetAlmost:"⚡ ໃກ້ຮອດຂອບເຂດ",
     budgetPctOf:"{pct}% ຂອງ {limit}",
+    editTxSave:"ບັນທຶກການແກ້ໄຂ ✓",
+    editTxType:"ປະເພດ",
+    editTxExpense:"− ລາຍຈ່າຍ",
+    editTxIncome:"+ ລາຍຮັບ",
+    editTxCurrency:"ສະກຸນເງິນ",
+    editTxAmount:"ຈຳນວນ ({currency})",
   },
   th:{
     welcome:"ยินดีต้อนรับสู่ Phajot",tagline:"Phajot — ติดตามการเงินของคุณ",
@@ -499,6 +511,12 @@ export const i18n={
     budgetOver:"⚠️ เกินงบ",
     budgetAlmost:"⚡ ใกล้ถึงขีดจำกัด",
     budgetPctOf:"{pct}% ของ {limit}",
+    editTxSave:"บันทึกการแก้ไข ✓",
+    editTxType:"ประเภท",
+    editTxExpense:"− รายจ่าย",
+    editTxIncome:"+ รายรับ",
+    editTxCurrency:"สกุลเงิน",
+    editTxAmount:"จำนวน ({currency})",
   },
 };
 export const t=(lang,key)=>i18n[lang]?.[key]||i18n.en[key]||key;
