@@ -102,7 +102,7 @@ export function GoalsScreen({ profile, transactions }) {
     const cat = [...DEFAULT_EXPENSE_CATS,...(profile.customCategories||[])].find(c=>c.id===top[0]);
     const cutBy = Math.round(top[1] * 0.2); // suggest 20% cut
     if (!cat || cutBy <= 0) return null;
-    return `Cut ${cat.emoji} ${catLabel(cat,lang)} by ${fmtCompact(cutBy,goal.currency)}/mo to save faster`;
+    return t(lang,"goalCutSuggestion").replace("{emoji}",cat.emoji).replace("{name}",catLabel(cat,lang)).replace("{amount}",fmtCompact(cutBy,goal.currency));
   };
 
   const monthsLeft = (goal) => {
@@ -123,8 +123,8 @@ export function GoalsScreen({ profile, transactions }) {
   const deadlineLabel = (goal) => {
     if (!goal.deadline) return null;
     const m = monthsLeft(goal);
-    if (m <= 1) return "Due this month ⚡";
-    if (m <= 3) return `${m} months left`;
+    if (m <= 1) return t(lang,"goalDueThisMonth");
+    if (m <= 3) return t(lang,"goalMonthsLeft").replace("{m}",m);
     return new Date(goal.deadline).toLocaleDateString("en-US", { month:"short", year:"numeric" });
   };
 

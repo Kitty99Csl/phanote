@@ -164,6 +164,11 @@ export const i18n={
     savingsAddTo:"Add to {name}",
     savingsProgress:"{saved} saved · {remaining} to go",
     savingsAll:"All ✓",
+    budgetSpent:"{amount} spent",
+    budgetSetShort:"+ Set",
+    goalCutSuggestion:"Cut {emoji} {name} by {amount}/mo to save faster",
+    goalDueThisMonth:"Due this month ⚡",
+    goalMonthsLeft:"{m} months left",
   },
   lo:{
     welcome:"ຍິນດີຕ້ອນຮັບ Phajot",tagline:"ພາຈົດ — ຕິດຕາມການເງິນຂອງທ່ານ",
@@ -327,6 +332,11 @@ export const i18n={
     savingsAddTo:"ເພີ່ມໃສ່ {name}",
     savingsProgress:"ອອມແລ້ວ {saved} · ຍັງເຫຼືອ {remaining}",
     savingsAll:"ທັງໝົດ ✓",
+    budgetSpent:"ໃຊ້ໄປ {amount}",
+    budgetSetShort:"+ ຕັ້ງ",
+    goalCutSuggestion:"ຫຼຸດ {emoji} {name} ລົງ {amount}/ເດືອນ ເພື່ອອອມໄວຂຶ້ນ",
+    goalDueThisMonth:"ຄົບກຳນົດເດືອນນີ້ ⚡",
+    goalMonthsLeft:"ຍັງເຫຼືອ {m} ເດືອນ",
   },
   th:{
     welcome:"ยินดีต้อนรับสู่ Phajot",tagline:"Phajot — ติดตามการเงินของคุณ",
@@ -469,6 +479,11 @@ export const i18n={
     savingsAddTo:"เพิ่มไปที่ {name}",
     savingsProgress:"ออมแล้ว {saved} · เหลืออีก {remaining}",
     savingsAll:"ทั้งหมด ✓",
+    budgetSpent:"ใช้ไป {amount}",
+    budgetSetShort:"+ ตั้ง",
+    goalCutSuggestion:"ลด {emoji} {name} ลง {amount}/เดือน เพื่อออมเร็วขึ้น",
+    goalDueThisMonth:"ครบกำหนดเดือนนี้ ⚡",
+    goalMonthsLeft:"เหลืออีก {m} เดือน",
   },
 };
 export const t=(lang,key)=>i18n[lang]?.[key]||i18n.en[key]||key;

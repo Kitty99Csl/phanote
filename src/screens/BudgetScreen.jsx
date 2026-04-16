@@ -135,13 +135,13 @@ export function BudgetScreen({ profile, transactions }) {
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ fontWeight:600, fontSize:14, color:T.dark, fontFamily:"'Noto Sans',sans-serif" }}>{catLabel(cat, lang)}</div>
                   <div style={{ fontSize:11, color:T.muted, marginTop:1 }}>
-                    {limit > 0 ? `${fmt(spent, selectedCur)} / ${fmt(limit, selectedCur)}` : spent > 0 ? `${fmt(spent, selectedCur)} spent` : "Tap to set limit"}
+                    {limit > 0 ? `${fmt(spent, selectedCur)} / ${fmt(limit, selectedCur)}` : spent > 0 ? t(lang,"budgetSpent").replace("{amount}",fmt(spent, selectedCur)) : t(lang,"tap_set_limit")}
                   </div>
                 </div>
                 <div style={{ flexShrink:0, textAlign:"right" }}>
                   {limit > 0
                     ? <div style={{ fontSize:14, fontWeight:800, color, fontFamily:"'Noto Sans',sans-serif" }}>{Math.round(pct)}%</div>
-                    : <div style={{ fontSize:11, color:"#ACE1AF", fontWeight:700 }}>+ Set</div>}
+                    : <div style={{ fontSize:11, color:"#ACE1AF", fontWeight:700 }}>{t(lang,"budgetSetShort")}</div>}
                 </div>
               </div>
               {limit > 0 && (
