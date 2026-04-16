@@ -155,7 +155,7 @@ See [CLAUDE.md](CLAUDE.md) for full project context. Non-negotiables:
 - **Session 5:** Lao-first branding + slogan lock + landing page refresh + brand identity
 - **Session 6:** Phajot migration + OCR bank statement + dedicated TransactionsScreen + heatmap analytics
 
-See [docs/session-6/SUMMARY.md](docs/session-6/SUMMARY.md) for the latest session details and [TOMORROW-START-HERE.md](TOMORROW-START-HERE.md) for Session 7 priorities.
+See [docs/session-6/SUMMARY.md](docs/session-6/SUMMARY.md) for the latest session details and [docs/TOMORROW-START-HERE.md](docs/TOMORROW-START-HERE.md) for next session priorities.
 
 ## License
 

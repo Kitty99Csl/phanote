@@ -114,7 +114,7 @@ Before marking Sprint D complete:
 - [ ] `docs/session-13/SUMMARY.md` created
 - [ ] `docs/RISKS.md` updated
 - [ ] `docs/ROADMAP-LIVE.md` updated (Rule 18)
-- [ ] `TOMORROW-START-HERE.md` updated to point at Sprint E (observability)
+- [ ] `docs/TOMORROW-START-HERE.md` updated to point at Sprint E (observability)
 
 ## Remember
 
