@@ -52,7 +52,7 @@ export function LoginScreen({ onLogin }) {
     setError("");
 
     if (!phone.trim() || phone.trim().length < 6) {
-      setError("Please enter a valid phone number");
+      setError(t(lang, "authInvalidPhone"));
       return;
     }
     if (!password || password.length < 6) {
@@ -111,8 +111,8 @@ export function LoginScreen({ onLogin }) {
     } catch (e) {
       setError(
         e.message?.includes("422")
-          ? "Invalid phone number format."
-          : "Could not sign in. Please try again."
+          ? t(lang, "authPhoneFormatError")
+          : t(lang, "authGenericError")
       );
       setLoading(false);
     }
