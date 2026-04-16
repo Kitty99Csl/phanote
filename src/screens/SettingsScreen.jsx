@@ -164,6 +164,9 @@ export function SettingsScreen({profile,transactions,onUpdateProfile,onReset,pin
 
       {/* ─── Security / PIN ─── */}
       <div style={{fontSize:10,fontWeight:700,letterSpacing:1.4,color:T.muted,textTransform:"uppercase",marginBottom:10,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"settingsSecurity")}</div>
+      {!pinConfig.owner && (
+        <div style={{fontSize:12,color:T.muted,marginBottom:12,lineHeight:1.6,fontFamily:"'Noto Sans','Noto Sans Lao',sans-serif"}}>{t(lang,"settingsPinExplain")}</div>
+      )}
       <div style={{background:T.surface,backdropFilter:"blur(20px)",borderRadius:20,boxShadow:T.shadow,marginBottom:20,overflow:"hidden"}}>
         <div style={{display:"flex",alignItems:"center",gap:12,padding:"16px 18px"}}>
           <div style={{width:40,height:40,borderRadius:12,background:"rgba(172,225,175,0.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>🔐</div>
