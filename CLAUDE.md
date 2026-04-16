@@ -5,7 +5,7 @@ Phajot (ພາຈົດ) — multi-currency personal finance PWA for Laos (LAK, 
 
 - Repo: Kitty99Csl/phanote (repo name intentionally preserved post-rename)
 - Main branch: main
-- Working branch: main (Session 9 deploy fix + RLS hardening merged 2026-04-14 at `aa78f9e`, no working branch cut)
+- Working branch: main
 - Live: app.phajot.com, api.phajot.com, phajot.com (legacy phanote.com domains 301 redirect)
 
 ## Second product: Tower
@@ -59,7 +59,7 @@ accessible via Settings for existing users.
 telling you about your money over coffee, not a bank dashboard.
 
 ## Tech stack
-- Frontend: React 19 + Vite 8, src/App.jsx is **345 lines** (after Session 7 refactor from 5,480 lines; now a thin root shell, logic lives in src/lib/, src/hooks/, src/components/, src/modals/, src/screens/)
+- Frontend: React 19 + Vite 8, src/App.jsx is **432 lines** (after Session 7 refactor from 5,480 lines, grew in Sprint C auth wiring; thin root shell, logic lives in src/lib/, src/hooks/, src/components/, src/modals/, src/screens/)
 - DB: Supabase (Singapore)
 - Worker: Cloudflare Workers at workers/phanote-api-worker.js (v4.4.0), name "phanote-parser" (filename preserved post-rename)
 - AI parse: Gemini 2.5 Flash
@@ -76,8 +76,7 @@ telling you about your money over coffee, not a bank dashboard.
 3. `PHAJOT-ACTION-PLAN.md` (screen-by-screen plan)
 4. `docs/tower/CHARTER.md` (Tower's mission and structure)
 5. `docs/tower/ROADMAP.md` (current sprint plan, Sprints B→K)
-6. `docs/tower/SPRINT-B-PLAN.md` (if working in Session 10)
-7. `docs/tower/AUTH-DESIGN.md` (if working in Session 11 Sprint C)
+6. `docs/ROADMAP-LIVE.md` (living roadmap — updated every session per Rule 18)
 
 ## Non-negotiable rules
 1. Never edit worker in Cloudflare web editor — always local + wrangler deploy
@@ -102,21 +101,18 @@ telling you about your money over coffee, not a bank dashboard.
 ## Known bugs to fix
 - (none active — Session 9 RLS hardening + deploy pipeline fix shipped, adversarially verified)
 
-## Current state: Session 9 complete, Sprint B starting Session 10
+## Current state: Session 12 complete, Sprint D ~70%
 
-**Session 9 shipped (April 14, 2026)** — CF Pages deploy pipeline fix + RLS hardening. See `docs/session-9/SUMMARY.md`, `docs/session-9/RLS-HARDENING.md`, `docs/RISKS.md`.
+- **Sprints B + C shipped** (Sessions 10-11) — trust & safety, auth replacement, deploy-verified
+- **Sprint D in progress** — i18n sweep ~70% done across Session 12 (67 strings, 10 screens/components). ~55 strings + Settings reorg remaining.
+- **Sprint D completes in Session 13** (~3-4h remaining)
+- **Sprint E (observability)** targets Session 14. **This sprint unlocks Tower.**
+- **Sprint F (Tower Lobby)** targets Session 15
+- **Sprints G-J (Tower rooms):** Sessions 16-19
+- **Sprint K+ (public launch prep):** Session 20+
+- **Audit findings:** 0 P0 open, 2 P1 open (statement import nav, i18n), 2 P2 open (analytics memo, settings overload)
 
-**Session 10 is Sprint B** — the first sprint of the Tower roadmap. Before Tower can be built, 4 prerequisite sprints must complete:
-- **Sprint B (Session 10)** — Trust & safety round 1: parent wrappers, error toasts, RLS cleanup, Sheet migration. See `docs/tower/SPRINT-B-PLAN.md`.
-- **Sprint C (Session 11)** — Real auth, schema drift captured, native dialogs replaced. See `docs/tower/AUTH-DESIGN.md`.
-- **Sprint D (Session 12)** — i18n marathon + Settings reorganization.
-- **Sprint E (Session 13)** — Observability floor (Sentry, AI cost log, `/health` enrichment, `docs/tower/` skeleton). **This sprint is what unlocks Tower.**
-
-**Sprint F (Session 14) onward** builds Tower itself, one room per session through Session 18.
-
-**Sprint K+ (Session 19+)** is public launch readiness — landing page rewrite, Pro gating, PDPA, LINE OTP, payments, LINE bot.
-
-See `docs/tower/ROADMAP.md` for the full timeline.
+See `docs/ROADMAP-LIVE.md` for the full living timeline with commit hashes.
 
 ## Recent key learnings (from Session 9)
 

@@ -42,7 +42,7 @@ Session 9 verified RLS **manually** with an adversarial SQL test in the Supabase
 
 ### [MEDIUM] Thai translations missing for 4 statementError* keys
 **Discovered:** Session 8 Sprint A Ext fetchWithTimeout sweep
-**Status:** Unfixed — Sprint D i18n marathon (40% done in Session 12, continues Session 13)
+**Status:** Unfixed — Sprint D i18n marathon (~70% done in Session 12, continues Session 13)
 
 `statementErrorParse`, `statementErrorNetwork`, `statementErrorRateLimit`, `statementErrorTimeout` all have EN + LO entries but no TH. Thai users fall back to English via the `t()` helper's implicit fallback. This is a **pre-existing gap from Session 6** — Session 9 added one more key (`statementErrorTimeout`) following the same partial pattern.
 
@@ -162,4 +162,4 @@ New shared `ConfirmSheet` component (92 lines) built on top of the existing `She
 
 ### ~~[HIGH] Derived-password auth (audit P0 #1)~~
 **Resolved:** Session 11 commit `770af58` · 2026-04-16
-Phone-to-email auth trick (`{countryCode}{phone}@phanote.app` + `Ph4n0te{phone}X`) replaced with user-set password auth via `src/lib/auth.js`. LoginScreen rewritten with login/register mode toggle. Legacy accounts (10 rows with `legacy_auth=true`) see MigrationScreen on first login post-deploy — pre-fills typed password, validates, calls `migrateLegacyAccount()` to update auth.users password + clear flag. Hotfix `8be34f5` fixed PinLock gate for no-PIN users and TOKEN_REFRESHED race during migration. Deploy-verified on phone + desktop (Tests A/B/C all pass). Old `signInWithPhone` function is dead code (exported, zero callers) — flagged for deletion in Sprint D. See `docs/session-11/SUMMARY.md`.
+Phone-to-email auth trick (`{countryCode}{phone}@phanote.app` + `Ph4n0te{phone}X`) replaced with user-set password auth via `src/lib/auth.js`. LoginScreen rewritten with login/register mode toggle. Legacy accounts (10 rows with `legacy_auth=true`) see MigrationScreen on first login post-deploy — pre-fills typed password, validates, calls `migrateLegacyAccount()` to update auth.users password + clear flag. Hotfix `8be34f5` fixed PinLock gate for no-PIN users and TOKEN_REFRESHED race during migration. Deploy-verified on phone + desktop (Tests A/B/C all pass). Old `signInWithPhone` function was dead code (exported, zero callers) — deleted in Session 12 commit `932a8bc`. See `docs/session-11/SUMMARY.md`.

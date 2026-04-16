@@ -1,10 +1,10 @@
 # PHAJOT — Live Roadmap
-> Last updated: 2026-04-16 · Session 12 · Commit 17fae99
+> Last updated: 2026-04-16 · Session 12 · Commit dd8ba84
 
 ## Current State
 - **Active sprint:** D (i18n + Settings) — ~70% COMPLETE
 - **Session:** 12
-- **Commits today:** 12 (6 morning + 6 post-break)
+- **Commits today:** 12 code + 3 docs = 15 total
 - **Production hash:** index-oPuRioVP.js
 - **Next action:** Session 13 finishes Sprint D — remaining modals + Settings reorg + PIN UX copy
 

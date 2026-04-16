@@ -23,7 +23,7 @@
 | 11 | `7ceb361` | i18n SetBudgetModal (7 strings, 3 reused) |
 | 12 | `17fae99` | i18n EditTransactionModal (9 strings, 3 reused) |
 
-**67 strings i18n'd** across 10 screens/components. 68 new keys + 9 reused. ~80 total new keys across Sessions 11-12 pending Lao/Thai wife review.
+**67 strings i18n'd** across 10 screens/components. 80 new keys + 9 reused across Sessions 11-12 (= 240 new entries across 3 langs). Lao walkthrough passed in Session 12. Thai translations pending wife review.
 
 **Bundle hash progression:** `CEFkIaIU` → `BkevNGeM` → `BLP-ChCs` → `oPuRioVP`
 
@@ -31,7 +31,7 @@
 
 ## What's shipping in Session 13
 
-Session 13 continues Sprint D. Estimated time: **4-5 hours**.
+Session 13 continues Sprint D. Estimated time: **3-4 hours**.
 
 ### Priority 1 — Finish i18n sweep (~55 strings, ~1.5h)
 
@@ -88,7 +88,7 @@ This closes audit P2 finding #7.
 - **Sprint E (observability)** — starts after Sprint D completes. Unlocks Tower.
 - **New features** — deferred until Tower ships (Sprint K).
 - **Landing page rewrite** — deferred to Sprint K.
-- **Lao/Thai wife review for 59 new i18n keys** — non-blocking, can happen between sessions.
+- **Lao walkthrough passed** in Session 12 — wife review can focus on Thai translations and the newly i18n'd form modals (80 keys total across Sessions 11-12).
 
 ## Known things NOT to touch
 
