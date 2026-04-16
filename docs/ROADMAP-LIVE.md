@@ -74,7 +74,7 @@
 
 ### Sprints G-J — Tower Rooms (Sessions 16-19)
 - G: Engine Room (technical health)
-- H: Admin Panel (user investigation)
+- H: Admin Panel (user investigation) + **Language Strings Admin Panel** — data-driven i18n via Supabase `translations` table, inline edit UI at `tower.phajot.com/admin/language-strings`, fallback chain DB → code-level i18n.js → English → key name. Wife/admins edit translations without redeploying. ~2 days within Sprint H budget.
 - I: Command Center (Sentinel chat)
 - J: Workshop + Archive
 **Status:** NOT STARTED

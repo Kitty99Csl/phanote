@@ -234,6 +234,41 @@ The technical health dashboard. Uptime graphs, error feed, AI cost tracker, traf
 ### Sprint H — Room 5: The Admin Panel (Session 16)
 User investigation. **Read-only in v1.** Search users, view profile/transactions/errors. Every read logs to `tower_admin_reads`. PDPA-compliant access controls.
 
+#### Language Strings Admin Panel
+
+Purpose: Replace code-level i18n editing with a data-driven admin panel. Admins edit translations without redeploying. Wife and other Lao/Thai reviewers can adjust strings directly.
+
+Reference implementation: office.bj88laos.com/setting/language-strings — inline table with Code/English/Lao/Thai/Used In columns, search, filter, inline edit, create button.
+
+Architecture:
+- Supabase `translations` table: `id`, `code` (unique), `en`, `lo`, `th`, `used_in`, `notes`, `created_at`, `updated_at`, `updated_by`
+- Runtime: app fetches translations on mount, caches in localStorage with 7-day TTL
+- Fallback chain: DB translation → code-level `i18n.js` → English → key name. App works offline, works if Supabase down.
+- Migration: seed script copies current ~154 keys from `src/lib/i18n.js` into DB on first deploy
+- Code-level `i18n.js` stays as permanent fallback (not deleted)
+
+Admin UI (Tower Room 5, `tower.phajot.com/admin/language-strings`):
+- Search by code or string content (in any language)
+- Filter by `used_in` (Settings, Home, Onboarding, etc.)
+- Inline edit: code | en | lo | th | used_in
+- Create new key button (+CREATE)
+- Soft-delete with audit log (`updated_by` tracks who changed what)
+- Export JSON (for backup and emergency sync)
+- Import JSON (for bulk updates from external translators)
+
+Estimated time: ~2 days within Sprint H's total budget.
+
+Benefits:
+- Wife/admins can fix bad translations without waiting for Kitty
+- New languages (Vietnamese, Khmer, etc.) become admin tasks, not code changes
+- Audit trail via `updated_by`/`updated_at`
+- Decouples translation work from deploy cycles
+
+Prerequisites from earlier sprints:
+- Sprint C auth (done) — needed for admin login
+- Sprint D code-level i18n complete (in progress) — provides migration seed data
+- Sprint E Sentry (planned) — monitors admin panel errors
+
 ### Sprint I — Room 2: The Command Center (Session 17)
 Chat with the Sentinels. **v1: iframes** of each Claude Project, left sidebar for navigation. Real Claude API chat deferred to v2.
 
@@ -296,6 +331,7 @@ Approximately **9–10 weeks** from this plan to a public-launch-ready Phajot mo
 | Version | Date | Change |
 |---|---|---|
 | v1.0 | 2026-04-14 | Initial roadmap. Sprints B through K defined. Timeline estimated. Dependencies chained. |
+| v1.1 | 2026-04-16 | Language Strings Admin Panel locked into Sprint H. Speaker confirmed Option A after reviewing bj88laos reference. |
 
 ---
 
