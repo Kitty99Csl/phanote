@@ -160,6 +160,10 @@ export const i18n={
     settingsGuide:"Phajot guide",
     settingsGuideSub:"How every feature works",
     quickEditSaved:"Saved",
+    savingsAddBtn:"Add Savings 💚",
+    savingsAddTo:"Add to {name}",
+    savingsProgress:"{saved} saved · {remaining} to go",
+    savingsAll:"All ✓",
   },
   lo:{
     welcome:"ຍິນດີຕ້ອນຮັບ Phajot",tagline:"ພາຈົດ — ຕິດຕາມການເງິນຂອງທ່ານ",
@@ -319,6 +323,10 @@ export const i18n={
     settingsGuide:"ຄູ່ມື Phajot",
     settingsGuideSub:"ແຕ່ລະຟີເຈີເຮັດວຽກແນວໃດ",
     quickEditSaved:"ບັນທຶກແລ້ວ",
+    savingsAddBtn:"ເພີ່ມເງິນອອມ 💚",
+    savingsAddTo:"ເພີ່ມໃສ່ {name}",
+    savingsProgress:"ອອມແລ້ວ {saved} · ຍັງເຫຼືອ {remaining}",
+    savingsAll:"ທັງໝົດ ✓",
   },
   th:{
     welcome:"ยินดีต้อนรับสู่ Phajot",tagline:"Phajot — ติดตามการเงินของคุณ",
@@ -457,6 +465,10 @@ export const i18n={
     settingsGuide:"คู่มือ Phajot",
     settingsGuideSub:"แต่ละฟีเจอร์ทำงานอย่างไร",
     quickEditSaved:"บันทึกแล้ว",
+    savingsAddBtn:"เพิ่มเงินออม 💚",
+    savingsAddTo:"เพิ่มไปที่ {name}",
+    savingsProgress:"ออมแล้ว {saved} · เหลืออีก {remaining}",
+    savingsAll:"ทั้งหมด ✓",
   },
 };
 export const t=(lang,key)=>i18n[lang]?.[key]||i18n.en[key]||key;

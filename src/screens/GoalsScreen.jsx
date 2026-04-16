@@ -268,7 +268,7 @@ export function GoalsScreen({ profile, transactions }) {
 
       {showCreate && <GoalModal profile={profile} onSave={createGoal} onClose={()=>setShowCreate(false)}/>}
       {editGoal   && <GoalModal goal={editGoal} profile={profile} onSave={d=>updateGoal(editGoal.id,d)} onClose={()=>setEditGoal(null)}/>}
-      {addToGoal  && <AddSavingsModal goal={addToGoal} onSave={amt=>addSavings(addToGoal.id,amt)} onClose={()=>setAddToGoal(null)}/>}
+      {addToGoal  && <AddSavingsModal goal={addToGoal} lang={lang} onSave={amt=>addSavings(addToGoal.id,amt)} onClose={()=>setAddToGoal(null)}/>}
       <ConfirmSheet
         open={!!pendingDeleteGoalId}
         onClose={()=>setPendingDeleteGoalId(null)}
