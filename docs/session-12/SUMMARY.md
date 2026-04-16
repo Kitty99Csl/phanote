@@ -143,11 +143,73 @@ Sprint D is 40% complete. The remaining 60% defers to Session 13:
 
 ## Post-state
 
-- **Local `main`**: `0695707`
-- **`origin/main`**: `0695707`
-- **Production `app.phajot.com`**: serving `index-BLP-ChCs.js`
-- **i18n keys total**: ~154 (116 pre-session + 38 added today)
-- **Sprint D progress**: 40% — 4 screens done, ~124 strings + Settings reorg remaining
+- **Local `main`**: `17fae99`
+- **`origin/main`**: `17fae99`
+- **Production `app.phajot.com`**: serving `index-oPuRioVP.js`
+- **i18n keys total**: ~186 (116 pre-session + 38 morning + 32 post-break)
+- **Sprint D progress**: ~70% — 10 screens/components done, ~55 strings + Settings reorg remaining
 - **Audit P1 #3 (i18n)**: still open — requires full sweep in Session 13
 - **Worker**: `api.phajot.com` at v4.4.0, unchanged
 - **Working tree**: clean except `.claude/` untracked
+
+## Post-break continuation
+
+After a break, 6 more commits shipped — continuing the i18n sweep into modals and smaller components.
+
+### 7. `61402e5` — feat: i18n QuickEditToast (1 string)
+
+Migrated an inline lang ternary (`lang==="lo"?"ບັນທຶກແລ້ວ":lang==="th"?"บันทึกแล้ว":"Saved"`) to `t(lang,"quickEditSaved")`. Translations were already correct — just bypassing the i18n system. New key `quickEditSaved` created (distinct from `saved_label` which means "money saved" in the goals context).
+
+### 8. `dcfb87f` — feat: i18n AddSavingsModal (4 strings + lang prop)
+
+Added `lang` prop wired from GoalsScreen. 4 new keys: `savingsAddBtn` ("Add Savings 💚"), `savingsAddTo` ("Add to {name}" with interpolation), `savingsProgress` ("{saved} saved · {remaining} to go"), `savingsAll` ("All ✓"). Lao/Thai name examples used in placeholder copy.
+
+### 9. `98a9648` — feat: i18n WalletCards (2 strings, zero new keys)
+
+Reused existing `income` and `expense` keys for the expanded detail panel headers. Added `lang` prop wired from HomeScreen. Zero new i18n entries — the purest reuse commit of the sweep. Cosmetic note: English displays "EXPENSE" (singular, from the existing key) rather than "EXPENSES" in the section header; Lao/Thai unaffected (no singular/plural distinction).
+
+### 10. `fe02751` — feat: i18n BudgetScreen + GoalsScreen (6 strings)
+
+Two partially-i18n'd screens closed in one commit. Initial audit estimated 4 strings; actual found 6. BudgetScreen: `budgetSpent` ("{amount} spent"), reused `tap_set_limit`, `budgetSetShort` ("+ Set"). GoalsScreen: `goalCutSuggestion` ("Cut {emoji} {name} by {amount}/mo to save faster" — Lao grammar correctly reorders verb-object-amount), `goalDueThisMonth` ("Due this month ⚡"), `goalMonthsLeft` ("{m} months left").
+
+### 11. `7ceb361` — feat: i18n SetBudgetModal (7 strings, 3 reused + 5 new)
+
+First form modal of the sweep. Reused `remove`, `save_budget`, `monthly_limit`. New keys: `budgetMonthlySubtitle`, `budgetSpentThisMonth`, `budgetOver` ("⚠️ Over budget"), `budgetAlmost` ("⚡ Almost at limit"), `budgetPctOf` ("{pct}% of {limit}"). The 3-branch budget status ternary handled cleanly — each branch gets its own `t()` key.
+
+### 12. `17fae99` — feat: i18n EditTransactionModal (9 strings, 3 reused + 6 new)
+
+Trickiest form modal. Reused `edit_tx`, `name_label`, `category_label`. New keys: `editTxSave` ("Save Changes ✓"), `editTxType`, `editTxExpense` ("− Expense" with Unicode minus U+2212), `editTxIncome` ("+ Income"), `editTxCurrency`, `editTxAmount` ("Amount ({currency})"). Byte-verified that the Unicode minus sign (U+2212, `e2 88 92`) was preserved in all 3 language entries.
+
+**New audit finding flagged:** EditTransactionModal silently returns on invalid input (`if(!a||a<=0)return;`) — no error toast, no visual feedback. UX gap for Sprint D-ext: should show a toast like other modals. Out of scope for today's i18n pass.
+
+## Post-break summary
+
+| # | Commit | Component | Strings | New keys | Reused keys |
+|---|---|---|---|---|---|
+| 7 | `61402e5` | QuickEditToast | 1 | 1 | 0 |
+| 8 | `dcfb87f` | AddSavingsModal | 4 | 4 | 0 |
+| 9 | `98a9648` | WalletCards | 2 | 0 | 2 |
+| 10 | `fe02751` | BudgetScreen + GoalsScreen | 6 | 5 | 1 |
+| 11 | `7ceb361` | SetBudgetModal | 7 | 5 | 3 |
+| 12 | `17fae99` | EditTransactionModal | 9 | 6 | 3 |
+| **Total** | | | **29** | **21** | **9** |
+
+## Full-day totals
+
+| Metric | Morning | Post-break | Total |
+|---|---|---|---|
+| Commits | 6 | 6 | 12 |
+| Strings i18n'd | 38 | 29 | 67 |
+| New i18n keys | 38 | 21 | 59 |
+| Reused keys | 0 | 9 | 9 |
+| New i18n entries (keys × 3 langs) | 114 | 63 | 177 |
+
+## Lessons learned (post-break additions)
+
+5. **Reuse-over-create is the right default for i18n.** 9 keys reused across 6 post-break commits (notably `income`/`expense` for WalletCards, `remove`/`save_budget`/`monthly_limit` for SetBudgetModal, `edit_tx`/`name_label`/`category_label` for EditTransactionModal). Reuse means zero translation work for those strings and guaranteed consistency across screens.
+
+6. **Byte-verify special characters in translations.** The Unicode minus sign (U+2212) in "− Expense" is visually identical to an ASCII hyphen but semantically different. Checking with `xxd` before committing caught a potential rendering inconsistency. Worth doing for any non-ASCII symbol in translations.
+
+7. **Audit estimates are lower bounds.** The BudgetScreen + GoalsScreen commit found 6 strings when the audit predicted 4. The EditTransactionModal commit found 9 when the audit predicted 8. Always read the full file; don't rely on grep heuristics alone.
+
+8. **Inline lang ternaries are an anti-pattern.** QuickEditToast's `lang==="lo"?"ບັນທຶກແລ້ວ":lang==="th"?"บันทึกแล้ว":"Saved"` had correct translations but bypassed the i18n system — invisible to key audits, unreachable by the Sprint H Language Strings admin panel. Migrating to `t()` is always worth it even when the translations are already correct.
