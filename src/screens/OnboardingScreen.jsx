@@ -1,10 +1,7 @@
 // Onboarding screen — 5-step first-boot wizard.
 // Extracted from App.jsx in Session 7.
 //
-// Pre-existing gaps flagged for cleanup backlog:
-//   - placeholder "e.g. Kanya, Som, Alex" hardcoded English
-//   - step subtitles "Select the ones that match your life" and
-//     "Select your income sources" hardcoded English
+// Pre-existing gap flagged for cleanup backlog:
 //   - LANGS array missing Thai (only Lao + English offered)
 
 import { useState } from "react";
@@ -41,11 +38,11 @@ export function OnboardingScreen({onComplete, onBack}){
       </div>
       <div style={{background:T.surface,backdropFilter:"blur(20px)",borderRadius:28,padding:"28px 24px",width:"100%",maxWidth:400,boxShadow:T.shadowLg,zIndex:1,maxHeight:"70dvh",overflowY:"auto"}}>
         {step===0&&(<>
-          {onBack&&(<button onClick={onBack} style={{background:"none",border:"none",cursor:"pointer",fontSize:13,color:T.muted,marginBottom:12,padding:0,fontFamily:"'Noto Sans',sans-serif",display:"flex",alignItems:"center",gap:4}}>← Back to phone login</button>)}
+          {onBack&&(<button onClick={onBack} style={{background:"none",border:"none",cursor:"pointer",fontSize:13,color:T.muted,marginBottom:12,padding:0,fontFamily:"'Noto Sans',sans-serif",display:"flex",alignItems:"center",gap:4}}>{t(lang,"onboardingBack")}</button>)}
           <h2 style={S.title}>{t(lang,"welcome")}</h2>
           <p style={S.sub}>{t(lang,"tagline")}</p>
           <label style={S.label}>{t(lang,"your_name")}</label>
-          <input value={name} onChange={e=>setName(e.target.value)} onKeyDown={e=>e.key==="Enter"&&advance()} placeholder="e.g. Kanya, Som, Alex" autoFocus style={{width:"100%",marginTop:8,padding:"13px 16px",borderRadius:14,border:`1.5px solid ${name.trim()?"#ACE1AF":"rgba(45,45,58,0.12)"}`,outline:"none",fontSize:15,fontFamily:"'Noto Sans',sans-serif",color:T.dark,background:"rgba(172,225,175,0.06)",boxSizing:"border-box"}}/>
+          <input value={name} onChange={e=>setName(e.target.value)} onKeyDown={e=>e.key==="Enter"&&advance()} placeholder={t(lang,"onboardingNamePlaceholder")} autoFocus style={{width:"100%",marginTop:8,padding:"13px 16px",borderRadius:14,border:`1.5px solid ${name.trim()?"#ACE1AF":"rgba(45,45,58,0.12)"}`,outline:"none",fontSize:15,fontFamily:"'Noto Sans',sans-serif",color:T.dark,background:"rgba(172,225,175,0.06)",boxSizing:"border-box"}}/>
           <label style={{...S.label,marginTop:20}}>{t(lang,"pick_avatar")}</label>
           <div style={{display:"flex",flexWrap:"wrap",gap:8,marginTop:8}}>
             {AVATARS.map(a=><button key={a} onClick={()=>setAvatar(a)} style={{width:52,height:52,borderRadius:16,border:"none",cursor:"pointer",fontSize:26,background:avatar===a?"rgba(172,225,175,0.3)":"rgba(45,45,58,0.05)",transform:avatar===a?"scale(1.15)":"scale(1)",boxShadow:avatar===a?"0 3px 12px rgba(172,225,175,0.4)":"none",transition:"all .2s ease"}}>{a}</button>)}
@@ -72,7 +69,7 @@ export function OnboardingScreen({onComplete, onBack}){
         </>)}
         {step===3&&(<>
           <h2 style={S.title}>{t(lang,"pick_expense_cats")}</h2>
-          <p style={S.sub}>Select the ones that match your life</p>
+          <p style={S.sub}>{t(lang,"onboardingExpenseSub")}</p>
           <div style={{display:"flex",flexWrap:"wrap",gap:8,marginTop:16}}>
             {DEFAULT_EXPENSE_CATS.map(cat=>{const on=expCats.includes(cat.id);return(
               <button key={cat.id} onClick={()=>toggleCat(cat.id,expCats,setExpCats)} style={catBtnStyle(on)}>
@@ -83,7 +80,7 @@ export function OnboardingScreen({onComplete, onBack}){
         </>)}
         {step===4&&(<>
           <h2 style={S.title}>{t(lang,"pick_income_cats")}</h2>
-          <p style={S.sub}>Select your income sources</p>
+          <p style={S.sub}>{t(lang,"onboardingIncomeSub")}</p>
           <div style={{display:"flex",flexWrap:"wrap",gap:8,marginTop:16}}>
             {DEFAULT_INCOME_CATS.map(cat=>{const on=incCats.includes(cat.id);return(
               <button key={cat.id} onClick={()=>toggleCat(cat.id,incCats,setIncCats)} style={catBtnStyle(on)}>
