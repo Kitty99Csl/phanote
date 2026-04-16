@@ -1,5 +1,11 @@
-# PHANOTE — New Open Questions (April 9, 2026)
-### Append these to PHANOTE-OPEN-QUESTIONS.md
+# Phajot — Open Questions
+
+> **Status:** Current source of truth (active questions + resolutions)
+>
+> Active questions awaiting decision at top. Resolved questions moved
+> to bottom with resolution commit reference.
+
+## Session 4 questions (2026-04-09)
 
 ---
 
@@ -89,3 +95,57 @@ That's potentially 8-12 hours of work. Should we:
 **Kitty's style preference:** Clear focused sessions with specific themes work better than "kitchen sink" sessions.
 
 **Recommendation:** Option B — Session 4 closes after AI Advisor + RLS ship. Session 5 handles the App.jsx refactor + remaining features.
+
+---
+
+## Session 5 questions (2026-04-10)
+
+### OQ-011 — OCR: Support bank statement / notification screen scanning
+
+**Status:** ✅ RESOLVED — Shipped in Session 6 as StatementScanFlow
+**Priority:** HIGH user value (huge Laos workflow win)
+**Captured:** Session 5 Day 1, April 10 2026
+
+**What:** Currently OCR only handles shop/restaurant receipts (single
+transaction at a time). User wants to scan bank app notification screens
+(BCEL One message view, JDB app, etc.) and import multiple transactions
+at once.
+
+**User workflow (desired):**
+1. User gets bank SMS/push notifications for transactions
+2. User opens BCEL One -> Messages tab -> sees list of recent transactions
+3. User screenshots the message list
+4. User taps "Scan Receipt" in Phajot
+5. OCR detects multiple transactions from the image
+6. Phajot shows a preview with all detected rows
+7. User reviews, edits or skips individual rows
+8. User confirms -> all imported as separate transactions in one batch
+
+**Why this matters for Laos:**
+- BCEL One / JDB notifications are the primary source of financial data
+  for most users (no open banking API in Laos)
+- Manual entry of 5-10 transactions per week = too much friction
+- This is the "bridge" between bank apps and Phajot without needing
+  bank API integrations that don't exist
+- Could unlock 10x more logging consistency for the average user
+
+**Resolution:** Implemented as StatementScanFlow in Session 6. Multi-image
+upload, multi-bank support, batch import with dedup, inline editing.
+
+---
+
+### OQ-012 — Lao-first positioning + official slogan locked
+
+**Status:** ✅ RESOLVED (Session 5 Day 1, April 11, 2026)
+**Priority:** Brand/marketing foundation
+**Captured:** Session 5 Day 1, April 10 2026
+
+**Decision summary:**
+Phajot repositions as a Lao-first product publicly while maintaining
+Thai as a supported language in the app. Slogan locked:
+- Lao: ເງິນເຈົ້າໄປໃສ? ດຽວພາຈົດບອກໃຫ້ຟັງ
+- English: Where did your money go? Let Phajot tell you.
+
+**Resolution:** Implemented across app and landing page during Session 5.
+Wife reaction confirmed the positioning works naturally.
+Commits: `de8e176` (app), `3fc39a3` (landing page).

@@ -1,5 +1,11 @@
-# PHANOTE — Decisions Log Entries (April 9, 2026)
-### Append these to PHANOTE-DECISIONS-LOG.md
+# Phajot — Decisions Log
+
+> **Status:** Current source of truth (decision history)
+>
+> Chronological log of architectural and product decisions. Each entry
+> references the session and commit where the decision was made.
+
+## Session 4 decisions (2026-04-09)
 
 ---
 
