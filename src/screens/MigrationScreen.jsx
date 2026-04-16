@@ -79,6 +79,7 @@ export default function MigrationScreen({
       open={true}
       onClose={onClose}
       title={t(lang, "migrationTitle")}
+      showCloseButton={false}
       footer={
         <button
           onClick={submit}

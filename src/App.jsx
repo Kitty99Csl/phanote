@@ -17,6 +17,7 @@ import { PinLock } from "./screens/PinLock";
 import { LoginScreen } from "./screens/LoginScreen";
 import { OnboardingScreen } from "./screens/OnboardingScreen";
 import { HomeScreen } from "./screens/HomeScreen";
+import MigrationScreen from "./screens/MigrationScreen";
 
 // ═══ ROOT APP ════════════════════════════════════════════════
 export default function App(){
@@ -27,6 +28,7 @@ export default function App(){
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [streakToast, setStreakToast]   = useState(null);
   const [pendingConfirm, setPendingConfirm] = useState(null); // null | {kind:'delete-tx', txId} | {kind:'reset'}
+  const [migrationPrefill, setMigrationPrefill] = useState(""); // one-hop forward of typed password to MigrationScreen
 
   // ── PIN state ──────────────────────────────────────────────
   const [pinConfig, setPinConfig] = useState(() => {
@@ -131,6 +133,7 @@ export default function App(){
           streakLastDate: dbProfile.streak_last_date || "",
           xp: dbProfile.xp || 0,
           isPro: dbProfile.is_pro || false,
+          legacyAuth: dbProfile.legacy_auth === true,
           userId: uid,
         });
         supabase.from("profiles").update({ last_seen_at: new Date().toISOString() }).eq("id", uid).then(()=>{});
@@ -167,8 +170,16 @@ export default function App(){
     setLoadingProfile(false);
   };
 
-  const handleLogin = async (user, isNew, phone, countryCode) => {
+  const handleLogin = async (user, isNew, phone, countryCode, authMeta = {}) => {
     setUserId(user.id);
+    // Forward the typed password one hop to MigrationScreen if the login
+    // path fell back to the derived legacy password. Cleared in onMigrated
+    // and in the migration cancel/sign-out path.
+    if (authMeta.fellBackToLegacy && authMeta.typedPassword) {
+      setMigrationPrefill(authMeta.typedPassword);
+    } else {
+      setMigrationPrefill("");
+    }
     // Show loading immediately — prevents flash of OnboardingScreen for existing users
     setLoadingProfile(true);
     try {
@@ -179,6 +190,26 @@ export default function App(){
     await loadUserData(user.id);
     // loadUserData sets loadingProfile=false at the end
     // if profile is still null after load → new user → OnboardingScreen shows
+  };
+
+  // Migration flow handlers — called by MigrationScreen.
+  const handleMigrated = () => {
+    setMigrationPrefill("");
+    // Optimistic flip: the password has been updated in auth.users and the
+    // legacy_auth flag cleared in profiles. Avoid a loading-spinner flash by
+    // updating the in-memory profile directly. TOKEN_REFRESHED will reconcile.
+    setProfile(p => p ? { ...p, legacyAuth: false } : p);
+  };
+  const handleMigrationCancel = async () => {
+    // User tapped backdrop on MigrationScreen = "not now". Sign them out
+    // cleanly — their legacy_auth flag is still true, so they'll land on
+    // MigrationScreen again next login. No escape hatch that leaves them
+    // logged-in-but-unmigrated.
+    setMigrationPrefill("");
+    setProfile(null);
+    setTransactions([]);
+    try { await supabase.auth.signOut(); } catch {}
+    setUserId(null);
   };
 
   const handleOnboarding = async (data) => {
@@ -313,6 +344,16 @@ export default function App(){
     <OnboardingScreen
       onComplete={handleOnboarding}
       onBack={() => { supabase.auth.signOut(); setUserId(null); setProfile(null); setTransactions([]); }}
+    />
+  );
+
+  if (profile.legacyAuth) return (
+    <MigrationScreen
+      profile={profile}
+      lang={profile.lang || "lo"}
+      prefillPassword={migrationPrefill}
+      onMigrated={handleMigrated}
+      onClose={handleMigrationCancel}
     />
   );
 
