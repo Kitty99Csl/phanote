@@ -292,7 +292,7 @@ export function StatementScanFlow({ profile, lang, onClose, onAdd, customCategor
           {batchHistory.length > 0 && (
             <div style={{ marginTop:24, padding:16, borderRadius:16, background:"rgba(172,225,175,0.08)", border:"1px solid rgba(172,225,175,0.2)" }}>
               <div style={{ fontSize:11, fontWeight:700, color:T.muted, textTransform:"uppercase", letterSpacing:1.4, marginBottom:10, fontFamily:"'Noto Sans',sans-serif" }}>
-                📋 {lang === "lo" ? "ການນຳເຂົ້າຫຼ້າສຸດ" : "Recent imports"}
+                📋 {t(lang, "statementRecentImports")}
               </div>
               {batchHistory.slice(0, 3).map(batch => (
                 <button key={batch.batch_id} onClick={() => setViewBatchId(batch.batch_id)} style={{
@@ -323,13 +323,13 @@ export function StatementScanFlow({ profile, lang, onClose, onAdd, customCategor
               <div onClick={e => e.stopPropagation()} style={{ width:"100%", maxWidth:420, background:"#fff", borderRadius:"24px 24px 0 0", padding:"20px 20px calc(env(safe-area-inset-bottom,0px) + 20px)", maxHeight:"70vh", overflowY:"auto" }}>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
                   <div style={{ fontWeight:800, fontSize:18, color:T.dark, fontFamily:"'Noto Sans',sans-serif" }}>
-                    {lang === "lo" ? "ລາຍລະອຽດການນຳເຂົ້າ" : "Import details"}
+                    {t(lang, "statementImportDetails")}
                   </div>
                   <button onClick={() => setViewBatchId(null)} style={{ border:"none", background:"none", fontSize:20, color:T.muted, cursor:"pointer" }}>×</button>
                 </div>
                 <div style={{ display:"flex", gap:12, marginBottom:16 }}>
                   <div style={{ background:"rgba(172,225,175,0.15)", borderRadius:12, padding:"8px 14px", fontSize:13, fontWeight:600, color:T.dark }}>{batch.currency}</div>
-                  <div style={{ background:"rgba(172,225,175,0.15)", borderRadius:12, padding:"8px 14px", fontSize:13, fontWeight:600, color:T.dark }}>{batch.tx_count} transactions</div>
+                  <div style={{ background:"rgba(172,225,175,0.15)", borderRadius:12, padding:"8px 14px", fontSize:13, fontWeight:600, color:T.dark }}>{batch.tx_count} {t(lang, "transactions_count")}</div>
                   <div style={{ background:"rgba(45,45,58,0.06)", borderRadius:12, padding:"8px 14px", fontSize:13, color:T.muted }}>{fmtRelative(batch.imported_at)}</div>
                 </div>
                 {batch.txs.slice(0, 5).map((tx, i) => (
@@ -340,14 +340,14 @@ export function StatementScanFlow({ profile, lang, onClose, onAdd, customCategor
                     </div>
                   </div>
                 ))}
-                {batch.tx_count > 5 && <div style={{ fontSize:12, color:T.muted, padding:"8px 0", textAlign:"center" }}>+{batch.tx_count - 5} more</div>}
+                {batch.tx_count > 5 && <div style={{ fontSize:12, color:T.muted, padding:"8px 0", textAlign:"center" }}>{t(lang, "statementMoreTx").replace("{n}", batch.tx_count - 5)}</div>}
                 <div style={{ display:"flex", gap:10, marginTop:20 }}>
                   <button onClick={() => setViewBatchId(null)} style={{ flex:1, padding:"14px", borderRadius:16, border:"none", background:"rgba(45,45,58,0.08)", color:T.dark, fontWeight:700, fontSize:14, cursor:"pointer", fontFamily:"'Noto Sans',sans-serif" }}>
-                    {lang === "lo" ? "ປິດ" : "Close"}
+                    {t(lang, "wrap_close")}
                   </button>
                   <button onClick={() => setPendingDeleteBatch(batch)}
                     style={{ flex:1, padding:"14px", borderRadius:16, border:"none", background:"rgba(192,57,43,0.1)", color:"#C0392B", fontWeight:700, fontSize:14, cursor:"pointer", fontFamily:"'Noto Sans',sans-serif" }}>
-                    {lang === "lo" ? `ລົບທັງໝົດ (${batch.tx_count})` : `Delete all (${batch.tx_count})`}
+                    {t(lang, "statementDeleteAll").replace("{n}", batch.tx_count)}
                   </button>
                 </div>
               </div>
@@ -455,13 +455,13 @@ export function StatementScanFlow({ profile, lang, onClose, onAdd, customCategor
             <div style={{ padding:40, textAlign:"center" }}>
               <div style={{ fontSize:40, marginBottom:12 }}>📭</div>
               <div style={{ fontSize:16, fontWeight:600, color:T.dark, marginBottom:6, fontFamily:"'Noto Sans',sans-serif" }}>
-                {lang === "lo" ? "ບໍ່ພົບທຸລະກຳ" : "No transactions found"}
+                {t(lang, "statementNoTx")}
               </div>
               <div style={{ fontSize:13, color:T.muted, lineHeight:1.5 }}>
-                {lang === "lo" ? "ລອງອັບໂຫຼດຮູບທີ່ຊັດເຈນກວ່າ ຫຼື ເລືອກທະນາຄານອື່ນ" : "Try clearer images or a different bank app screenshot"}
+                {t(lang, "statementNoTxHint")}
               </div>
               <button onClick={() => { setStep("upload"); setTxs([]); setStats(null); }} style={{ marginTop:16, padding:"10px 24px", borderRadius:14, border:"none", background:"rgba(45,45,58,0.08)", color:T.dark, fontWeight:600, fontSize:13, cursor:"pointer", fontFamily:"'Noto Sans',sans-serif" }}>
-                {lang === "lo" ? "ລອງໃໝ່" : "Try again"}
+                {t(lang, "wrap_retry")}
               </button>
             </div>
           ) : txs.map((tx, i) => {
@@ -563,7 +563,7 @@ export function StatementScanFlow({ profile, lang, onClose, onAdd, customCategor
           </div>
           <div style={{ fontSize:13, color:T.muted }}>{bank ? `${bank} · ` : ""}{currency}</div>
           <div style={{ marginTop:12 }}>
-            {primaryBtn("Done", () => onImportDone(saveProgress))}
+            {primaryBtn(t(lang, "statementDone"), () => onImportDone(saveProgress))}
           </div>
         </div>
       )}
