@@ -101,7 +101,7 @@ export function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,o
               <button onClick={()=>setTab("settings")} style={{width:36,height:36,borderRadius:12,border:"none",cursor:"pointer",background:"linear-gradient(145deg,#ACE1AF,#7BC8A4)",fontSize:20,boxShadow:"0 3px 10px rgba(172,225,175,0.4)",flexShrink:0}}>{profile.avatar}</button>
             </div>
           </div>
-          <div style={{paddingBottom:6}}><WalletCards transactions={transactions}/></div>
+          <div style={{paddingBottom:6}}><WalletCards transactions={transactions} lang={lang}/></div>
           <SafeToSpend transactions={transactions} profile={profile}/>
         </div>
       )}

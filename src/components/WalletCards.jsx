@@ -3,16 +3,16 @@
 // Includes inline CircleFlag sub-component for the tabs.
 // Extracted from App.jsx in Session 7.
 //
-// Pre-existing gaps flagged for cleanup backlog:
-//   - hardcoded "Income" / "Expenses" labels (no i18n)
+// Pre-existing gap flagged for cleanup backlog:
 //   - inline CircleFlag duplicates Flag.jsx logic; could be
 //     a Flag shape="circle" prop in a future cleanup
 
 import { useState } from "react";
 import { T, CURR, fmt, fmtCompact } from "../lib/theme";
+import { t } from "../lib/i18n";
 import { Flag } from "./Flag";
 
-export function WalletCards({transactions}){
+export function WalletCards({transactions, lang = "lo"}){
   const[expanded,setExpanded]=useState(null);
   const getStats=(cur)=>{
     const now=new Date(),mo=now.getMonth(),yr=now.getFullYear();
@@ -69,11 +69,11 @@ export function WalletCards({transactions}){
               </div>
               <div style={{display:"flex",gap:8}}>
                 <div style={{flex:1,padding:"8px 10px",borderRadius:12,background:"rgba(172,225,175,0.15)"}}>
-                  <div style={{fontSize:10,fontWeight:700,color:"#2A7A40",textTransform:"uppercase",letterSpacing:0.8}}>Income</div>
+                  <div style={{fontSize:10,fontWeight:700,color:"#2A7A40",textTransform:"uppercase",letterSpacing:0.8}}>{t(lang,"income")}</div>
                   <div style={{fontSize:14,fontWeight:800,color:"#1A5A30",marginTop:3,fontFamily:"'Noto Sans',sans-serif"}}>+{fmt(stats.income,expanded)}</div>
                 </div>
                 <div style={{flex:1,padding:"8px 10px",borderRadius:12,background:"rgba(255,179,167,0.12)"}}>
-                  <div style={{fontSize:10,fontWeight:700,color:"#A03020",textTransform:"uppercase",letterSpacing:0.8}}>Expenses</div>
+                  <div style={{fontSize:10,fontWeight:700,color:"#A03020",textTransform:"uppercase",letterSpacing:0.8}}>{t(lang,"expense")}</div>
                   <div style={{fontSize:14,fontWeight:800,color:"#C0392B",marginTop:3,fontFamily:"'Noto Sans',sans-serif"}}>−{fmt(stats.expenses,expanded)}</div>
                 </div>
               </div>
