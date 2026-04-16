@@ -172,7 +172,7 @@ export function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,o
             </div>
           </div>
       )}
-      {showUpgrade&&<ProUpgradeScreen onClose={()=>setShowUpgrade(false)}/>}
+      {showUpgrade&&<ProUpgradeScreen lang={lang} onClose={()=>setShowUpgrade(false)}/>}
       {showGuide&&(
         <div style={{position:"fixed",inset:0,zIndex:500,background:"#F7FCF5",overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
           <GuideScreen lang={lang} onClose={()=>setShowGuide(false)}/>
