@@ -1,5 +1,7 @@
 # Next Session Start Here
 
+> **Status:** Current working note (resets each session)
+
 **Last session:** Session 12 — Sprint D ~70% (i18n sweep + infra cleanup) · April 16, 2026
 **Next session:** Session 13 — Finish Sprint D (remaining modals + Settings reorg + PIN UX)
 **Production hash:** `index-oPuRioVP.js`

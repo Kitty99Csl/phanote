@@ -1,5 +1,7 @@
 # Phajot — Known Risks
 
+> **Status:** Current source of truth (active risks + mitigations)
+
 Living document. Updated at the end of each session.
 
 **Severity levels:**

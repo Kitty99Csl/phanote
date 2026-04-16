@@ -1,4 +1,7 @@
 # PHAJOT — Live Roadmap
+
+> **Status:** Current source of truth (live roadmap, updated every session wrap-up)
+
 > Last updated: 2026-04-16 · Session 12 · Commit dd8ba84
 
 ## Current State

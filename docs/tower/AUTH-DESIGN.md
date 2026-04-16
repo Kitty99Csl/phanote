@@ -1,5 +1,7 @@
 # 🔐 TOWER — AUTH DESIGN
 
+> **Status:** Supporting reference (Sprint C auth plan, now implemented)
+
 ### Sprint C Authentication Plan · Version 1.0
 
 > This document specifies the replacement for Phajot's current pseudo-phone-auth pattern. It is the canonical plan for Sprint C (Session 11). Changes to this plan must be recorded in the changelog at the bottom.

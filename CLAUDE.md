@@ -1,5 +1,7 @@
 # CLAUDE.md — Phajot project context
 
+> **Status:** Current source of truth (operating rules + sprint context)
+
 ## Project
 Phajot (ພາຈົດ) — multi-currency personal finance PWA for Laos (LAK, THB, USD). Solo developer: Kitty. For personal + family use first, public launch later.
 
@@ -72,11 +74,9 @@ telling you about your money over coffee, not a bank dashboard.
 ## Required reading before editing
 
 1. `project_codex.md` (the bible — design rules, UX, architecture)
-2. `PHAJOT-PROJECT.md` (feature scope)
-3. `PHAJOT-ACTION-PLAN.md` (screen-by-screen plan)
-4. `docs/tower/CHARTER.md` (Tower's mission and structure)
-5. `docs/tower/ROADMAP.md` (current sprint plan, Sprints B→K)
-6. `docs/ROADMAP-LIVE.md` (living roadmap — updated every session per Rule 18)
+2. `docs/ROADMAP-LIVE.md` (living roadmap — updated every session per Rule 18)
+3. `docs/tower/CHARTER.md` (Tower's mission and structure)
+4. `docs/tower/ROADMAP.md` (Tower sprint plan, Sprints B→K)
 
 ## Non-negotiable rules
 1. Never edit worker in Cloudflare web editor — always local + wrangler deploy

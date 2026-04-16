@@ -1,3 +1,8 @@
+> **Status:** Archived
+> **Reason:** Historical reference from early April 2026. Content reflects pre-Session-10 project state.
+> **Superseded by:** CLAUDE.md (operating rules), project_codex.md (product philosophy), docs/ROADMAP-LIVE.md (live roadmap).
+> **Last original update:** 2026-04-11 (Session 6)
+
 # Phajot — Pre-Development Checklist & Stitch Prompt
 
 ## YOUR ACTION ITEMS (before we start coding)

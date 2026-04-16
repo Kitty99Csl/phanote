@@ -1,5 +1,7 @@
 # 🗼 TOWER — CHARTER
 
+> **Status:** Supporting reference (Tower vision + architecture)
+
 ### The Watchtower Above Phajot · Version 1.0
 
 > **Rule:** This is the founding document for Tower. Before making changes to Tower's structure, team, or mission, review this document. Before closing any major Tower phase, update this document.

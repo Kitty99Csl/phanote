@@ -1,5 +1,7 @@
 # 🗺️ TOWER — ROADMAP
 
+> **Status:** Supporting reference (Tower sprint plan)
+
 ### The Phased Path from Sprint B to Public Launch · Version 1.0
 
 > This roadmap is the agreed order of work from April 14, 2026 forward. It is subject to revision at the end of each sprint based on what was learned. Changes to the order or scope must be recorded in the CHANGELOG section at the bottom.

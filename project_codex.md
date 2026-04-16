@@ -1,4 +1,7 @@
 # 📒 PHAJOT — PROJECT CODEX
+
+> **Status:** Current source of truth (product philosophy + design system)
+
 ### The Single Source of Truth · Version 1.4
 > **Rule:** Before writing any complex code, review this document. Before closing any major phase, update this document. This codex is a living contract between the developer and the project.
 

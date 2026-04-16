@@ -1,5 +1,7 @@
 # Phajot · ພາຈົດ
 
+> **Status:** Supporting reference (public repo overview)
+
 > Where did your money go? Let Phajot tell you.
 > ເງິນເຈົ້າໄປໃສ? ດຽວພາຈົດບອກໃຫ້ຟັງ
 
