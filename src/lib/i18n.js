@@ -159,6 +159,7 @@ export const i18n={
     settingsHelp:"Help",
     settingsGuide:"Phajot guide",
     settingsGuideSub:"How every feature works",
+    quickEditSaved:"Saved",
   },
   lo:{
     welcome:"ຍິນດີຕ້ອນຮັບ Phajot",tagline:"ພາຈົດ — ຕິດຕາມການເງິນຂອງທ່ານ",
@@ -317,6 +318,7 @@ export const i18n={
     settingsHelp:"ຊ່ວຍເຫຼືອ",
     settingsGuide:"ຄູ່ມື Phajot",
     settingsGuideSub:"ແຕ່ລະຟີເຈີເຮັດວຽກແນວໃດ",
+    quickEditSaved:"ບັນທຶກແລ້ວ",
   },
   th:{
     welcome:"ยินดีต้อนรับสู่ Phajot",tagline:"Phajot — ติดตามการเงินของคุณ",
@@ -454,6 +456,7 @@ export const i18n={
     settingsHelp:"ช่วยเหลือ",
     settingsGuide:"คู่มือ Phajot",
     settingsGuideSub:"แต่ละฟีเจอร์ทำงานอย่างไร",
+    quickEditSaved:"บันทึกแล้ว",
   },
 };
 export const t=(lang,key)=>i18n[lang]?.[key]||i18n.en[key]||key;

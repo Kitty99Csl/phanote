@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { findCat } from "../lib/categories";
+import { t } from "../lib/i18n";
 
 export function QuickEditToast({tx,lang,onChangeCategory,onDone,customCategories=[]}){
   const cat=findCat(tx.categoryId,customCategories);
@@ -32,7 +33,7 @@ export function QuickEditToast({tx,lang,onChangeCategory,onDone,customCategories
         <span style={{fontSize:16,flexShrink:0}}>{cat.emoji}</span>
         <div style={{flex:1,minWidth:0}}>
           <div style={{fontSize:11,fontWeight:700,color:"#fff",fontFamily:"'Noto Sans',sans-serif",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-            {lang==="lo"?"ບັນທຶກແລ້ວ":lang==="th"?"บันทึกแล้ว":"Saved"} ✓
+            {t(lang,"quickEditSaved")} ✓
           </div>
           <div style={{fontSize:10,color:"rgba(255,255,255,0.55)",marginTop:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{tx.description}</div>
         </div>
