@@ -54,24 +54,25 @@ export function AnalyticsScreen({ profile, transactions, onOpenTransactions = ()
   };
 
   // Compute date range based on period
+  const locale = lang==="th"?"th-TH":lang==="lo"?"lo-LA":"en-US";
   const getRange = () => {
     if (period === "today") {
       const d = now.toISOString().split("T")[0];
-      return { label: "Today", filter: tx => tx.date === d };
+      return { label: t(lang,"period_today"), filter: tx => tx.date === d };
     }
     if (period === "week") {
       const start = new Date(now); start.setDate(now.getDate() - now.getDay());
       const startStr = start.toISOString().split("T")[0];
-      return { label: "This Week", filter: tx => tx.date >= startStr };
+      return { label: t(lang,"analyticsThisWeek"), filter: tx => tx.date >= startStr };
     }
     if (period === "month") {
       const targetDate = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
       const m = targetDate.getMonth(), y = targetDate.getFullYear();
-      const label = targetDate.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+      const label = targetDate.toLocaleDateString(locale, { month: "long", year: "numeric" });
       return { label, filter: tx => { const d = new Date(tx.date); return d.getMonth()===m && d.getFullYear()===y; }, canNav: true, targetDate };
     }
     // all time
-    return { label: "All Time", filter: () => true };
+    return { label: t(lang,"period_all"), filter: () => true };
   };
 
   const range = getRange();
@@ -192,34 +193,34 @@ export function AnalyticsScreen({ profile, transactions, onOpenTransactions = ()
       {isEmpty ? (
         <div style={{ textAlign:"center", padding:"60px 24px", display:"flex", flexDirection:"column", alignItems:"center", gap:12 }}>
           <div style={{ fontSize:52 }}>📊</div>
-          <div style={{ fontWeight:700, fontSize:17, color:T.dark, fontFamily:"'Noto Sans',sans-serif" }}>No data for {range.label}</div>
-          <div style={{ fontSize:13, color:T.muted }}>Log some {selectedCur} transactions to see analytics</div>
+          <div style={{ fontWeight:700, fontSize:17, color:T.dark, fontFamily:"'Noto Sans',sans-serif" }}>{t(lang,"no_data")} {range.label}</div>
+          <div style={{ fontSize:13, color:T.muted }}>{t(lang,"log_transactions")}</div>
         </div>
       ) : (<>
 
         {/* Income / Expense / Net cards */}
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:10 }}>
           <div style={{ background:T.surface, borderRadius:18, padding:"14px 16px", boxShadow:T.shadow }}>
-            <div style={{ fontSize:10, fontWeight:700, color:"#2A7A40", textTransform:"uppercase", letterSpacing:0.8 }}>Income</div>
+            <div style={{ fontSize:10, fontWeight:700, color:"#2A7A40", textTransform:"uppercase", letterSpacing:0.8 }}>{t(lang,"income")}</div>
             <div style={{ fontSize:18, fontWeight:800, color:"#1A5A30", fontFamily:"'Noto Sans',sans-serif", marginTop:4 }}>+{fmt(income, selectedCur)}</div>
-            <div style={{ fontSize:11, color:T.muted, marginTop:2 }}>{filteredTxs.filter(x=>x.type==="income").length} transactions</div>
+            <div style={{ fontSize:11, color:T.muted, marginTop:2 }}>{filteredTxs.filter(x=>x.type==="income").length} {t(lang,"transactions_count")}</div>
             {momDelta?.income != null && (
               <div style={{ marginTop:6, display:"inline-flex", alignItems:"center", gap:3, padding:"2px 8px", borderRadius:9999, fontSize:10, fontWeight:700,
                 background: momDelta.income >= 0 ? "rgba(172,225,175,0.2)" : "rgba(255,179,167,0.2)",
                 color: momDelta.income >= 0 ? "#1A5A30" : "#C0392B" }}>
-                {momDelta.income >= 0 ? "▲" : "▼"} {momDelta.income > 0 ? "+" : ""}{momDelta.income}% vs last mo
+                {momDelta.income >= 0 ? "▲" : "▼"} {momDelta.income > 0 ? "+" : ""}{momDelta.income}% {t(lang,"analyticsVsLastMo")}
               </div>
             )}
           </div>
           <div style={{ background:T.surface, borderRadius:18, padding:"14px 16px", boxShadow:T.shadow }}>
-            <div style={{ fontSize:10, fontWeight:700, color:"#A03020", textTransform:"uppercase", letterSpacing:0.8 }}>Expenses</div>
+            <div style={{ fontSize:10, fontWeight:700, color:"#A03020", textTransform:"uppercase", letterSpacing:0.8 }}>{t(lang,"expense")}</div>
             <div style={{ fontSize:18, fontWeight:800, color:"#C0392B", fontFamily:"'Noto Sans',sans-serif", marginTop:4 }}>−{fmt(expenses, selectedCur)}</div>
-            <div style={{ fontSize:11, color:T.muted, marginTop:2 }}>{filteredTxs.filter(x=>x.type==="expense").length} transactions</div>
+            <div style={{ fontSize:11, color:T.muted, marginTop:2 }}>{filteredTxs.filter(x=>x.type==="expense").length} {t(lang,"transactions_count")}</div>
             {momDelta?.expense != null && (
               <div style={{ marginTop:6, display:"inline-flex", alignItems:"center", gap:3, padding:"2px 8px", borderRadius:9999, fontSize:10, fontWeight:700,
                 background: momDelta.expense <= 0 ? "rgba(172,225,175,0.2)" : "rgba(255,179,167,0.2)",
                 color: momDelta.expense <= 0 ? "#1A5A30" : "#C0392B" }}>
-                {momDelta.expense > 0 ? "▲" : "▼"} {momDelta.expense > 0 ? "+" : ""}{momDelta.expense}% vs last mo
+                {momDelta.expense > 0 ? "▲" : "▼"} {momDelta.expense > 0 ? "+" : ""}{momDelta.expense}% {t(lang,"analyticsVsLastMo")}
               </div>
             )}
           </div>
@@ -228,14 +229,14 @@ export function AnalyticsScreen({ profile, transactions, onOpenTransactions = ()
         {/* Net + savings rate */}
         <div style={{ background:T.surface, borderRadius:18, padding:"14px 18px", boxShadow:T.shadow, marginBottom:20, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
           <div>
-            <div style={{ fontSize:10, fontWeight:700, color:T.muted, textTransform:"uppercase", letterSpacing:0.8 }}>Net</div>
+            <div style={{ fontSize:10, fontWeight:700, color:T.muted, textTransform:"uppercase", letterSpacing:0.8 }}>{t(lang,"net")}</div>
             <div style={{ fontSize:22, fontWeight:800, color: net>=0?"#1A5A30":"#C0392B", fontFamily:"'Noto Sans',sans-serif", marginTop:4 }}>
               {net>=0?"+":""}{fmt(net, selectedCur)}
             </div>
           </div>
           {income > 0 && (
             <div style={{ textAlign:"right" }}>
-              <div style={{ fontSize:10, fontWeight:700, color:T.muted, textTransform:"uppercase", letterSpacing:0.8 }}>Savings Rate</div>
+              <div style={{ fontSize:10, fontWeight:700, color:T.muted, textTransform:"uppercase", letterSpacing:0.8 }}>{t(lang,"savings_rate")}</div>
               <div style={{ fontSize:28, fontWeight:800, fontFamily:"'Noto Sans',sans-serif", marginTop:4,
                 color: savingsRate>=20?"#1A5A30":savingsRate>=0?"#d4993a":"#C0392B" }}>
                 {savingsRate}%
@@ -247,7 +248,7 @@ export function AnalyticsScreen({ profile, transactions, onOpenTransactions = ()
         {/* Donut chart */}
         {catBreakdown.length > 0 && (
           <div style={{ background:T.surface, borderRadius:22, padding:"20px 18px", boxShadow:T.shadow, marginBottom:20 }}>
-            <div style={{ fontSize:12, fontWeight:700, color:T.muted, textTransform:"uppercase", letterSpacing:1, marginBottom:16 }}>Spending Breakdown</div>
+            <div style={{ fontSize:12, fontWeight:700, color:T.muted, textTransform:"uppercase", letterSpacing:1, marginBottom:16 }}>{t(lang,"spending_breakdown")}</div>
             <div style={{ display:"flex", alignItems:"center", gap:20 }}>
               <div style={{ flexShrink:0, position:"relative", width:130, height:130 }}>
                 <svg width="130" height="130" viewBox="0 0 130 130">
@@ -265,7 +266,7 @@ export function AnalyticsScreen({ profile, transactions, onOpenTransactions = ()
                   ))}
                 </svg>
                 <div style={{ position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center" }}>
-                  <div style={{ fontSize:10,color:T.muted,fontWeight:600 }}>Total</div>
+                  <div style={{ fontSize:10,color:T.muted,fontWeight:600 }}>{t(lang,"filteredTotal")}</div>
                   <div style={{ fontSize:12,fontWeight:800,color:T.dark,fontFamily:"'Noto Sans',sans-serif",textAlign:"center",lineHeight:1.2 }}>{fmtCompact(expenses,selectedCur)}</div>
                 </div>
               </div>
@@ -287,7 +288,7 @@ export function AnalyticsScreen({ profile, transactions, onOpenTransactions = ()
         {/* Top expenses bars */}
         {catBreakdown.length > 0 && (
           <div style={{ background:T.surface, borderRadius:22, padding:"20px 18px", boxShadow:T.shadow, marginBottom:20 }}>
-            <div style={{ fontSize:12, fontWeight:700, color:T.muted, textTransform:"uppercase", letterSpacing:1, marginBottom:16 }}>Top Expenses</div>
+            <div style={{ fontSize:12, fontWeight:700, color:T.muted, textTransform:"uppercase", letterSpacing:1, marginBottom:16 }}>{t(lang,"top_expenses")}</div>
             <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
               {catBreakdown.slice(0,6).map((item,i)=>{
                 const pct = (item.amount/(catBreakdown[0]?.amount||1))*100;
@@ -313,7 +314,7 @@ export function AnalyticsScreen({ profile, transactions, onOpenTransactions = ()
         {/* Income sources */}
         {incBreakdown.length > 0 && (
           <div style={{ background:T.surface, borderRadius:22, padding:"20px 18px", boxShadow:T.shadow, marginBottom:20 }}>
-            <div style={{ fontSize:12, fontWeight:700, color:T.muted, textTransform:"uppercase", letterSpacing:1, marginBottom:16 }}>Income Sources</div>
+            <div style={{ fontSize:12, fontWeight:700, color:T.muted, textTransform:"uppercase", letterSpacing:1, marginBottom:16 }}>{t(lang,"income_sources")}</div>
             <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
               {incBreakdown.map((item,i)=>(
                 <div key={i} style={{ display:"flex",alignItems:"center",gap:12 }}>
@@ -343,7 +344,7 @@ export function AnalyticsScreen({ profile, transactions, onOpenTransactions = ()
           const todayStr = now.toISOString().split("T")[0];
           return(
             <div style={{ background:T.surface,borderRadius:22,padding:"20px 18px",boxShadow:T.shadow }}>
-              <div style={{ fontSize:12,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:16 }}>Last 7 Days</div>
+              <div style={{ fontSize:12,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:16 }}>{t(lang,"last_7_days")}</div>
               <div style={{ display:"flex",gap:6,alignItems:"flex-end",height:80 }}>
                 {days.map((day,i)=>(
                   <div key={i} style={{ flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4 }}>
@@ -357,8 +358,8 @@ export function AnalyticsScreen({ profile, transactions, onOpenTransactions = ()
                 ))}
               </div>
               <div style={{ display:"flex",gap:16,marginTop:12,justifyContent:"center" }}>
-                <div style={{ display:"flex",alignItems:"center",gap:5 }}><div style={{ width:10,height:10,borderRadius:3,background:"#3da873" }}/><span style={{ fontSize:11,color:T.muted }}>Income</span></div>
-                <div style={{ display:"flex",alignItems:"center",gap:5 }}><div style={{ width:10,height:10,borderRadius:3,background:"#e8857a" }}/><span style={{ fontSize:11,color:T.muted }}>Expenses</span></div>
+                <div style={{ display:"flex",alignItems:"center",gap:5 }}><div style={{ width:10,height:10,borderRadius:3,background:"#3da873" }}/><span style={{ fontSize:11,color:T.muted }}>{t(lang,"income")}</span></div>
+                <div style={{ display:"flex",alignItems:"center",gap:5 }}><div style={{ width:10,height:10,borderRadius:3,background:"#e8857a" }}/><span style={{ fontSize:11,color:T.muted }}>{t(lang,"expense")}</span></div>
               </div>
             </div>
           );
