@@ -12,13 +12,18 @@
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│  FLOOR 5 — Public Launch (Sprint K+)                     │
+│  FLOOR 6 — Public Launch (Sprint K+)                     │
 │  Landing rewrite · LINE bot · Payments · PDPA · App Store│
 └──────────────────────────────────────────────────────────┘
                           ▲
 ┌──────────────────────────────────────────────────────────┐
+│  FLOOR 5 — OCR Hardening (Sprint L)                      │
+│  Preprocessing · Validators · Benchmark · Provider gate  │
+└──────────────────────────────────────────────────────────┘
+                          ▲
+┌──────────────────────────────────────────────────────────┐
 │  FLOOR 4 — Tower v1 (Sprints F–J)                        │
-│  Lobby → Engine Room → Admin → Chat → Workshop → Archive │
+│  Lobby → Engine Room → Admin → Chat+OCR Room → Workshop  │
 └──────────────────────────────────────────────────────────┘
                           ▲
 ┌──────────────────────────────────────────────────────────┐
@@ -271,17 +276,63 @@ Prerequisites from earlier sprints:
 - Sprint D code-level i18n complete (in progress) — provides migration seed data
 - Sprint E Sentry (planned) — monitors admin panel errors
 
-### Sprint I — Room 2: The Command Center (Session 17)
+### Sprint I — Room 2: The Command Center + OCR Reliability Room (Session 17)
 Chat with the Sentinels. **v1: iframes** of each Claude Project, left sidebar for navigation. Real Claude API chat deferred to v2.
+
+#### OCR Reliability Room (Room 3 or 4)
+Built alongside Command Center using data from `ai_call_log` (Sprint E):
+- OCR attempts / failures / success rates per bank
+- Average review corrections per statement
+- Bank-specific error rates
+- Confidence distribution chart
+- Cost per 100 scans
+- Most common row errors
+
+Feeds Sprint L hardening decisions with real data.
 
 ### Sprint J — Rooms 3 & 6: Workshop + Archive (Session 18)
 Combined sprint because both are markdown-backed. Workshop reads `docs/tower/vanguard/` for sprint state. Archive reads `PHANOTE-DECISIONS-LOG.md`, `docs/session-*/`, and FAQ from Hawthorne. Full-text search across all of it.
 
 ---
 
+## SPRINT L — OCR Pipeline Hardening
+
+**Sessions:** 20–21 · **Start:** ~June 16, 2026 · **Estimate:** 8–12 hours across 2 sessions
+
+**Goal:** Harden the Gemini-based OCR pipeline using real data from Tower's OCR Reliability Room. Treat Lao OCR as a pipeline problem, not a model problem.
+
+### Priorities
+
+1. **Image preprocessing** (~2 hours)
+   Browser-side: contrast normalization, deskew, resolution upscaling. Run before sending to Gemini.
+
+2. **Strengthen /parse-statement prompt** (~1 hour)
+   Add strict JSON schema, explicit field constraints, row-count verification.
+
+3. **Bank-specific validators** (~2 hours)
+   BCEL and LDB first (most common). JDB later. Validate parsed rows against known bank statement patterns.
+
+4. **Benchmark dataset** (~2 hours)
+   Collect ~50 labeled real statements from production usage. Store in `tests/ocr-benchmark/`.
+
+5. **Accuracy baseline** (~1 hour)
+   Run current Gemini pipeline against benchmark. Measure field-level accuracy per bank.
+
+6. **Provider evaluation gate** (~2 hours, conditional)
+   IF baseline accuracy <85%: evaluate Google Document OCR and Azure Document Intelligence. Compare cost, accuracy, and latency. Document decision in `docs/decisions/DECISIONS-LOG.md`.
+
+### Definition of done
+- Preprocessing pipeline running in browser before OCR submission
+- Bank validators catching >50% of current misparses
+- Benchmark dataset exists with ≥50 labeled statements
+- Accuracy baseline documented
+- Provider decision documented (switch or stay)
+
+---
+
 ## SPRINT K+ — Public Launch Readiness
 
-**Session:** 19+ · **Start:** ~June 23, 2026 or later · **Estimate:** Multi-session block
+**Session:** 22+ · **Start:** ~June 30, 2026 or later · **Estimate:** Multi-session block
 
 **Goal:** Floor 5. Now Tower monitors a launching product. Now we invite strangers.
 
@@ -307,12 +358,13 @@ Combined sprint because both are markdown-backed. Workshop reads `docs/tower/van
 | E | 13 | May 5 | Observability — Tower data sources |
 | F | 14 | May 12 | Tower Lobby live |
 | G | 15 | May 19 | Engine Room |
-| H | 16 | May 26 | Admin Panel |
-| I | 17 | Jun 2 | Command Center |
+| H | 16 | May 26 | Admin Panel + Language Strings |
+| I | 17 | Jun 2 | Command Center + OCR Reliability Room |
 | J | 18 | Jun 9 | Workshop + Archive |
-| K | 19+ | Jun 16+ | Public launch prep |
+| L | 20–21 | Jun 16 | OCR Pipeline Hardening |
+| K | 22+ | Jun 30+ | Public launch prep |
 
-Approximately **9–10 weeks** from this plan to a public-launch-ready Phajot monitored by Tower.
+Approximately **11–12 weeks** from this plan to a public-launch-ready Phajot monitored by Tower.
 
 ---
 
@@ -334,6 +386,7 @@ Approximately **9–10 weeks** from this plan to a public-launch-ready Phajot mo
 |---|---|---|
 | v1.0 | 2026-04-14 | Initial roadmap. Sprints B through K defined. Timeline estimated. Dependencies chained. |
 | v1.1 | 2026-04-16 | Language Strings Admin Panel locked into Sprint H. Speaker confirmed Option A after reviewing bj88laos reference. |
+| v1.2 | 2026-04-16 | Sprint L (OCR Pipeline Hardening) inserted between J and K. OCR Reliability Room added to Sprint I. External advisor decision: treat OCR as pipeline problem, not model problem. Closes OQ-015. |
 
 ---
 

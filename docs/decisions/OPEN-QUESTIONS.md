@@ -149,3 +149,30 @@ Thai as a supported language in the app. Slogan locked:
 **Resolution:** Implemented across app and landing page during Session 5.
 Wife reaction confirmed the positioning works naturally.
 Commits: `de8e176` (app), `3fc39a3` (landing page).
+
+---
+
+## Session 14 questions (2026-04-16)
+
+### OQ-015 — OCR provider strategy
+
+**Status:** ✅ RESOLVED (2026-04-16, external advisor review)
+**Priority:** 🟡 MEDIUM — affects Sprint L planning
+**Captured:** Session 14, April 16, 2026
+
+**Question:** Should we switch from Gemini Flash to Google Document OCR or Azure OCR for better Lao statement accuracy?
+
+**Decision:** NO — not yet. Decision sequence:
+1. Sprint E adds `ai_call_log` with OCR-specific metrics
+2. Sprint I Tower Room monitors real OCR quality
+3. Sprint L hardens current pipeline (preprocessing + validators + benchmark)
+4. ONLY IF benchmark <85% accuracy, evaluate cloud OCR providers
+5. Self-hosted/fine-tuned OCR is Sprint 2027+ scope, not considered
+
+**Rejected alternatives:**
+- Ensemble OCR (too expensive for family stage)
+- OpenAI-powered advisor in Tower (contradicts Rule 17, adds complexity — Claude Projects already handle reasoning)
+
+**Rationale:** Treat Lao OCR as a pipeline problem (bad images, weak prompts, no validation) before treating it as a model problem. Tower's OCR Reliability Room (Sprint I) provides the observability needed to make data-driven decisions. Sprint L then hardens based on real data.
+
+**Resolution:** Strategy locked. Sprint L inserted into roadmap between Sprint J (Tower complete) and Sprint K (public launch). External advisor input documented in handover transcripts.

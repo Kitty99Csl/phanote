@@ -86,11 +86,21 @@
 ### Sprints G-J — Tower Rooms (Sessions 16-19)
 - G: Engine Room (technical health)
 - H: Admin Panel (user investigation) + **Language Strings Admin Panel** — data-driven i18n via Supabase `translations` table, inline edit UI at `tower.phajot.com/admin/language-strings`, fallback chain DB → code-level i18n.js → English → key name. Wife/admins edit translations without redeploying. ~2 days within Sprint H budget.
-- I: Command Center (Sentinel chat)
+- I: Command Center (Sentinel chat) + **OCR Reliability Room** — attempts/failures/success rates per bank, average review corrections, confidence distribution, cost per 100 scans, most common row errors. Feeds Sprint L hardening decisions with real data.
 - J: Workshop + Archive
 **Status:** NOT STARTED
 
-### Sprint K+ — Public Launch (Session 20+)
+### Sprint L — OCR Pipeline Hardening (Sessions 20-21, ~May-Jun 2026)
+- Image preprocessing (browser-side: contrast, deskew, resolution)
+- Strengthen /parse-statement prompt with strict schema
+- Bank-specific validators (BCEL, LDB first; JDB later)
+- Build benchmark dataset (~50 labeled real statements)
+- Benchmark current Gemini pipeline → accuracy baseline
+- IF baseline <85%: evaluate Google Document OCR vs Azure
+- Document decision in docs/decisions/DECISIONS-LOG.md
+**Status:** NOT STARTED
+
+### Sprint K+ — Public Launch (Session 22+)
 - Landing page rewrite
 - LINE OTP at registration
 - Payment system (PromptPay -> BCEL QR -> Stripe)
