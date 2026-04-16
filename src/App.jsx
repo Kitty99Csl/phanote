@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { T } from "./lib/theme";
 import { store } from "./lib/store";
 import { supabase } from "./lib/supabase";
@@ -29,6 +29,14 @@ export default function App(){
   const [streakToast, setStreakToast]   = useState(null);
   const [pendingConfirm, setPendingConfirm] = useState(null); // null | {kind:'delete-tx', txId} | {kind:'reset'}
   const [migrationPrefill, setMigrationPrefill] = useState(""); // one-hop forward of typed password to MigrationScreen
+
+  // ── Migration guard ────────────────────────────────────────
+  // Ref tracks whether the legacy migration gate is active, so the
+  // TOKEN_REFRESHED handler can skip loadUserData during mid-migration
+  // password updates (which fire TOKEN_REFRESHED and race with the
+  // profiles.update that clears legacy_auth).
+  const migratingRef = useRef(false);
+  useEffect(() => { migratingRef.current = profile?.legacyAuth === true; }, [profile]);
 
   // ── PIN state ──────────────────────────────────────────────
   const [pinConfig, setPinConfig] = useState(() => {
@@ -113,7 +121,7 @@ export default function App(){
     };
     init();
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === "TOKEN_REFRESHED" && session?.user) await loadUserData(session.user.id);
+      if (event === "TOKEN_REFRESHED" && session?.user && !migratingRef.current) await loadUserData(session.user.id);
     });
     return () => subscription.unsubscribe();
   },[]);
@@ -359,7 +367,7 @@ export default function App(){
 
   return (
     <>
-      {(pinRole === null || pinSetupMode) && (
+      {((pinRole === null && pinConfig?.owner) || pinSetupMode) && (
         <PinLock
           pinConfig={pinConfig}
           pinInput={pinInput}
