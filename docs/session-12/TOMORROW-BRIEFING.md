@@ -55,6 +55,45 @@
 
 ## Session 13 kickoff sequence
 
+### Step 0 — Optional warm-up (10-15 min, before StatementScanFlow)
+
+Consolidate scattered decision and open-question logs into a single discoverable location.
+
+Current state — scattered:
+- `docs/session-4/DECISIONS-LOG-APPEND.md`
+- `docs/session-4/OPEN-QUESTIONS-APPEND.md`
+- `docs/session-5/OPEN-QUESTIONS-SESSION-5.md`
+
+Target state — consolidated:
+- `docs/decisions/DECISIONS-LOG.md` (chronological, clear date headers per source)
+- `docs/decisions/OPEN-QUESTIONS.md` (active questions + resolved section at bottom)
+
+Execution:
+1. `mkdir -p docs/decisions`
+2. `git mv docs/session-4/DECISIONS-LOG-APPEND.md docs/decisions/DECISIONS-LOG.md`
+3. `git mv docs/session-4/OPEN-QUESTIONS-APPEND.md docs/decisions/OPEN-QUESTIONS.md`
+4. Manually merge `docs/session-5/OPEN-QUESTIONS-SESSION-5.md` content into `docs/decisions/OPEN-QUESTIONS.md`, preserving Session 5 date markers
+5. Delete `docs/session-5/OPEN-QUESTIONS-SESSION-5.md` after merge
+6. Add status labels per Session 12 pattern:
+   - `docs/decisions/DECISIONS-LOG.md` → "Status: Current source of truth (decision history)"
+   - `docs/decisions/OPEN-QUESTIONS.md` → "Status: Current source of truth (active questions + resolutions)"
+7. One atomic commit:
+   ```
+   git add -A
+   git commit -m "docs: consolidate decision + question logs into docs/decisions/"
+   git push origin main
+   ```
+
+Benefit: answers "where did we decide X?" in one place instead of searching multiple session folders.
+
+Risk: zero — git mv preserves history, merge is additive text concatenation, can be reverted with `git revert` if the merge is messy.
+
+Time: 10-15 min. Perfect morning warm-up before StatementScanFlow.
+
+Addresses: external GPT-audit refinement on `docs/decisions/` subfolder. Session 12 already did 90% of the audit's recommendations tonight; this closes the last 10%.
+
+### Steps 1-9 — Main kickoff
+
 1. `git pull origin main`
 2. `cd /workspaces/phanote`
 3. `nvm use 24.13.1`
