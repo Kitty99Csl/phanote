@@ -2,14 +2,14 @@
 
 > **Status:** Current source of truth (live roadmap, updated every session wrap-up)
 
-> Last updated: 2026-04-16 · Session 12 · Commit dd8ba84
+> Last updated: 2026-04-16 · Session 13 · Commit e94d88f
 
 ## Current State
-- **Active sprint:** D (i18n + Settings) — ~70% COMPLETE
-- **Session:** 12
-- **Commits today:** 12 code + 3 docs = 15 total
-- **Production hash:** index-oPuRioVP.js
-- **Next action:** Session 13 finishes Sprint D — remaining modals + Settings reorg + PIN UX copy
+- **Active sprint:** D (i18n + Settings) — ~95% COMPLETE
+- **Session:** 13
+- **Commits today (Sessions 11-13):** 40 total across 3 sessions
+- **Production hash:** index-dqQyI8JV.js
+- **Next action:** Session 14 finishes Sprint D (StreakModal + GoalModal + Settings reorg) then starts Sprint E
 
 ## Sprint Progress
 
@@ -55,14 +55,16 @@
 | 10 | fe02751 | i18n BudgetScreen + GoalsScreen (6 strings) | — | Done |
 | 11 | 7ceb361 | i18n SetBudgetModal (7 strings, 3 reused) | — | Done |
 | 12 | 17fae99 | i18n EditTransactionModal (9 strings, 3 reused) | oPuRioVP | Done |
-| 13 | — | i18n StreakModal + GoalModal (~18 strings) | — | Session 13 |
-| 14 | — | i18n StatementScanFlow + 4 Thai keys (~8 strings) | — | Session 13 |
-| 15 | — | i18n AnalyticsScreen gaps (~12 strings) | — | Session 13 |
-| 16 | — | Settings reorganization (5 sections) | — | Session 13 |
-| 17 | — | PIN UX clarity copy | — | Session 13 |
-| 18 | — | i18n GuideScreen + ProUpgradeScreen (~65 strings) | — | Session 13 (if time) |
-**Progress:** 67 strings i18n'd across 10 screens/components + 2 infra cleanups. 9 keys reused.
-**Status:** IN PROGRESS (~70%)
+| 13 | 6dbd012 | Consolidate decisions folder | — | Done |
+| 14 | 44bad73 | i18n StatementScanFlow + 4 Thai fills | BJD95Wbr | Done |
+| 15 | c10130f | i18n AnalyticsScreen + locale fix | DmeXjngF | Done |
+| 16 | 86ccb94 | PIN UX clarity explainer | BG1Hl7nq | Done |
+| 17 | 1109ae1 | i18n ProUpgradeScreen (25 keys) | C-_BiQBs | Done |
+| 18 | e94d88f | i18n GuideScreen (66 keys, largest commit) | dqQyI8JV | Done |
+| 19 | — | i18n StreakModal + GoalModal (~18 strings) | — | Session 14 |
+| 20 | — | Settings reorganization (5 sections) | — | Session 14 |
+**Progress:** ~170 strings i18n'd across 16 screens/components + 2 infra cleanups. All production-visible screens done.
+**Status:** IN PROGRESS (~95%)
 
 ### Sprint E — Observability (Session 14, ~Apr 28) — UNLOCKS TOWER
 - Sentry (frontend + worker)
@@ -101,11 +103,11 @@
 |---|---------|----------|--------|
 | 1 | Derived-password auth | P0 | Closed (770af58, Session 11) |
 | 2 | Statement import end-state | P1 | Open (backlog) |
-| 3 | i18n hardcoded strings | P1 | Open (Sprint D, ~70% done — 10 screens/components complete, ~55 strings remain) |
+| 3 | i18n hardcoded strings | P1 | Open (Sprint D, ~95% done — all production-visible screens complete, 2 modals remain) |
 | 4 | Modal/gate patterns | P1 | Closed (05f8f7d + b6b2598, Session 10) |
 | 5 | Error handling | P1 | Closed (2e99fad, Session 10) |
 | 6 | Analytics memoization | P2 | Open (backlog) |
-| 7 | Settings overload | P2 | Open (Sprint D, deferred to Session 13) |
+| 7 | Settings overload | P2 | Open (Sprint D, deferred to Session 14) |
 | 8 | Native dialogs | P1 | Closed (b6b2598, Session 10) |
 
 **Zero P0 open. Two P1 open. Two P2 open.**
@@ -117,6 +119,7 @@
 | 10 | CWOl1l1h | BeOPC5lm | Parent wrappers, toast, Sheet, ConfirmSheet |
 | 11 | BeOPC5lm | CEFkIaIU | Auth i18n, LoginScreen rewrite, hotfix |
 | 12 | CEFkIaIU | oPuRioVP | Dead code deletion, localStorage fix, i18n sweep (10 screens/components) |
+| 13 | oPuRioVP | dqQyI8JV | StatementScanFlow, AnalyticsScreen locale fix, PIN UX, ProUpgradeScreen, GuideScreen (largest) |
 
 ## The Tower Team
 | Name | Role |
