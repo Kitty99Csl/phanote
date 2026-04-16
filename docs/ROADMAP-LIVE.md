@@ -91,14 +91,29 @@
 **Status:** NOT STARTED
 
 ### Sprint L — OCR Pipeline Hardening (Sessions 20-21, ~May-Jun 2026)
-- Image preprocessing (browser-side: contrast, deskew, resolution)
-- Strengthen /parse-statement prompt with strict schema
-- Bank-specific validators (BCEL, LDB first; JDB later)
-- Build benchmark dataset (~50 labeled real statements)
-- Benchmark current Gemini pipeline → accuracy baseline
-- IF baseline <85%: evaluate Google Document OCR vs Azure
-- Document decision in docs/decisions/DECISIONS-LOG.md
-**Status:** NOT STARTED
+
+New sprint added 2026-04-16 based on external advisor review. Treat Lao OCR as pipeline problem, not model problem.
+
+| # | Item | Notes | Status |
+|---|------|-------|--------|
+| 1 | Image preprocessing (browser-side) | Contrast normalization, deskew detection, resolution scaling, thermal-print binarization | Not started |
+| 2 | Strengthen /parse-statement prompt | Strict JSON schema, structural validation expectations | Not started |
+| 3 | Bank-specific validators | BCEL + LDB first (most used), JDB later | Not started |
+| 4 | Benchmark dataset | ~50 labeled real statements, anonymized family samples | Not started |
+| 5 | Benchmark current Gemini pipeline | Accuracy baseline, bank-by-bank error rates | Not started |
+| 6 | Conditional: evaluate cloud OCR | ONLY IF baseline <85%, compare Google Document OCR vs Azure | Conditional |
+
+Benefits before public launch:
+- Real accuracy numbers per bank
+- Data-driven decision on provider switch
+- Bank validators catch structural errors OCR misses
+
+Rejected alternatives:
+- Ensemble OCR (premature for family-stage, doubles cost)
+- Self-hosted/fine-tuned OCR (needs 1000+ labeled Lao statements we don't have)
+- OpenAI advisor in Tower (contradicts Rule 17 'Tower is a viewer not writer', splits AI attention)
+
+**Status:** NOT STARTED — scheduled after Sprint J completes
 
 ### Sprint K+ — Public Launch (Session 22+)
 - Landing page rewrite

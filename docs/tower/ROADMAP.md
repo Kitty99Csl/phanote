@@ -276,19 +276,30 @@ Prerequisites from earlier sprints:
 - Sprint D code-level i18n complete (in progress) — provides migration seed data
 - Sprint E Sentry (planned) — monitors admin panel errors
 
-### Sprint I — Room 2: The Command Center + OCR Reliability Room (Session 17)
-Chat with the Sentinels. **v1: iframes** of each Claude Project, left sidebar for navigation. Real Claude API chat deferred to v2.
+### Sprint I — Command Center + OCR Reliability Room (Session 18)
 
-#### OCR Reliability Room (Room 3 or 4)
-Built alongside Command Center using data from `ai_call_log` (Sprint E):
-- OCR attempts / failures / success rates per bank
+Original scope: Chat with Sentinels via Claude Projects iframes. **v1: iframes** of each Claude Project, left sidebar for navigation. Real Claude API chat deferred to v2.
+
+Added 2026-04-16 per external advisor recommendation:
+
+#### OCR Reliability Room
+
+Dedicated Tower room monitoring real OCR quality (not just uptime).
+
+Tracks:
+- OCR attempts / failures / success rates
 - Average review corrections per statement
-- Bank-specific error rates
+- Bank-specific error rates (BCEL vs LDB vs JDB)
 - Confidence distribution chart
 - Cost per 100 scans
-- Most common row errors
+- Most common row errors (merchant missing, amount ambiguous, date format mismatch)
+- Fallback rate (if we ever add fallback)
 
-Feeds Sprint L hardening decisions with real data.
+Data source: `ai_call_log` table (seeded in Sprint E with OCR-specific columns: `provider`, `bank_detected`, `confidence`, `review_corrections_count`, `errors`).
+
+Purpose: make Sprint L (OCR Pipeline Hardening) data-driven. Without this room, OCR improvements are vibes-based. With it, every fix targets a measurable error class.
+
+Owner Sentinel: **Osiris** (QA). Adds OCR quality to Osiris's monitoring scope alongside parser accuracy and regression.
 
 ### Sprint J — Rooms 3 & 6: Workshop + Archive (Session 18)
 Combined sprint because both are markdown-backed. Workshop reads `docs/tower/vanguard/` for sprint state. Archive reads `PHANOTE-DECISIONS-LOG.md`, `docs/session-*/`, and FAQ from Hawthorne. Full-text search across all of it.
@@ -299,27 +310,37 @@ Combined sprint because both are markdown-backed. Workshop reads `docs/tower/van
 
 **Sessions:** 20–21 · **Start:** ~June 16, 2026 · **Estimate:** 8–12 hours across 2 sessions
 
-**Goal:** Harden the Gemini-based OCR pipeline using real data from Tower's OCR Reliability Room. Treat Lao OCR as a pipeline problem, not a model problem.
+**Goal:** Harden the Gemini-based OCR pipeline using real data from Tower's OCR Reliability Room. Treat Lao OCR as a pipeline problem, not a model problem. Added 2026-04-16 based on external advisor review.
 
 ### Priorities
 
 1. **Image preprocessing** (~2 hours)
-   Browser-side: contrast normalization, deskew, resolution upscaling. Run before sending to Gemini.
+   Browser-side: contrast normalization, deskew detection, resolution scaling, thermal-print binarization. Run before sending to Gemini.
 
 2. **Strengthen /parse-statement prompt** (~1 hour)
-   Add strict JSON schema, explicit field constraints, row-count verification.
+   Add strict JSON schema, structural validation expectations, explicit field constraints, row-count verification.
 
 3. **Bank-specific validators** (~2 hours)
-   BCEL and LDB first (most common). JDB later. Validate parsed rows against known bank statement patterns.
+   BCEL and LDB first (most used). JDB later. Validate parsed rows against known bank statement patterns.
 
 4. **Benchmark dataset** (~2 hours)
-   Collect ~50 labeled real statements from production usage. Store in `tests/ocr-benchmark/`.
+   Collect ~50 labeled real statements from production usage, anonymized family samples. Store in `tests/ocr-benchmark/`.
 
 5. **Accuracy baseline** (~1 hour)
-   Run current Gemini pipeline against benchmark. Measure field-level accuracy per bank.
+   Run current Gemini pipeline against benchmark. Measure field-level accuracy per bank, bank-by-bank error rates.
 
 6. **Provider evaluation gate** (~2 hours, conditional)
-   IF baseline accuracy <85%: evaluate Google Document OCR and Azure Document Intelligence. Compare cost, accuracy, and latency. Document decision in `docs/decisions/DECISIONS-LOG.md`.
+   ONLY IF baseline accuracy <85%: evaluate Google Document OCR and Azure Document Intelligence. Compare cost, accuracy, and latency. Document decision in `docs/decisions/DECISIONS-LOG.md`.
+
+### Benefits before public launch
+- Real accuracy numbers per bank
+- Data-driven decision on provider switch
+- Bank validators catch structural errors OCR misses
+
+### Rejected alternatives
+- Ensemble OCR (premature for family-stage, doubles cost)
+- Self-hosted/fine-tuned OCR (needs 1000+ labeled Lao statements we don't have, GPU $200-500/mo)
+- OpenAI advisor in Tower (contradicts Rule 17 'Tower is a viewer not writer', splits AI attention)
 
 ### Definition of done
 - Preprocessing pipeline running in browser before OCR submission

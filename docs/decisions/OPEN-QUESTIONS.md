@@ -160,19 +160,37 @@ Commits: `de8e176` (app), `3fc39a3` (landing page).
 **Priority:** 🟡 MEDIUM — affects Sprint L planning
 **Captured:** Session 14, April 16, 2026
 
-**Question:** Should we switch from Gemini Flash to Google Document OCR or Azure OCR for better Lao statement accuracy?
+**Question:** Should Phajot switch from Gemini Flash to Google Document OCR, Azure OCR, or self-hosted model for better Lao bank statement accuracy?
 
-**Decision:** NO — not yet. Decision sequence:
-1. Sprint E adds `ai_call_log` with OCR-specific metrics
-2. Sprint I Tower Room monitors real OCR quality
-3. Sprint L hardens current pipeline (preprocessing + validators + benchmark)
-4. ONLY IF benchmark <85% accuracy, evaluate cloud OCR providers
-5. Self-hosted/fine-tuned OCR is Sprint 2027+ scope, not considered
+**Resolution:** NO — not yet. Stay with Gemini Flash and improve the pipeline first. Decision sequence locked:
+
+1. Sprint E (Session 14): `ai_call_log` table gains OCR-specific columns
+   - `provider`, `bank_detected`, `confidence`, `review_corrections_count`, `errors`
+2. Sprint I (Session 18): Tower OCR Reliability Room monitors real quality
+3. Sprint L (Sessions 20-21): Pipeline hardening
+   - Image preprocessing (browser-side)
+   - Strengthened /parse-statement prompt with strict schema
+   - Bank-specific validators (BCEL, LDB first)
+   - Labeled benchmark dataset (~50 real statements)
+   - Benchmark current Gemini → accuracy baseline per bank
+4. ONLY if benchmark shows <85% accuracy: evaluate Google Document OCR or Azure
 
 **Rejected alternatives:**
-- Ensemble OCR (too expensive for family stage)
-- OpenAI-powered advisor in Tower (contradicts Rule 17, adds complexity — Claude Projects already handle reasoning)
 
-**Rationale:** Treat Lao OCR as a pipeline problem (bad images, weak prompts, no validation) before treating it as a model problem. Tower's OCR Reliability Room (Sprint I) provides the observability needed to make data-driven decisions. Sprint L then hardens based on real data.
+- **Ensemble OCR** (run two providers, fall back): Premature at family-stage. Doubles cost without proven need. Revisit only if single-provider <70% on benchmark.
+- **Self-hosted / fine-tuned OCR**: Needs 1000+ labeled Lao statements we don't have. GPU infrastructure $200-500/month minimum. Sprint 2027+ scope at earliest.
+- **OpenAI-powered advisor in Tower**: Contradicts Rule 17 (Tower is a viewer, not a writer). Splits AI attention between two providers. Claude Projects already handle reasoning in Tower via 7 Sentinels.
 
-**Resolution:** Strategy locked. Sprint L inserted into roadmap between Sprint J (Tower complete) and Sprint K (public launch). External advisor input documented in handover transcripts.
+**Source:** External advisor review, transcripts archived in conversation history.
+
+**Guiding principles recorded:**
+
+- "Next gain comes from better input images + stricter extraction schema + bank-specific validation + benchmark — NOT from switch-model-and-hope"
+- "Never trust raw OCR output directly for statement import. Every row passes validation or shows for review."
+- "Statement import flow: image → preprocess → OCR/extract → row validation → confidence/review → import"
+
+**Follow-ups:**
+
+- Sprint E: design `ai_call_log` schema with OCR observability in mind
+- Sprint L: revisit this decision with real benchmark data
+- Tower Sprint I: Osiris Sentinel adopts OCR quality monitoring
