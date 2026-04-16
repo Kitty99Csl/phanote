@@ -378,6 +378,7 @@ export default function App(){
           isSetup={!!pinSetupMode}
           setupMode={pinSetupMode}
           setupStep={pinSetupStep}
+          lang={profile?.lang || "lo"}
         />
       )}
       {pinSetupMode && (

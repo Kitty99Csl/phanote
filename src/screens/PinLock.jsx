@@ -7,18 +7,19 @@
 //   - hardcoded English on security-critical screens
 
 import { T } from "../lib/theme";
+import { t } from "../lib/i18n";
 import { Logo } from "../components/Logo";
 
-export function PinLock({ pinConfig, pinInput, pinShake, onKey, isSetup, setupMode, setupStep }) {
+export function PinLock({ pinConfig, pinInput, pinShake, onKey, isSetup, setupMode, setupStep, lang = "lo" }) {
   const keys = ["1","2","3","4","5","6","7","8","9","","0","⌫"];
   const dots = pinInput.length;
   const title = isSetup
-    ? (setupMode === "set-owner" ? "Set Owner PIN" : "Set Guest PIN")
-    : "Welcome back";
+    ? (setupMode === "set-owner" ? t(lang, "pinSetupOwnerTitle") : t(lang, "pinSetupGuestTitle"))
+    : t(lang, "pinWelcomeBack");
   const subtitle = isSetup
-    ? (setupStep === "confirm" ? "Confirm your PIN" : setupMode === "set-owner"
-        ? "Enter new 4-digit owner PIN" : "Enter a 4-digit guest PIN")
-    : "Enter your PIN to continue";
+    ? (setupStep === "confirm" ? t(lang, "pinConfirm") : setupMode === "set-owner"
+        ? t(lang, "pinSetupOwnerSub") : t(lang, "pinSetupGuestSub"))
+    : t(lang, "pinEnterSub");
   return (
     <div style={{position:"fixed",inset:0,zIndex:9999,background:T.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:28}}>
       <div style={{marginBottom:6}}><Logo size={100} /></div>
@@ -41,7 +42,7 @@ export function PinLock({ pinConfig, pinInput, pinShake, onKey, isSetup, setupMo
         ))}
       </div>
       {!isSetup&&pinConfig?.guest&&(
-        <div style={{marginTop:28,fontSize:12,color:T.muted,textAlign:"center",fontFamily:"'Noto Sans',sans-serif"}}>Owner and guest PINs both accepted</div>
+        <div style={{marginTop:28,fontSize:12,color:T.muted,textAlign:"center",fontFamily:"'Noto Sans',sans-serif"}}>{t(lang, "pinBothAccepted")}</div>
       )}
       <style>{`@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}`}</style>
     </div>
