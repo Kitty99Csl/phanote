@@ -54,7 +54,8 @@ export default function App(){
   const [pinSetupFirst, setPinSetupFirst] = useState("");
 
   const savePinConfig = (cfg) => {
-    localStorage.setItem("phanote_pins", JSON.stringify(cfg));
+    if (userId) store.set(`phanote_pins_${userId}`, cfg); // per-user, authoritative
+    store.set("phanote_pins", cfg);                       // global, last-known-user cache
     setPinConfig(cfg);
     if (userId) {
       (async () => {
@@ -167,12 +168,13 @@ export default function App(){
     try {
       const { data: pinRow } = await supabase.from("profiles")
         .select("pin_config").eq("id", uid).single();
-      const pinCfg = pinRow?.pin_config || JSON.parse(localStorage.getItem("phanote_pins") || "null") || {owner:null,guest:null};
+      const pinCfg = pinRow?.pin_config || store.get(`phanote_pins_${uid}`) || store.get("phanote_pins") || {owner:null,guest:null};
       setPinConfig(pinCfg);
-      localStorage.setItem("phanote_pins", JSON.stringify(pinCfg));
+      store.set(`phanote_pins_${uid}`, pinCfg); // per-user, authoritative
+      store.set("phanote_pins", pinCfg);        // global, last-known-user cache
       if (pinCfg?.owner) setPinRole(null);
     } catch {
-      const pinCfg = JSON.parse(localStorage.getItem("phanote_pins") || "null");
+      const pinCfg = store.get(`phanote_pins_${uid}`) || store.get("phanote_pins");
       if (pinCfg?.owner) setPinRole(null);
     }
     setLoadingProfile(false);
