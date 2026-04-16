@@ -169,6 +169,11 @@ export const i18n={
     goalCutSuggestion:"Cut {emoji} {name} by {amount}/mo to save faster",
     goalDueThisMonth:"Due this month ⚡",
     goalMonthsLeft:"{m} months left",
+    budgetMonthlySubtitle:"Monthly budget · {currency}",
+    budgetSpentThisMonth:"Spent this month",
+    budgetOver:"⚠️ Over budget",
+    budgetAlmost:"⚡ Almost at limit",
+    budgetPctOf:"{pct}% of {limit}",
   },
   lo:{
     welcome:"ຍິນດີຕ້ອນຮັບ Phajot",tagline:"ພາຈົດ — ຕິດຕາມການເງິນຂອງທ່ານ",
@@ -337,6 +342,11 @@ export const i18n={
     goalCutSuggestion:"ຫຼຸດ {emoji} {name} ລົງ {amount}/ເດືອນ ເພື່ອອອມໄວຂຶ້ນ",
     goalDueThisMonth:"ຄົບກຳນົດເດືອນນີ້ ⚡",
     goalMonthsLeft:"ຍັງເຫຼືອ {m} ເດືອນ",
+    budgetMonthlySubtitle:"ງົບລາຍເດືອນ · {currency}",
+    budgetSpentThisMonth:"ໃຊ້ໄປເດືອນນີ້",
+    budgetOver:"⚠️ ເກີນງົບ",
+    budgetAlmost:"⚡ ໃກ້ຮອດຂອບເຂດ",
+    budgetPctOf:"{pct}% ຂອງ {limit}",
   },
   th:{
     welcome:"ยินดีต้อนรับสู่ Phajot",tagline:"Phajot — ติดตามการเงินของคุณ",
@@ -484,6 +494,11 @@ export const i18n={
     goalCutSuggestion:"ลด {emoji} {name} ลง {amount}/เดือน เพื่อออมเร็วขึ้น",
     goalDueThisMonth:"ครบกำหนดเดือนนี้ ⚡",
     goalMonthsLeft:"เหลืออีก {m} เดือน",
+    budgetMonthlySubtitle:"งบรายเดือน · {currency}",
+    budgetSpentThisMonth:"ใช้ไปเดือนนี้",
+    budgetOver:"⚠️ เกินงบ",
+    budgetAlmost:"⚡ ใกล้ถึงขีดจำกัด",
+    budgetPctOf:"{pct}% ของ {limit}",
   },
 };
 export const t=(lang,key)=>i18n[lang]?.[key]||i18n.en[key]||key;
