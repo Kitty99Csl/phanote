@@ -1,35 +1,65 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sarabun:wght@300;400;500;600;700&family=Noto+Sans+Lao:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sarabun:wght@300;400;500;600;700&family=Noto+Sans+Lao:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
 
 @import "tailwindcss";
 
 @theme {
-  /* Celadon palette — mirrors main app src/index.css */
-  --color-celadon-50: #F7FCF5;
-  --color-celadon-100: #E9FFDB;
-  --color-celadon-200: #C5EFB2;
-  --color-celadon-300: #ACE1AF;
-  --color-celadon-400: #8BD48F;
-  --color-celadon-500: #5aae5f;
-  --color-celadon-600: #3d8a42;
-  --color-celadon-700: #1a2e1a;
+  /* Slate palette — Cosmodrome dark */
+  --color-slate-950: #06090d;
+  --color-slate-900: #0a0e13;
+  --color-slate-800: #0f1419;
+  --color-slate-700: #1e2430;
+  --color-slate-600: #2a3240;
+  --color-slate-500: #4b5563;
+  --color-slate-400: #6b7280;
+  --color-slate-300: #8b929b;
+  --color-slate-200: #9ca3af;
+  --color-slate-100: #c7cbd1;
+  --color-slate-50:  #fafafa;
 
-  /* Ink (text) palette */
-  --color-ink-900: #1a2e1a;
-  --color-ink-700: #5a7a5a;
-  --color-ink-500: #96b396;
+  /* Orange — Destiny accent */
+  --color-ember-500: #f5a623;
+  --color-ember-600: #d4881a;
+  --color-ember-400: #f7b84d;
+  --color-ember-300: #fac77a;
 
-  /* Fontstack match with main app */
-  --font-sans: 'Sarabun', 'Noto Sans Lao', system-ui, sans-serif;
-  --font-display: 'Plus Jakarta Sans', 'Sarabun', 'Noto Sans Lao', sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* Semantic status */
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger:  #ef4444;
+
+  /* Fontstack — Helvetica/Inter first for Destiny feel */
+  --font-sans: 'Inter', 'Helvetica Neue', 'Sarabun', 'Noto Sans Lao', system-ui, sans-serif;
+  --font-display: 'Inter', 'Helvetica Neue', system-ui, sans-serif;
+  --font-mono: 'SF Mono', 'JetBrains Mono', Menlo, monospace;
 }
 
 body {
   margin: 0;
   font-family: var(--font-sans);
+  background: var(--color-slate-900);
+  color: var(--color-slate-100);
   -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
 }
 
-h1, h2, h3, h4, h5, h6, .font-display {
-  font-family: var(--font-display);
+/* Utility: Destiny-style all-caps spaced labels */
+@utility destiny-label {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--color-ember-500);
+}
+
+@utility destiny-label-muted {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--color-slate-400);
+}
+
+/* Corner cut on cards — clip-path */
+@utility corner-cut {
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
 }

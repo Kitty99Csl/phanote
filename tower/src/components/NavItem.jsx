@@ -1,20 +1,28 @@
 import { NavLink } from 'react-router-dom'
 
-export default function NavItem({ path, emoji, label }) {
+export default function NavItem({ path, label, subtitle }) {
   return (
     <NavLink
       to={path}
       end={path === '/'}
       className={({ isActive }) =>
-        `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+        `block px-4 py-3 transition-all border-l-2 ${
           isActive
-            ? 'bg-celadon-100 text-ink-900'
-            : 'text-ink-700 hover:bg-celadon-50 hover:text-ink-900'
+            ? 'border-ember-500 bg-gradient-to-r from-ember-500/10 to-transparent'
+            : 'border-transparent hover:bg-slate-800/50'
         }`
       }
     >
-      <span className="text-lg">{emoji}</span>
-      <span>{label}</span>
+      {({ isActive }) => (
+        <>
+          <div className={`text-[11px] tracking-[0.2em] uppercase font-semibold ${isActive ? 'text-ember-500' : 'text-slate-300'}`}>
+            {isActive && <span className="mr-1">▸</span>}{label}
+          </div>
+          <div className="text-[9px] tracking-[0.1em] text-slate-500 uppercase mt-1">
+            {subtitle}
+          </div>
+        </>
+      )}
     </NavLink>
   )
 }
