@@ -5,6 +5,7 @@
 import { useState } from "react";
 import { T, CURR } from "../lib/theme";
 import { t } from "../lib/i18n";
+import { showToast } from "../lib/toast";
 import { DEFAULT_EXPENSE_CATS, DEFAULT_INCOME_CATS, catLabel } from "../lib/categories";
 import { useClickGuard } from "../hooks/useClickGuard";
 import Sheet from "../components/Sheet";
@@ -28,7 +29,10 @@ export function EditTransactionModal({tx,lang,onSave,onClose,customCategories=[]
   };
   const save=()=>run(async()=>{
     const a=parseFloat(String(amount).replace(/,/g,""));
-    if(!a||a<=0)return;
+    if(!a||a<=0){
+      showToast(t(lang,"editTxErrorBadAmount"),"error");
+      return;
+    }
     await onSave({...tx,amount:a,categoryId:catId,description:desc.trim()||tx.description,currency:editCurrency,type:editType});
     onClose();
   });

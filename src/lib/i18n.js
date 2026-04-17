@@ -286,6 +286,7 @@ export const i18n={
     editTxIncome:"+ Income",
     editTxCurrency:"Currency",
     editTxAmount:"Amount ({currency})",
+    editTxErrorBadAmount:"Please enter an amount greater than zero",
     // Streak & progress (StreakModal + StreakBadge)
     streakTitle:"Your Progress",
     streakLevelN:"Level {n}",
@@ -605,6 +606,7 @@ export const i18n={
     editTxIncome:"+ ລາຍຮັບ",
     editTxCurrency:"ສະກຸນເງິນ",
     editTxAmount:"ຈຳນວນ ({currency})",
+    editTxErrorBadAmount:"ກະລຸນາໃສ່ຈຳນວນທີ່ຫຼາຍກວ່າສູນ",
     // Streak & progress (StreakModal + StreakBadge)
     streakTitle:"ຄວາມຄືບໜ້າຂອງເຈົ້າ",
     streakLevelN:"ລະດັບ {n}",
@@ -908,6 +910,7 @@ export const i18n={
     editTxIncome:"+ รายรับ",
     editTxCurrency:"สกุลเงิน",
     editTxAmount:"จำนวน ({currency})",
+    editTxErrorBadAmount:"กรุณาใส่จำนวนเงินที่มากกว่าศูนย์",
     // Streak & progress (StreakModal + StreakBadge)
     streakTitle:"ความคืบหน้าของคุณ",
     streakLevelN:"เลเวล {n}",
