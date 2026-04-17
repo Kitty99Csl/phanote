@@ -1,6 +1,6 @@
 # Current Sprint — F (Tower Lobby)
 
-> **Status:** In progress · Session 15 partial (Items 1 + 3 only)
+> **Status:** In progress · Session 15 complete (Items 1 + 3 + Cosmodrome direction) · Session 16 picks up Items 2, 4, 5, 6
 > **Started:** 2026-04-18 (Session 15 evening)
 > **Target close:** Session 16
 
@@ -12,13 +12,19 @@ from Sprint E's floor.
 
 **Items:**
 
-- 🔜 1. Create `tower/` Vite app + CF Pages project (Session 15)
-- ⏸ 2. Admin gate via `is_admin` flag + RLS (Migration 007) —
-  Session 16
-- 🔜 3. Tower Lobby layout + nav shell (Session 15)
-- ⏸ 4. Room 1: live /health display (Session 16)
-- ⏸ 5. Room 2: live ai_call_log recent rows (Session 16)
-- ⏸ 6. Room 3: ai_daily_stats summary cards (Session 16)
+- ✅ 1. Create `tower/` Vite app + CF Pages project — shipped 428ad78
+- ⏸ 2. Admin gate via `is_admin` flag + RLS (Migration 007) — Session 16
+- ✅ 3. Tower Lobby layout + nav shell — shipped 8df2959
+- ⏸ 4. Room 1: live /health display — Session 16
+- ⏸ 5. Room 2: live ai_call_log recent rows — Session 16
+- ⏸ 6. Room 3: ai_daily_stats summary cards — Session 16
+
+### Bonus work shipped (Cosmodrome visual direction)
+
+- ✅ Destiny-inspired theme redesign (ce39de5)
+- ✅ Pass 1 atmosphere polish (51e2192)
+- ✅ Pass 2 design spec v1 + tactical density (2f5faa7)
+- ✅ Tower Design System v1 (docs/tower/design-system.md)
 
 **Session 15 partial scope:** Items 1 + 3. Skeleton + nav shell,
 no auth yet, no rooms rendering real data yet. Ends with "Tower
@@ -43,5 +49,6 @@ three rooms live.
 
 ## Changelog
 
+- 2026-04-18 · Session 15 wrap: Items 1 + 3 shipped + Cosmodrome visual direction established (design system v1 approved)
 - 2026-04-18 · Sprint F opened, Session 15 partial scope locked
 - 2026-04-17 · Sprint E closed 8/8 (Session 14)

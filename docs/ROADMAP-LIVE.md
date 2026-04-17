@@ -2,14 +2,17 @@
 
 > **Status:** Current source of truth (live roadmap, updated every session wrap-up)
 
-> Last updated: 2026-04-17 (Sprint E Item 7 close)
+> Last updated: 2026-04-18 (Session 15 wrap — Sprint F partial)
 
 ## Current State
-- **Active sprint:** E — closing (8/8 after this commit) · Next: F (Tower Lobby)
-- **Session 14:** in progress (closing with this commit) · Session 15 next: Sprint F
-- **Production hash:** index-BJCgj50K.js (commit 4ba9788)
+- **Active sprint:** F (Tower Lobby) — in progress · Session 15 complete (Items 1 + 3 + bonus Cosmodrome direction) · Session 16 picks up Items 2, 4, 5, 6
+- **Session 15:** closed this commit · Session 16 next: complete Sprint F
+- **Production hash (Phajot):** index-BJCgj50K.js (unchanged — main app untouched in Session 15)
+- **Tower bundle:** index-DYnDWyB4.js — Tower live at tower.phajot.com (gated by Cloudflare Access)
 - **Worker version:** 4.7.0
-- **Next action:** Session 15 starts Sprint F (Tower Lobby — minimal admin viewer consuming /health + ai_daily_stats + Sentry)
+- **Latest commit:** 2f5faa7 (Pass 2 — Tower design spec v1 + tactical density)
+- **Next action:** Session 16 — complete Sprint F Items 2, 4, 5, 6 (admin gate + 3 rooms rendering real data)
+- **Notable milestone:** Tower design system v1 approved (`docs/tower/design-system.md`)
 
 ## Sprint Progress
 
@@ -80,17 +83,32 @@
 | 5a. ErrorBoundary | ✅ | cbc8620 | Lo/th/en branded fallback |
 | 5b. Sentry wiring | ✅ | 4ba9788 | Worker v4.7.0, bundle BJCgj50K |
 | 6. UptimeRobot | ✅ | 6fdd24e | stats.uptimerobot.com/FbQp9qBnJr |
-| 7. Claude Projects (Vanguard + Osiris) | 🔜 | — | Immediately after docs wrap |
+| 7. Claude Projects (Vanguard + Osiris) | ✅ | 2cd5690 | SPRINT E CLOSED 8/8 |
 
-**Status:** 7/8 SHIPPED — Item 7 (Claude Projects, Speaker UI work) in progress. Sprint formally closes when Item 7 ships.
+**Status:** COMPLETE ✅ (8/8)
 
-### Sprint F — Tower Lobby (Session 15, ~May 5)
-- Create tower/ Vite app
-- CF Pages project for tower.phajot.com
-- Hard-gate to Speaker
-- Room 1 (Lobby) with live data
-- Dark mode
-**Status:** NOT STARTED
+### Sprint F — Tower Lobby (Sessions 15-16)
+
+| Item | Status | Commit | Notes |
+|---|---|---|---|
+| 1. tower/ Vite app + CF Pages project | ✅ | 428ad78 | Vite 8 + Tailwind 4, matches main app toolchain |
+| 2. Admin gate via is_admin + RLS (Migration 007) | ⏸ | — | Session 16 — security-critical work |
+| 3. Tower Lobby layout + nav shell | ✅ | 8df2959 | Router, sidebar, 4 route placeholders |
+| 4. Room 1: live /health display | ⏸ | — | Session 16 |
+| 5. Room 2: ai_call_log recent rows | ⏸ | — | Session 16 |
+| 6. Room 3: ai_daily_stats summary cards | ⏸ | — | Session 16 |
+
+**Bonus work shipped (Cosmodrome visual direction):**
+
+| Commit | What |
+|---|---|
+| ce39de5 | Destiny-inspired theme redesign (celadon light → dark slate + ember) |
+| 51e2192 | Pass 1 — atmosphere polish (radial gradients + noise + vignette + status pulses) |
+| 2f5faa7 | Pass 2 — Tower design spec v1 + tactical density (HeaderStrip + StatusChip + TacticalPlaceholder + module codes) |
+
+**Infrastructure (outside git):** CF Pages project `tower-phajot` live, `tower.phajot.com` custom domain active, Cloudflare Access application "Phajot Tower" gating Speaker email (policy `782108c8-7169-438e-9088-77ffb3c49080`).
+
+**Status:** IN PROGRESS — 3/6 items + bonus Cosmodrome direction (Session 15 complete, Session 16 picks up 2 + 4 + 5 + 6)
 
 ### Sprints G-J — Tower Rooms (Sessions 16-19)
 - G: Engine Room (technical health)
@@ -156,6 +174,7 @@ Rejected alternatives:
 | 13 | oPuRioVP | dqQyI8JV | StatementScanFlow, AnalyticsScreen locale fix, PIN UX, ProUpgradeScreen, GuideScreen (largest) |
 | 14 (Sprint D close) | dqQyI8JV | B3mY1iQw | StreakModal, GoalModal, Settings reorg, EditTx toast |
 | 14 (Sprint E) | B3mY1iQw | BJCgj50K | ErrorBoundary (CLP6JP-c) → Sentry wiring (BJCgj50K). Worker 4.4.0 → 4.5.0 → 4.6.0 → 4.7.0 across commits e21d7d2, 67e8859, 4ba9788. |
+| 15 (Sprint F partial) | BJCgj50K | BJCgj50K (unchanged) | Main app untouched — all work in `tower/`. Tower bundle: index-DYnDWyB4.js. 6 commits: 19bee35, 428ad78, 8df2959, ce39de5, 51e2192, 2f5faa7. |
 
 ## The Tower Team
 | Name | Role |

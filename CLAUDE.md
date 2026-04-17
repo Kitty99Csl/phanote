@@ -71,6 +71,10 @@ telling you about your money over coffee, not a bank dashboard.
 - Deploy worker: npx wrangler deploy (requires CLOUDFLARE_API_TOKEN)
 - Snapshot for chat Claude: docs/snapshots/phanote-api-worker.js (read-only, refresh at session end)
 
+## Development environment notes
+
+**Cloudflare Pages `.pages.dev` URLs are geo-blocked in Laos.** Default CF Pages URLs (`<project>.pages.dev`) cannot be used as Speaker-reachable staging/preview URLs. All CF Pages projects intended for Speaker's iteration must be accessed via custom subdomain on the phajot.com zone (e.g., `tower.phajot.com`, `app.phajot.com`, future `staging.phajot.com`). Cloudflare automatically CNAMEs custom subdomains when you own the underlying domain. Identified: Session 15, 2026-04-18.
+
 ## Required reading before editing
 
 1. `project_codex.md` (the bible — design rules, UX, architecture)
