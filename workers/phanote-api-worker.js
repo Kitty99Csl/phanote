@@ -20,11 +20,205 @@
 
 import { computeCostUsd, PRICING_VERSION } from './lib/ai-costs.js';
 
+// Worker version
+const WORKER_VERSION = '4.6.0';
+
+// Build-time constant. Updated on every deploy.
+// Future (Sprint E-ext): a deploy hook will replace the
+// __DEPLOYED_AT__ placeholder pattern with the real timestamp.
+// For now, manually bump to the commit's deploy time.
+const DEPLOYED_AT = '2026-04-17T05:55:56Z';
+
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
+
+// ─── /health caches (worker-global, persist across warm instances) ───
+let supabasePingCache = {
+  ok: null,
+  last_checked_at: null,
+  ping_ms: null,
+};
+const PING_CACHE_TTL_MS = 60 * 1000;
+
+let aiStatsCache = {
+  fetched_at: null,
+  data: null,
+};
+const STATS_CACHE_TTL_MS = 60 * 1000;
+
+async function checkSupabaseHealth(env) {
+  const now = Date.now();
+  const cacheAge = supabasePingCache.last_checked_at
+    ? now - new Date(supabasePingCache.last_checked_at).getTime()
+    : Infinity;
+
+  if (cacheAge < PING_CACHE_TTL_MS && supabasePingCache.ok !== null) {
+    return {
+      ...supabasePingCache,
+      cache_age_seconds: Math.floor(cacheAge / 1000),
+    };
+  }
+
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
+    supabasePingCache = {
+      ok: false,
+      last_checked_at: new Date().toISOString(),
+      ping_ms: null,
+    };
+    return { ...supabasePingCache, cache_age_seconds: 0 };
+  }
+
+  const start = Date.now();
+  try {
+    // Lightweight connectivity probe: select one row (head request-like)
+    const res = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/ai_call_log?select=id&limit=1`,
+      {
+        headers: {
+          'apikey': env.SUPABASE_SERVICE_ROLE_KEY,
+          'Authorization': `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+      }
+    );
+    const ping_ms = Date.now() - start;
+    supabasePingCache = {
+      ok: res.ok,
+      last_checked_at: new Date().toISOString(),
+      ping_ms,
+    };
+  } catch (err) {
+    supabasePingCache = {
+      ok: false,
+      last_checked_at: new Date().toISOString(),
+      ping_ms: Date.now() - start,
+    };
+  }
+
+  return { ...supabasePingCache, cache_age_seconds: 0 };
+}
+
+async function getAIStats(env) {
+  const now = Date.now();
+  const age = aiStatsCache.fetched_at
+    ? now - new Date(aiStatsCache.fetched_at).getTime()
+    : Infinity;
+
+  if (age < STATS_CACHE_TTL_MS && aiStatsCache.data) {
+    return aiStatsCache.data;
+  }
+
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
+    return null;
+  }
+
+  const oneHourAgo = new Date(now - 60 * 60 * 1000).toISOString();
+
+  try {
+    const res = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/ai_call_log?` +
+      `select=provider,endpoint,status,created_at&` +
+      `created_at=gte.${oneHourAgo}&` +
+      `order=created_at.desc&limit=1000`,
+      {
+        headers: {
+          'apikey': env.SUPABASE_SERVICE_ROLE_KEY,
+          'Authorization': `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+      }
+    );
+
+    if (!res.ok) return null;
+
+    const rows = await res.json();
+
+    const providers = {
+      gemini: { success: 0, error: 0, last_success_at: null, last_error_at: null },
+      anthropic: { success: 0, error: 0, last_success_at: null, last_error_at: null },
+    };
+    const endpoints = {};
+    let total = 0;
+    let errors = 0;
+
+    for (const row of rows) {
+      total++;
+      const isError = row.status !== 'success';
+      if (isError) errors++;
+
+      if (providers[row.provider]) {
+        if (isError) {
+          providers[row.provider].error++;
+          if (!providers[row.provider].last_error_at || row.created_at > providers[row.provider].last_error_at) {
+            providers[row.provider].last_error_at = row.created_at;
+          }
+        } else {
+          providers[row.provider].success++;
+          if (!providers[row.provider].last_success_at || row.created_at > providers[row.provider].last_success_at) {
+            providers[row.provider].last_success_at = row.created_at;
+          }
+        }
+      }
+
+      endpoints[row.endpoint] = (endpoints[row.endpoint] || 0) + 1;
+    }
+
+    const data = {
+      ai_volume_last_hour: { total, errors, by_endpoint: endpoints },
+      gemini: {
+        last_success_at: providers.gemini.last_success_at,
+        last_error_at: providers.gemini.last_error_at,
+        calls_last_hour: providers.gemini.success + providers.gemini.error,
+        errors_last_hour: providers.gemini.error,
+      },
+      anthropic: {
+        last_success_at: providers.anthropic.last_success_at,
+        last_error_at: providers.anthropic.last_error_at,
+        calls_last_hour: providers.anthropic.success + providers.anthropic.error,
+        errors_last_hour: providers.anthropic.error,
+      },
+    };
+
+    aiStatsCache = { fetched_at: new Date().toISOString(), data };
+    return data;
+  } catch (err) {
+    console.error('getAIStats failed:', err?.message);
+    return null;
+  }
+}
+
+function computeStatus(supabase, aiStats) {
+  if (!supabase.ok && supabase.last_checked_at &&
+      (Date.now() - new Date(supabase.last_checked_at).getTime()) > 5 * 60 * 1000) {
+    return { status: 'error', status_reason: 'supabase_unreachable_5min' };
+  }
+  if (!supabase.ok) {
+    return { status: 'error', status_reason: 'supabase_ping_failed' };
+  }
+
+  if (supabase.cache_age_seconds > 90) {
+    return { status: 'degraded', status_reason: 'supabase_ping_stale' };
+  }
+
+  if (aiStats) {
+    const total = aiStats.ai_volume_last_hour.total;
+    const errorRate = total > 0 ? aiStats.ai_volume_last_hour.errors / total : 0;
+    if (errorRate > 0.05) {
+      return { status: 'degraded', status_reason: 'ai_error_rate_elevated' };
+    }
+
+    const fifteenMinAgo = Date.now() - 15 * 60 * 1000;
+    for (const provider of ['gemini', 'anthropic']) {
+      const lastErr = aiStats[provider]?.last_error_at;
+      if (lastErr && new Date(lastErr).getTime() > fifteenMinAgo) {
+        return { status: 'degraded', status_reason: `${provider}_recent_errors` };
+      }
+    }
+  }
+
+  return { status: 'ok', status_reason: null };
+}
 
 // ─── RATE LIMITING (in-memory, per-IP) ───────────────────────────
 // Protects against abuse and runaway scripts.
@@ -519,19 +713,49 @@ export default {
     }
 
     if (url.pathname === "/" || url.pathname === "/health") {
-      return Response.json({
-        status: "ok", service: "Phajot API", version: "4.5.0",
-        parse: "gemini-2.5-flash", advise: "claude-haiku-4-5", ocr: "gemini-2.5-flash-vision", monthly_report: "claude-haiku-4-5", parse_statement: "gemini-2.5-flash-vision",
-        routes: ["/parse", "/advise", "/ocr", "/monthly-report", "/parse-statement"],
-        features: ["rate_limiting", "kill_switch"],
-        status_flags: {
-          ai_parse: isFeatureEnabled(env, "parse"),
-          advisor: isFeatureEnabled(env, "advise"),
-          ocr: isFeatureEnabled(env, "ocr"),
-          monthly_wrap: isFeatureEnabled(env, "monthly_report"),
-          statement: isFeatureEnabled(env, "parse_statement"),
+      const supabase = await checkSupabaseHealth(env);
+      const aiStats = await getAIStats(env);
+      const { status, status_reason } = computeStatus(supabase, aiStats);
+
+      const emptyProviderStats = { last_success_at: null, last_error_at: null, calls_last_hour: 0, errors_last_hour: 0 };
+
+      const body = {
+        status,
+        status_reason,
+        service: 'Phajot API',
+        version: WORKER_VERSION,
+        deployed_at: DEPLOYED_AT,
+        dependencies: {
+          supabase: {
+            ok: supabase.ok,
+            last_checked_at: supabase.last_checked_at,
+            ping_ms: supabase.ping_ms,
+            cache_age_seconds: supabase.cache_age_seconds,
+          },
+          gemini: aiStats?.gemini || emptyProviderStats,
+          anthropic: aiStats?.anthropic || emptyProviderStats,
         },
-      }, { headers: CORS });
+        ai_volume_last_hour: aiStats?.ai_volume_last_hour || { total: 0, errors: 0, by_endpoint: {} },
+        features: {
+          ai_enabled: env.AI_ENABLED === 'true',
+          advisor_enabled: env.ADVISOR_ENABLED === 'true',
+          ocr_enabled: env.OCR_ENABLED === 'true',
+          monthly_wrap_enabled: env.MONTHLY_WRAP_ENABLED === 'true',
+          statement_enabled: env.STATEMENT_ENABLED === 'true',
+        },
+        routes: [
+          'POST /parse',
+          'POST /advise',
+          'POST /ocr',
+          'POST /parse-statement',
+          'POST /monthly-report',
+          'GET /health',
+        ],
+      };
+
+      return new Response(JSON.stringify(body, null, 2), {
+        headers: { 'Content-Type': 'application/json', ...CORS },
+      });
     }
 
     if (request.method !== "POST") return new Response("Method not allowed", { status: 405, headers: CORS });
