@@ -287,6 +287,11 @@ export const i18n={
     editTxCurrency:"Currency",
     editTxAmount:"Amount ({currency})",
     editTxErrorBadAmount:"Please enter an amount greater than zero",
+    // ErrorBoundary (app-wide fallback UI)
+    errorBoundaryTitle:"Something went wrong",
+    errorBoundaryMessage:"We hit a small bump. Don't worry — your data is safe.",
+    errorBoundaryReload:"↻ Reload Phajot",
+    errorBoundaryCode:"Error code: {code}",
     // Streak & progress (StreakModal + StreakBadge)
     streakTitle:"Your Progress",
     streakLevelN:"Level {n}",
@@ -607,6 +612,11 @@ export const i18n={
     editTxCurrency:"ສະກຸນເງິນ",
     editTxAmount:"ຈຳນວນ ({currency})",
     editTxErrorBadAmount:"ກະລຸນາໃສ່ຈຳນວນທີ່ຫຼາຍກວ່າສູນ",
+    // ErrorBoundary (app-wide fallback UI)
+    errorBoundaryTitle:"ບາງສິ່ງຜິດພາດ",
+    errorBoundaryMessage:"ມີບັນຫາເລັກນ້ອຍ ບໍ່ຕ້ອງກັງວົນ ຂໍ້ມູນຂອງທ່ານຍັງປອດໄພ",
+    errorBoundaryReload:"↻ ໂຫຼດຄືນ Phajot",
+    errorBoundaryCode:"ລະຫັດຄວາມຜິດພາດ: {code}",
     // Streak & progress (StreakModal + StreakBadge)
     streakTitle:"ຄວາມຄືບໜ້າຂອງເຈົ້າ",
     streakLevelN:"ລະດັບ {n}",
@@ -911,6 +921,11 @@ export const i18n={
     editTxCurrency:"สกุลเงิน",
     editTxAmount:"จำนวน ({currency})",
     editTxErrorBadAmount:"กรุณาใส่จำนวนเงินที่มากกว่าศูนย์",
+    // ErrorBoundary (app-wide fallback UI)
+    errorBoundaryTitle:"บางอย่างผิดพลาด",
+    errorBoundaryMessage:"เกิดปัญหาเล็กน้อย ไม่ต้องห่วง ข้อมูลของคุณยังปลอดภัย",
+    errorBoundaryReload:"↻ โหลดใหม่ Phajot",
+    errorBoundaryCode:"รหัสข้อผิดพลาด: {code}",
     // Streak & progress (StreakModal + StreakBadge)
     streakTitle:"ความคืบหน้าของคุณ",
     streakLevelN:"เลเวล {n}",
