@@ -81,6 +81,8 @@ telling you about your money over coffee, not a bank dashboard.
 2. `docs/ROADMAP-LIVE.md` (living roadmap — updated every session per Rule 18)
 3. `docs/tower/CHARTER.md` (Tower's mission and structure)
 4. `docs/tower/ROADMAP.md` (Tower sprint plan, Sprints B→K)
+5. `docs/patterns.md` (optional context — working set of development patterns, soft guidance not rules)
+6. `docs/session-ritual.md` (optional context — CC-executable opening/closing ritual templates)
 
 ## Non-negotiable rules
 1. Never edit worker in Cloudflare web editor — always local + wrangler deploy
@@ -103,6 +105,7 @@ telling you about your money over coffee, not a bank dashboard.
 18. **Update `docs/ROADMAP-LIVE.md` in every session wrap-up commit.** Move completed items to done, update commit hashes, update Current State section, update audit tracker. This is the living roadmap — it must always reflect the true project state.
 19. **Database schema changes must originate from a migration file.** All schema changes to Supabase (new tables, columns, indexes, policies, cron jobs, materialized views) must first exist as a migration file in `supabase/migrations/NNN_description.sql` and be committed to git. Apply via `supabase db push` or by pasting the file contents into Supabase SQL Editor. Never paste ad-hoc SQL into the SQL Editor without the backing migration file. Emergencies excepted: if a production hotfix requires direct SQL Editor intervention, the same session must backfill a migration file documenting the change before work ends. Session 14 introduced this rule after discovering observability schema drift (migration 006 backfill). Direct SQL Editor edits bypass git history and make schema drift invisible until someone diffs production against migrations.
 20. **Any sprint close commit must update both `docs/ROADMAP-LIVE.md` and the relevant `SPRINT-CURRENT.md` in the same commit. A sprint is not considered closed until both are updated.** This rule was introduced Session 15 after Vanguard caught that Session 14's commit 036b617 updated Sprint E's table in ROADMAP-LIVE.md but forgot the top-level state banner, producing stale-state drift that required a follow-up fix in 2cd5690. Partial updates across multiple commits create exactly this bug class. Future sprint-close commits must be rejected (by CC or Speaker review) if they touch SPRINT-CURRENT.md but not ROADMAP-LIVE.md, or vice versa.
+21. **Reality-check before targeted edits.** When editing a file based on an external description of its contents (audit findings, memory, a spec from another Claude session), first read the current file state to verify the described contents match reality. Audits from memory are hypotheses, not facts. Session 15 proved this pattern twice: Codex's CLAUDE.md audit claimed `session-4` branch references that had already been fixed, and a Tower README link to `SPRINT-C-PLAN.md` was written from memory — the file doesn't exist. In both cases, CC's file read caught the error before a bad commit. Cost: 30 seconds of file reads. Benefit: avoiding wrong edits, broken links, and duplicated rules.
 
 ## Known bugs to fix
 - (none active — Session 9 RLS hardening + deploy pipeline fix shipped, adversarially verified)
@@ -111,7 +114,17 @@ telling you about your money over coffee, not a bank dashboard.
 
 For current session, sprint progress, commit hashes, and live infrastructure state, see `docs/ROADMAP-LIVE.md`. This file (CLAUDE.md) holds operating rules, stack info, and environment notes only — not operational state. Rule 20 codifies this separation: live execution truth lives in ROADMAP-LIVE.md and SPRINT-CURRENT.md, not here.
 
-## Recent key learnings (from Session 9)
+## Recent key learnings
+
+### Session 15 learnings (Sprint F start + Cosmodrome visual direction)
+
+- **Reality-check before edits (now Rule 21).** Audits from memory are hypotheses; verify file state before editing. Caught two near-mistakes Session 15. See `docs/patterns.md` for the pattern, `docs/session-ritual.md` for the CC-executable ritual.
+- **Mockup-in-chat overstates production feel by ~35%.** Chat widgets are narrow; production browsers are wide. Calibrate accordingly when reviewing mockups.
+- **Visual-first before major UI changes.** 3 mockup directions rendered in-chat before Destiny redesign code. Saved ~2 iteration cycles.
+- **CC runs reality checks, not Speaker.** Formalized as `docs/session-ritual.md`. Was previously ad-hoc.
+- **Tower design system v1 approved.** See `docs/tower/design-system.md`. Dark tactical UI with Phajot identity — not a Destiny reskin.
+
+### Session 9 learnings
 
 1. **"Merged to main" ≠ "shipped to users".** 8 commits sat on `origin/main` for 2 days while CF Pages silently failed every build and kept serving the 2-day-old bundle. No notification, no dashboard warning visible without explicitly opening the Deployments tab. Always verify production bundle hash after a user-visible merge.
 2. **Node minor version drift propagates through the bundled npm.** `.nvmrc = 24` let CF Pages auto-resolve to 24.13.1 while Codespace was on 24.11.1. The minor bump shipped a new npm (11.6.2 → 11.8.0) which writes more `@emnapi` optional-dep entries in the lockfile. `npm ci` on the old lockfile passed locally, failed on CF Pages.
