@@ -2,14 +2,14 @@
 
 > **Status:** Current source of truth (live roadmap, updated every session wrap-up)
 
-> Last updated: 2026-04-16 · Session 13 · Commit e94d88f
+> Last updated: 2026-04-17 · Session 14 · Commit 14409d6 (note: next session updates this to Session 15's final commit)
 
 ## Current State
-- **Active sprint:** D (i18n + Settings) — ~95% COMPLETE
-- **Session:** 13
-- **Commits today (Sessions 11-13):** 40 total across 3 sessions
-- **Production hash:** index-dqQyI8JV.js
-- **Next action:** Session 14 finishes Sprint D (StreakModal + GoalModal + Settings reorg) then starts Sprint E
+- **Active sprint:** D — **CLOSED** · Next: E (observability)
+- **Session:** 14 complete · Session 15 next
+- **Commits Session 14:** 5 (4 code + 1 docs)
+- **Production hash:** index-B3mY1iQw.js
+- **Next action:** Session 15 starts Sprint E (Sentry + ai_call_log + worker /health + docs/tower + 2 Claude Projects + uptime)
 
 ## Sprint Progress
 
@@ -61,10 +61,13 @@
 | 16 | 86ccb94 | PIN UX clarity explainer | BG1Hl7nq | Done |
 | 17 | 1109ae1 | i18n ProUpgradeScreen (25 keys) | C-_BiQBs | Done |
 | 18 | e94d88f | i18n GuideScreen (66 keys, largest commit) | dqQyI8JV | Done |
-| 19 | — | i18n StreakModal + GoalModal (~18 strings) | — | Session 14 |
-| 20 | — | Settings reorganization (5 sections) | — | Session 14 |
-**Progress:** ~170 strings i18n'd across 16 screens/components + 2 infra cleanups. All production-visible screens done.
-**Status:** IN PROGRESS (~95%)
+| 19 | 155d09c | i18n StreakModal + StreakBadge + streak.js (32 keys) | BiywABVn | Done |
+| 20 | e7fe1a7 | i18n GoalModal (5 new + 6 reuses) | DNy6ACqS | Done |
+| 21 | 858d3a0 | Settings 7→5 reorganization | CtlS9t5- | Done |
+| 22 | 391d63e | EditTransactionModal silent-return toast (Sprint D-ext) | B3mY1iQw | Done |
+| 23 | 14409d6 | I18N-PROVISIONAL-KEYS tracking file | — | Done |
+**Progress:** ~210 strings i18n'd across 18 screens/components + 2 infra cleanups. All production-visible screens and modals done.
+**Status:** COMPLETE ✅
 
 ### Sprint E — Observability (Session 14, ~Apr 28) — UNLOCKS TOWER
 - Sentry (frontend + worker)
@@ -128,14 +131,14 @@ Rejected alternatives:
 |---|---------|----------|--------|
 | 1 | Derived-password auth | P0 | Closed (770af58, Session 11) |
 | 2 | Statement import end-state | P1 | Open (backlog) |
-| 3 | i18n hardcoded strings | P1 | Open (Sprint D, ~95% done — all production-visible screens complete, 2 modals remain) |
+| 3 | i18n hardcoded strings | P1 | **Closed (Session 14)** |
 | 4 | Modal/gate patterns | P1 | Closed (05f8f7d + b6b2598, Session 10) |
 | 5 | Error handling | P1 | Closed (2e99fad, Session 10) |
 | 6 | Analytics memoization | P2 | Open (backlog) |
-| 7 | Settings overload | P2 | Open (Sprint D, deferred to Session 14) |
+| 7 | Settings overload | P2 | **Closed (Session 14, 858d3a0)** |
 | 8 | Native dialogs | P1 | Closed (b6b2598, Session 10) |
 
-**Zero P0 open. Two P1 open. Two P2 open.**
+**Zero P0 open. One P1 open. One P2 open.**
 
 ## Bundle Hash History
 | Session | Start | End | Key commits |
@@ -145,6 +148,7 @@ Rejected alternatives:
 | 11 | BeOPC5lm | CEFkIaIU | Auth i18n, LoginScreen rewrite, hotfix |
 | 12 | CEFkIaIU | oPuRioVP | Dead code deletion, localStorage fix, i18n sweep (10 screens/components) |
 | 13 | oPuRioVP | dqQyI8JV | StatementScanFlow, AnalyticsScreen locale fix, PIN UX, ProUpgradeScreen, GuideScreen (largest) |
+| 14 | dqQyI8JV | B3mY1iQw | StreakModal, GoalModal, Settings reorg, EditTx toast |
 
 ## The Tower Team
 | Name | Role |
