@@ -107,18 +107,9 @@ telling you about your money over coffee, not a bank dashboard.
 ## Known bugs to fix
 - (none active — Session 9 RLS hardening + deploy pipeline fix shipped, adversarially verified)
 
-## Current state: Session 12 complete, Sprint D ~70%
+## Current state
 
-- **Sprints B + C shipped** (Sessions 10-11) — trust & safety, auth replacement, deploy-verified
-- **Sprint D in progress** — i18n sweep ~70% done across Session 12 (67 strings, 10 screens/components). ~55 strings + Settings reorg remaining.
-- **Sprint D completes in Session 13** (~3-4h remaining)
-- **Sprint E (observability)** targets Session 14. **This sprint unlocks Tower.**
-- **Sprint F (Tower Lobby)** targets Session 15
-- **Sprints G-J (Tower rooms):** Sessions 16-19
-- **Sprint K+ (public launch prep):** Session 20+
-- **Audit findings:** 0 P0 open, 2 P1 open (statement import nav, i18n), 2 P2 open (analytics memo, settings overload)
-
-See `docs/ROADMAP-LIVE.md` for the full living timeline with commit hashes.
+For current session, sprint progress, commit hashes, and live infrastructure state, see `docs/ROADMAP-LIVE.md`. This file (CLAUDE.md) holds operating rules, stack info, and environment notes only — not operational state. Rule 20 codifies this separation: live execution truth lives in ROADMAP-LIVE.md and SPRINT-CURRENT.md, not here.
 
 ## Recent key learnings (from Session 9)
 
@@ -188,3 +179,7 @@ Thresholds and design decisions:
 - Values: clarity, warmth, respect for users, no shame about spending.
 - Explain WHY before HOW. Don't just execute — teach.
 - When unsure, ASK before doing.
+
+---
+
+*Last updated: 2026-04-18 (post Session 15 close) · Maintained by Speaker + Chat Claude · Used by Claude Code · For live state see docs/ROADMAP-LIVE.md*

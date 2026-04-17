@@ -5,6 +5,8 @@
 ### The Single Source of Truth · Version 1.4
 > **Rule:** Before writing any complex code, review this document. Before closing any major phase, update this document. This codex is a living contract between the developer and the project.
 
+> ⚠️ **This is the product/design constitution, NOT current execution truth.** For current sprint, commit hashes, live infrastructure state, and ongoing work, see `docs/ROADMAP-LIVE.md`. The codex contains frozen principles: design rules, UX philosophy, brand voice, architecture rules. Implementation claims and phase references may lag reality — treat them as historical context, not current state.
+
 ---
 
 ## 0. THE NORTH STAR
@@ -26,7 +28,7 @@
 | **Marketing Domain** | `phajot.com` ✅ LIVE |
 | **Current Version** | v0.6.2 — Session 9 RLS hardening + CF Pages deploy pipeline fix |
 | **Status** | 🟡 Family Testing |
-| **Last Codex Update** | April 14, 2026 · Session 9 |
+| **Last Codex Update** | April 14, 2026 · Session 9 (principles frozen) — see docs/ROADMAP-LIVE.md for current state |
 
 > **Updated [2026-04-14] (Session 9):** CF Pages deploy pipeline fix (Node 24.13.1 exact pinning + `engines` field + lockfile regeneration under matching npm 11.8.0) unblocks 2 days of stuck commits — Session 8 Sprint A + Ext had merged to main but was never actually deployed to `app.phajot.com` due to silent CF Pages build failures. RLS hardening complete: `ai_memory` data leak (USING(true) permissive SELECT policy) dropped, `goals` RLS enabled (was rowsecurity=false with inert policy), `profiles` policies deduped 6→1 canonical, `transactions` policies deduped 7→1 canonical. Adversarial verification with second test user (User B, `5e3629a1-aa60-4c25-a013-11bf40b8e6b9`) proves cross-user SELECT/INSERT are blocked while self-access still works. See `docs/session-9/SUMMARY.md`, `docs/session-9/RLS-HARDENING.md`, `docs/RISKS.md`. Two new CLAUDE.md non-negotiable rules (11 + 12) capture the Session 9 lessons: verify production bundle hash after merge, pin exact Node version.
 

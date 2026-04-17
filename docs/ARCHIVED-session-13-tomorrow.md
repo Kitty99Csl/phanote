@@ -1,5 +1,7 @@
 # Next Session Start Here
 
+> ⚠️ ARCHIVED — This was the "tomorrow" plan from Session 13 (transitioning into Session 14). Preserved for historical context only. For current session plans see `docs/session-{N}/SUMMARY.md` and `docs/tower/vanguard/SPRINT-CURRENT.md`.
+
 > **Status:** Current working note (resets each session)
 
 **Last session:** Session 13 — Sprint D ~95% (i18n sweep + PIN UX + docs consolidation) · April 16, 2026
