@@ -3,6 +3,7 @@ main = "workers/phanote-api-worker.js"
 compatibility_date = "2024-01-01"
 
 routes = [
+  { pattern = "api.phajot.com/*", zone_name = "phajot.com" },
   { pattern = "api.phanote.com/*", zone_name = "phanote.com" }
 ]
 
