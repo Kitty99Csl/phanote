@@ -167,3 +167,115 @@ From Sessions 12-13 (still pending):
 - `ມາສເຕີ້/มาสเตอร์` (Master) resonance check in streak context (now live in StreakModal in addition to GuideScreen)
 
 None are blocking. All feed Sprint H's admin-panel queue.
+
+---
+
+## Sprint E — Observability Substrate (Session 14 afternoon)
+
+Sprint E built the observability floor Phajot needs before public
+launch: error tracking (Sentry), AI call logging (ai_call_log),
+external uptime monitoring (UptimeRobot), and a structured /health
+endpoint. Plus the Tower Sentinel documentation skeleton that
+future Sprint F (Tower Lobby) will consume.
+
+### Commits
+
+| # | Item | Commit | Notes |
+|---|---|---|---|
+| 1 | docs/tower Sentinel skeleton | `0ce4820` | 7 STATUS.md files, Vanguard SPRINT-CURRENT.md |
+| 2 | Migration 006 + Rule 19 + wrangler route | `caa4b1a` | 3 check constraints added, idempotent backfill for observability schema drift. New Rule 19: schema changes originate from migration files. |
+| 3 | AI call instrumentation | `e21d7d2` | callClaude wrapper, logAICall helper, 5 endpoints instrumented. Worker 4.4.0 → 4.5.0. |
+| 4 | /health endpoint enrichment | `67e8859` | Nested JSON, status=ok\|degraded\|error, Supabase ping (60s cache), AI stats from ai_call_log. Worker 4.5.0 → 4.6.0. |
+| 5a | Frontend ErrorBoundary | `cbc8620` | Celadon-branded fallback UI, lo/th/en, window.location.reload(). Bundle B3mY1iQw → CLP6JP-c. |
+| 5b | Sentry wiring (both sides) | `4ba9788` | @sentry/react + @sentry/cloudflare. Worker 4.6.0 → 4.7.0. Bundle CLP6JP-c → BJCgj50K. |
+| 6 | UptimeRobot + Banshee STATUS | `6fdd24e` | 2 monitors live, status page at stats.uptimerobot.com/FbQp9qBnJr. |
+| 7 | Claude Projects (Vanguard + Osiris) | pending | Scheduled for Speaker immediately after this docs wrap commit. |
+
+### Discoveries during Sprint E
+
+**Schema drift:** Migration 006 was NOT a greenfield create — the
+observability schema already existed in Supabase from a prior
+session's direct SQL Editor paste. This was discovered via
+diagnostic queries during Item 2 and motivated the creation of
+Rule 19. The 3 phantom tables (user_sessions, user_feedback,
+admin_logs) flagged in the migration's drift diagnostic also
+already exist without migration files — backlog item for
+Session 15+ to backfill.
+
+**AI cost data (rough estimate):** First /parse call logged at
+$0.000087 USD. At ~100 calls/user/day that's ~$0.26/user/month in
+AI cost. Well under 5% of Pro revenue ($2.99/mo). Pricing version
+tagged as `v1-draft-2026-04-17` — Sprint E-ext will verify against
+Anthropic + Google billing dashboards and bump to
+`v2-verified-YYYY-MM-DD`.
+
+**Worker robustness is a testing annoyance:** Forcing worker
+errors for Sentry verification was hard because the handlers
+catch everything gracefully. Sentry was passively verified instead
+(deploy clean, secret set, wrapper active, no leak). Real errors
+will populate Sentry over time.
+
+**Sentry onboarding wizard is sticky:** Several minutes lost to
+Sentry's "waiting for first event" UI not updating even after
+events were confirmed arriving via Network tab. Fix: navigate
+directly to /issues/?project=... URL instead of following the
+onboarding flow.
+
+**Cloudflare Workers per-isolate cache:** /health's 60s Supabase
+ping cache works within a single warm isolate but different
+requests often land on different isolates (low traffic = cold
+starts). Acceptable at current scale (~288 UptimeRobot pings/day
+= negligible DB load). Workers KV or Durable Objects would fix
+it properly — deferred to Sprint K+ if needed.
+
+### Known gaps after Sprint E (deferred to Sprint E-ext or Sprint F)
+
+1. `user_id` + `plan_tier` in ai_call_log are null/'free'
+   placeholders. Real auth context threading deferred.
+2. AI pricing numbers are rough estimates. Verify against billing
+   dashboards and bump PRICING_VERSION.
+3. 3 phantom tables (user_sessions, user_feedback, admin_logs) need
+   migration backfills (migration 007 candidate).
+4. DEPLOYED_AT constant in worker is manually updated. Automate
+   via GitHub Action or wrangler hook.
+5. UptimeRobot email alerts only. Install mobile app for push,
+   or switch to Better Stack if webhooks become essential.
+6. Tower Lobby (Sprint F goal) will consume /health and
+   ai_daily_stats. Matview hasn't been populated yet (runs
+   nightly at 02:00 UTC — first real data lands tonight).
+7. Sentry release tracking uses 'unknown' — Sprint E-ext: inject
+   VITE_COMMIT_SHA at build time via CF Pages env or GitHub Action.
+
+### Rule 19 (new this sprint)
+
+All database schema changes must originate from a migration file
+in supabase/migrations/NNN_*.sql. Emergency ad-hoc SQL Editor
+edits require same-session backfill. Migration 006 itself was
+the backfill for existing observability drift. See CLAUDE.md for
+full rule text.
+
+### Translation key backlog (🟡 provisional)
+
+The `errorBoundaryMessage` Lao string ("ມີບັນຫາເລັກນ້ອຍ
+ບໍ່ຕ້ອງກັງວົນ ຂໍ້ມູນຂອງທ່ານຍັງປອດໄພ") is Speaker-reviewed but
+flagged for Sprint H admin panel. Already in
+docs/decisions/I18N-PROVISIONAL-KEYS.md.
+
+### Session 14 final state
+
+- Commits: 12 (5 Sprint D close + 7 Sprint E through Item 6)
+- Production: app.phajot.com at index-BJCgj50K.js (commit 4ba9788),
+  worker api.phajot.com at v4.7.0
+- Rule 11 verified on all 4 bundle rebuilds
+- Worker deployed 4x during Sprint E: 4.4.0 → 4.5.0 → 4.6.0 → 4.7.0
+- New Sentry events received: 2 (frontend verification test), 0 worker events
+- UptimeRobot: both monitors reporting 100% uptime
+- Zero rollbacks, zero production incidents
+
+### Next session
+
+Session 15 begins with Sprint F — Tower Lobby. Sprint F's goal:
+build a minimal admin-only viewer that reads /health +
+ai_daily_stats + recent Sentry issues and displays them in a
+single dashboard. Admin access gated via RLS + is_admin flag
+(schema work). Expected scope: ~4-6 items, ~1 day.

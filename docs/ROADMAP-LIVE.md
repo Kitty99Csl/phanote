@@ -69,14 +69,20 @@
 **Progress:** ~210 strings i18n'd across 18 screens/components + 2 infra cleanups. All production-visible screens and modals done.
 **Status:** COMPLETE ✅
 
-### Sprint E — Observability (Session 14, ~Apr 28) — UNLOCKS TOWER
-- Sentry (frontend + worker)
-- AI cost tracking (ai_call_log table)
-- Worker /health enrichment
-- docs/tower/ Sentinel skeleton
-- First 2 Claude Projects (Vanguard + Osiris)
-- External uptime monitor
-**Status:** NOT STARTED
+### Sprint E — Observability (Session 14) — UNLOCKS TOWER
+
+| Item | Status | Commit | Notes |
+|---|---|---|---|
+| 1. Tower Sentinel skeleton | ✅ | 0ce4820 | 7 STATUS.md files |
+| 2. Migration 006 + Rule 19 + wrangler route | ✅ | caa4b1a | Schema drift reconciliation |
+| 3. AI call instrumentation | ✅ | e21d7d2 | 5 endpoints logged |
+| 4. /health enrichment | ✅ | 67e8859 | Worker v4.6.0 |
+| 5a. ErrorBoundary | ✅ | cbc8620 | Lo/th/en branded fallback |
+| 5b. Sentry wiring | ✅ | 4ba9788 | Worker v4.7.0, bundle BJCgj50K |
+| 6. UptimeRobot | ✅ | 6fdd24e | stats.uptimerobot.com/FbQp9qBnJr |
+| 7. Claude Projects (Vanguard + Osiris) | 🔜 | — | Immediately after docs wrap |
+
+**Status:** 7/8 SHIPPED — Item 7 (Claude Projects, Speaker UI work) in progress. Sprint formally closes when Item 7 ships.
 
 ### Sprint F — Tower Lobby (Session 15, ~May 5)
 - Create tower/ Vite app
@@ -148,7 +154,8 @@ Rejected alternatives:
 | 11 | BeOPC5lm | CEFkIaIU | Auth i18n, LoginScreen rewrite, hotfix |
 | 12 | CEFkIaIU | oPuRioVP | Dead code deletion, localStorage fix, i18n sweep (10 screens/components) |
 | 13 | oPuRioVP | dqQyI8JV | StatementScanFlow, AnalyticsScreen locale fix, PIN UX, ProUpgradeScreen, GuideScreen (largest) |
-| 14 | dqQyI8JV | B3mY1iQw | StreakModal, GoalModal, Settings reorg, EditTx toast |
+| 14 (Sprint D close) | dqQyI8JV | B3mY1iQw | StreakModal, GoalModal, Settings reorg, EditTx toast |
+| 14 (Sprint E) | B3mY1iQw | BJCgj50K | ErrorBoundary (CLP6JP-c) → Sentry wiring (BJCgj50K). Worker 4.4.0 → 4.5.0 → 4.6.0 → 4.7.0 across commits e21d7d2, 67e8859, 4ba9788. |
 
 ## The Tower Team
 | Name | Role |
