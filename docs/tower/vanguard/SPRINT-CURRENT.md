@@ -1,13 +1,12 @@
 # Current Sprint — E (Observability Floor)
 
-> **Status:** 7/8 complete · Item 7 in progress (Claude Projects setup by Speaker)
-> **Started:** 2026-04-17
-> **Est. completion:** 2026-04-17 (same session, once Item 7 ships)
+> **Status:** ✅ 8/8 complete · Sprint E closed 2026-04-17
+> **Started:** 2026-04-17 (Session 14 afternoon)
+> **Closed:** 2026-04-17 (Session 14 evening, same session)
 
 ## Sprint E — Observability Substrate (Session 14)
 
-**Status:** 7/8 complete. Item 7 in progress (Claude Projects
-setup by Speaker).
+**Status:** ✅ 8/8 complete. Closed same session it opened.
 
 **Items:**
 
@@ -18,28 +17,40 @@ setup by Speaker).
 - ✅ 5a. Frontend ErrorBoundary (cbc8620)
 - ✅ 5b. Sentry wiring (4ba9788)
 - ✅ 6. UptimeRobot + Banshee STATUS (6fdd24e)
-- 🔜 7. Vanguard + Osiris Claude Projects (Speaker UI work,
-  pending)
+- ✅ 7. Vanguard + Osiris Claude Projects (this commit)
 
-**Sprint closes when Item 7 ships.** Next sprint: F (Tower Lobby).
+**Next sprint:** F (Tower Lobby) — Session 15.
 
-## Definition of done
+## Definition of done — ACHIEVED
 
-Per ROADMAP.md Sprint E:
+Per ROADMAP.md Sprint E (all 6 gates):
 
-- [x] Sentry catching real errors from both frontend and worker
-- [x] `ai_call_log` has real rows from production AI calls
-- [x] `/health` returns enriched JSON
-- [x] `docs/tower/` skeleton exists in repo
-- [ ] Vanguard and Osiris Claude Projects set up and testing
-- [x] UptimeRobot pinging and alerting
+- [x] Sentry catching real errors (frontend + worker)
+- [x] `ai_call_log` has real rows from production (first /parse logged at $0.000087)
+- [x] `/health` returns enriched JSON (nested shape, status field, AI stats)
+- [x] `docs/tower/` skeleton exists (7 STATUS.md files + SPRINT-CURRENT.md)
+- [x] UptimeRobot pinging and alerting (2 monitors, 100% uptime, status page live)
+- [x] Vanguard and Osiris Claude Projects set up and testing (verified via CLAUDE-PROJECTS-SETUP.md artifact this commit)
 
-## Notes
+## Session 15 handoff — Sprint F
 
-- Recon surfaced 4 findings (stale wrangler route, no callClaude wrapper, no ErrorBoundary, 3 phantom tables). Items 3 and 5a address the first three.
-- Schema design adds 4 upgrades beyond original roadmap spec: `plan_tier` snapshot column, `ai_daily_stats` materialized view, 90-day retention cron, `tower_admin_reads` bundled into migration 006.
+Sprint F goal: build Tower Lobby. Minimal admin-only viewer at
+tower.phajot.com reading from the observability floor Sprint E
+shipped (ai_daily_stats matview, /health, Sentry issues,
+ai_call_log direct queries).
+
+Expected items:
+1. Create `tower/` Vite app + CF Pages project
+2. Admin gate via is_admin flag + RLS (schema change — migration 007 candidate alongside phantom-table backfill)
+3. Tower Lobby layout + navigation shell (design system match with app)
+4. Room 1: live /health display
+5. Room 2: live ai_call_log recent rows view
+6. Room 3: ai_daily_stats summary cards
+
+Expected scope: 4-6 items · 1 day · ~$3 in AI to vibe-code.
 
 ## Changelog
 
-- 2026-04-17 · Items 1-6 shipped, Item 7 in progress (Session 14)
-- 2026-04-17 · Created during Sprint E Item 1 (Session 14)
+- 2026-04-17 · Item 7 shipped, Sprint E closed 8/8 (Session 14 evening)
+- 2026-04-17 · Items 1-6 shipped, Item 7 in progress (Session 14 afternoon)
+- 2026-04-17 · Created during Sprint E Item 1 (Session 14 morning)

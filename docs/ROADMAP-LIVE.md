@@ -2,14 +2,14 @@
 
 > **Status:** Current source of truth (live roadmap, updated every session wrap-up)
 
-> Last updated: 2026-04-17 · Session 14 · Commit 14409d6 (note: next session updates this to Session 15's final commit)
+> Last updated: 2026-04-17 (Sprint E Item 7 close)
 
 ## Current State
-- **Active sprint:** D — **CLOSED** · Next: E (observability)
-- **Session:** 14 complete · Session 15 next
-- **Commits Session 14:** 5 (4 code + 1 docs)
-- **Production hash:** index-B3mY1iQw.js
-- **Next action:** Session 15 starts Sprint E (Sentry + ai_call_log + worker /health + docs/tower + 2 Claude Projects + uptime)
+- **Active sprint:** E — closing (8/8 after this commit) · Next: F (Tower Lobby)
+- **Session 14:** in progress (closing with this commit) · Session 15 next: Sprint F
+- **Production hash:** index-BJCgj50K.js (commit 4ba9788)
+- **Worker version:** 4.7.0
+- **Next action:** Session 15 starts Sprint F (Tower Lobby — minimal admin viewer consuming /health + ai_daily_stats + Sentry)
 
 ## Sprint Progress
 
