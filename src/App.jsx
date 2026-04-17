@@ -253,7 +253,12 @@ export default function App(){
       setTransactions(prev => prev.map(t => t.id === tx.id ? { ...t, id: saved.id } : t));
       await dbTrackEvent(userId, "transaction_added", { type: tx.type, currency: tx.currency, category: tx.categoryId, amount: tx.amount });
       const bonusToast = await updateStreak(userId, profile, setProfile);
-      if (bonusToast) setStreakToast(bonusToast);
+      if (bonusToast) {
+        const lang = profile?.lang || "lo";
+        let msg = t(lang, bonusToast.key);
+        for (const [k, v] of Object.entries(bonusToast.params)) msg = msg.replace(`{${k}}`, v);
+        setStreakToast(msg);
+      }
     } catch (e) {
       console.error("Save tx error:", e);
       showToast(t(profile?.lang || "en", "toastSaveError"), "error");

@@ -50,7 +50,7 @@ export const updateStreak = async (userId, currentProfile, setProfile) => {
       streakCount += 1;
       xp += XP_PER_TX;
       const bonus = STREAK_BONUS[streakCount];
-      if (bonus) { xp += bonus; bonusToast = `🔥 ${streakCount}-day streak! +${bonus} bonus XP 🎉`; }
+      if (bonus) { xp += bonus; bonusToast = { key: "streakBonusToast", params: { n: streakCount, xp: bonus } }; }
     } else {
       streakCount = 1; // reset
       xp += XP_PER_TX;

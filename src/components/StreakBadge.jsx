@@ -1,6 +1,7 @@
 // Inline streak pill shown in the home header. Tappable to open StreakModal. Extracted from App.jsx in Session 7.
 
 import { T } from "../lib/theme";
+import { t } from "../lib/i18n";
 import { getLevel, getLevelProgress } from "../lib/streak";
 
 export function StreakBadge({ profile, onPress }) {
@@ -15,11 +16,11 @@ export function StreakBadge({ profile, onPress }) {
     }}>
       <span style={{fontSize:13}}>{streakCount >= 7 ? "🔥" : "📅"}</span>
       <span style={{fontSize:12, fontWeight:700, color:T.dark, fontFamily:"'Noto Sans',sans-serif"}}>
-        {streakCount}{lang==="lo"?"ວ":lang==="th"?"ว":"d"}
+        {streakCount}{t(lang,"streakDayAbbrev")}
       </span>
       <span style={{fontSize:10, color:T.muted}}>·</span>
       <span style={{fontSize:11}}>{level.emoji}</span>
-      <span style={{fontSize:10, fontWeight:600, color:T.muted}}>Lv.{level.index}</span>
+      <span style={{fontSize:10, fontWeight:600, color:T.muted}}>{t(lang,"level")}{level.index}</span>
     </button>
   );
 }
