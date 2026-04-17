@@ -36,10 +36,87 @@
 body {
   margin: 0;
   font-family: var(--font-sans);
-  background: var(--color-slate-900);
+  background: radial-gradient(ellipse at top right, #111825 0%, #0a0e13 55%, #050709 100%), var(--color-slate-900);
+  background-attachment: fixed;
   color: var(--color-slate-100);
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
+}
+
+/* Film-grain noise overlay — inline SVG, ~3% opacity */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+}
+
+/* Ensure app content renders above the noise layer */
+#root {
+  position: relative;
+  z-index: 2;
+}
+
+/* Main content area: vignette + atmospheric warm-top glow. Overrides Tailwind bg-slate-900 */
+main.flex-1 {
+  background:
+    radial-gradient(ellipse at 50% 0%, transparent 40%, rgba(0,0,0,0.4) 100%),
+    radial-gradient(ellipse at top right, #111825 0%, #0a0e13 55%, #050709 100%);
+  background-attachment: fixed;
+  position: relative;
+}
+
+/* Sidebar depth gradient — heavier at top, deeper black at bottom */
+aside.w-60 {
+  background: linear-gradient(180deg, #0a0a0f 0%, #06090d 50%, #030507 100%);
+}
+
+/* Pulse on .bg-success (Field Report green dot) */
+@keyframes ember-pulse {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+  }
+  50% {
+    opacity: 0.6;
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+  }
+}
+
+.bg-success {
+  animation: ember-pulse 2.4s ease-in-out infinite;
+}
+
+/* Route-enter fade-up on room content */
+@keyframes room-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+main.flex-1 > div {
+  animation: room-enter 0.4s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bg-success {
+    animation: none;
+  }
+  main.flex-1 > div {
+    animation: none;
+  }
 }
 
 /* Utility: Destiny-style all-caps spaced labels */
