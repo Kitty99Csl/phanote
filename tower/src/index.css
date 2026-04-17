@@ -1,0 +1,35 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sarabun:wght@300;400;500;600;700&family=Noto+Sans+Lao:wght@400;500;600;700&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  /* Celadon palette — mirrors main app src/index.css */
+  --color-celadon-50: #F7FCF5;
+  --color-celadon-100: #E9FFDB;
+  --color-celadon-200: #C5EFB2;
+  --color-celadon-300: #ACE1AF;
+  --color-celadon-400: #8BD48F;
+  --color-celadon-500: #5aae5f;
+  --color-celadon-600: #3d8a42;
+  --color-celadon-700: #1a2e1a;
+
+  /* Ink (text) palette */
+  --color-ink-900: #1a2e1a;
+  --color-ink-700: #5a7a5a;
+  --color-ink-500: #96b396;
+
+  /* Fontstack match with main app */
+  --font-sans: 'Sarabun', 'Noto Sans Lao', system-ui, sans-serif;
+  --font-display: 'Plus Jakarta Sans', 'Sarabun', 'Noto Sans Lao', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6, .font-display {
+  font-family: var(--font-display);
+}
