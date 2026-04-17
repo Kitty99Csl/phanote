@@ -1,5 +1,5 @@
 /**
- * PHAJOT — Main API Worker v4.4.0
+ * PHAJOT — Main API Worker v4.5.0
  * Domains: api.phanote.com (legacy), api.phajot.com
  *
  * /parse  → Gemini 2.5 Flash (best Lao/Thai text understanding)
@@ -11,7 +11,14 @@
  * - v4.2: Added AI kill switch (Option A — fail safe)
  *         Env vars: AI_ENABLED, ADVISOR_ENABLED, OCR_ENABLED
  *         Missing or any value !== "true" means DISABLED.
+ * Session 14 changes:
+ * - v4.5: AI instrumentation — every call logs to public.ai_call_log
+ *         via Supabase REST (service_role, fire-and-forget).
+ *         callClaude() wrapper added, callGemini refactored to
+ *         consistent shape, logAICall + classifyError helpers added.
  */
+
+import { computeCostUsd, PRICING_VERSION } from './lib/ai-costs.js';
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -238,13 +245,142 @@ OUTPUT FORMAT (JSON only, no markdown):
 Return ONLY valid JSON. No markdown fences. No commentary.`;
 
 // ─────────────────────────────────────────────
+// Wraps Gemini API calls. Returns {ok, data, duration_ms, tokens_in, tokens_out}
+// on success; {ok:false, status, duration_ms, error, tokens_in:0, tokens_out:0}
+// on failure. Token counts pulled from data.usageMetadata when available.
 const callGemini = async (env, payload) => {
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${env.GEMINI_API_KEY}`,
-    { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }
-  );
-  return res.json();
+  const start = Date.now();
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${env.GEMINI_API_KEY}`,
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }
+    );
+    const data = await res.json();
+    const duration_ms = Date.now() - start;
+    if (!res.ok || data.error) {
+      return {
+        ok: false,
+        status: res.status,
+        duration_ms,
+        error: data?.error?.message || `HTTP ${res.status}`,
+        tokens_in: 0,
+        tokens_out: 0,
+      };
+    }
+    return {
+      ok: true,
+      data,
+      duration_ms,
+      tokens_in: data?.usageMetadata?.promptTokenCount || 0,
+      tokens_out: data?.usageMetadata?.candidatesTokenCount || 0,
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      status: 0,
+      duration_ms: Date.now() - start,
+      error: err?.message || 'network',
+      tokens_in: 0,
+      tokens_out: 0,
+    };
+  }
 };
+
+// Wraps Anthropic Claude API calls. Returns same shape as callGemini.
+async function callClaude(env, payload) {
+  const start = Date.now();
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    const duration_ms = Date.now() - start;
+    if (!res.ok || data.error) {
+      return {
+        ok: false,
+        status: res.status,
+        duration_ms,
+        error: data?.error?.message || `HTTP ${res.status}`,
+        tokens_in: 0,
+        tokens_out: 0,
+      };
+    }
+    return {
+      ok: true,
+      data,
+      duration_ms,
+      tokens_in: data?.usage?.input_tokens || 0,
+      tokens_out: data?.usage?.output_tokens || 0,
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      status: 0,
+      duration_ms: Date.now() - start,
+      error: err?.message || 'network',
+      tokens_in: 0,
+      tokens_out: 0,
+    };
+  }
+}
+
+// Map HTTP status + error message to error_class enum
+// (matches ai_call_log_error_class_check constraint).
+function classifyError(status, errorMsg) {
+  if (status === 429) return 'rate_limit';
+  if (status === 408 || status === 504) return 'timeout';
+  if (status >= 500 && status < 600) return 'provider_5xx';
+  if (status >= 400 && status < 500) return 'provider_4xx';
+  if (status === 0) return 'network';
+  if (errorMsg && /timeout|timed out/i.test(errorMsg)) return 'timeout';
+  if (errorMsg && /parse/i.test(errorMsg)) return 'parse_fail';
+  return 'other';
+}
+
+// Insert one row into public.ai_call_log via Supabase REST.
+// Fire-and-forget: errors logged to console but never thrown
+// back to the caller. Failure to log MUST NOT affect the AI
+// response returned to the user.
+async function logAICall(env, ctx, row) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
+    // Defensive: missing config = silent skip, not crash
+    return;
+  }
+  const insertPromise = fetch(
+    `${env.SUPABASE_URL}/rest/v1/ai_call_log`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': env.SUPABASE_SERVICE_ROLE_KEY,
+        'Authorization': `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+        'Prefer': 'return=minimal',
+      },
+      body: JSON.stringify(row),
+    }
+  ).then(async (res) => {
+    if (!res.ok) {
+      const txt = await res.text().catch(() => '');
+      // SECURITY: only log status code + safe error text fragment.
+      // NEVER log the row body (may contain PII like raw_input)
+      // or the auth header (would leak service_role key).
+      console.error('ai_call_log insert failed:', res.status, txt.slice(0, 200));
+    }
+  }).catch((err) => {
+    console.error('ai_call_log insert errored:', err?.message || 'unknown');
+  });
+
+  if (ctx && typeof ctx.waitUntil === 'function') {
+    ctx.waitUntil(insertPromise);
+  }
+  // If ctx unavailable, the promise fires without keep-alive guarantee
+}
 
 // ─── AMOUNT SAFETY FIX ───────────────────────────────────────────
 // Lao receipts use . as thousands separator: 573.000 means 573000
@@ -368,7 +504,7 @@ function computeWrapStats(transactions, prevMonthExpense, month) {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
 
     const url = new URL(request.url);
@@ -384,7 +520,7 @@ export default {
 
     if (url.pathname === "/" || url.pathname === "/health") {
       return Response.json({
-        status: "ok", service: "Phajot API", version: "4.4.0",
+        status: "ok", service: "Phajot API", version: "4.5.0",
         parse: "gemini-2.5-flash", advise: "claude-haiku-4-5", ocr: "gemini-2.5-flash-vision", monthly_report: "claude-haiku-4-5", parse_statement: "gemini-2.5-flash-vision",
         routes: ["/parse", "/advise", "/ocr", "/monthly-report", "/parse-statement"],
         features: ["rate_limiting", "kill_switch"],
@@ -410,13 +546,35 @@ export default {
         const text = body.text || "";
         if (!text.trim()) return Response.json({ error: "Empty input" }, { status: 400, headers: CORS });
 
-        const data = await callGemini(env, {
+        const result = await callGemini(env, {
           system_instruction: { parts: [{ text: PARSE_SYSTEM }] },
           contents: [{ parts: [{ text }] }],
           generationConfig: { response_mime_type: "application/json", temperature: 0.1, maxOutputTokens: 1024 },
         });
 
-        const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+        // TODO Sprint E-ext: thread user_id + plan_tier from frontend auth context
+        logAICall(env, ctx, {
+          user_id: null,
+          plan_tier: 'free',
+          endpoint: '/parse',
+          provider: 'gemini',
+          model: 'gemini-2.5-flash',
+          status: result.ok ? 'success' : 'error',
+          duration_ms: result.duration_ms,
+          tokens_in: result.tokens_in,
+          tokens_out: result.tokens_out,
+          cost_usd: computeCostUsd('gemini-2.5-flash', result.tokens_in, result.tokens_out),
+          error_class: result.ok ? null : classifyError(result.status, result.error),
+          error_message: result.ok ? null : (result.error || '').slice(0, 500),
+          metadata: { pricing_version: PRICING_VERSION, local_parse_hit: false, from_cache: false },
+        });
+
+        if (!result.ok) {
+          return Response.json({ amount: 0, currency: "LAK", type: "expense", category: "other",
+            description: "", confidence: 0.3, model: "fallback" }, { headers: CORS });
+        }
+
+        const raw = result.data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
         const parsed = JSON.parse(raw);
         return Response.json({ ...parsed, model: "gemini-2.5-flash" }, { headers: CORS });
 
@@ -467,24 +625,32 @@ INSTRUCTIONS:
 - Keep response under 120 words — concise and actionable.
 - Use 1-2 emojis max. If data is insufficient, say so honestly.`;
 
-        const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-api-key": env.ANTHROPIC_API_KEY,
-            "anthropic-version": "2023-06-01",
-          },
-          body: JSON.stringify({
-            model: "claude-haiku-4-5",
-            max_tokens: 1024,
-            system: systemPrompt,
-            messages: [{ role: "user", content: question }],
-          }),
+        const result = await callClaude(env, {
+          model: "claude-haiku-4-5",
+          max_tokens: 1024,
+          system: systemPrompt,
+          messages: [{ role: "user", content: question }],
         });
 
-        const data = await claudeRes.json();
-        if (data.error) return Response.json({ error: data.error.message }, { status: 500, headers: CORS });
-        const reply = data?.content?.[0]?.text || "I couldn't generate a response. Please try again.";
+        // TODO Sprint E-ext: thread user_id + plan_tier from frontend auth context
+        logAICall(env, ctx, {
+          user_id: null,
+          plan_tier: 'free',
+          endpoint: '/advise',
+          provider: 'anthropic',
+          model: 'claude-haiku-4-5',
+          status: result.ok ? 'success' : 'error',
+          duration_ms: result.duration_ms,
+          tokens_in: result.tokens_in,
+          tokens_out: result.tokens_out,
+          cost_usd: computeCostUsd('claude-haiku-4-5', result.tokens_in, result.tokens_out),
+          error_class: result.ok ? null : classifyError(result.status, result.error),
+          error_message: result.ok ? null : (result.error || '').slice(0, 500),
+          metadata: { pricing_version: PRICING_VERSION, message_count: 1, context_tx_count: recentTransactions.length },
+        });
+
+        if (!result.ok) return Response.json({ error: result.error }, { status: 500, headers: CORS });
+        const reply = result.data?.content?.[0]?.text || "I couldn't generate a response. Please try again.";
         return Response.json({ reply }, { headers: CORS });
 
       } catch (e) {
@@ -532,7 +698,7 @@ Rules:
 - description = merchant name max 30 chars
 - items = line items only, no subtotals/tax, max 12, amounts as integers`;
 
-        const data = await callGemini(env, {
+        const result = await callGemini(env, {
           contents: [{
             parts: [
               { inline_data: { mime_type: mimeType, data: imageBase64 } },
@@ -542,7 +708,25 @@ Rules:
           generationConfig: { temperature: 0, maxOutputTokens: 4096 },
         });
 
-        if (data.error) return Response.json({ error: data.error.message || "Gemini error", detail: JSON.stringify(data.error) }, { status: 500, headers: CORS });
+        // TODO Sprint E-ext: thread user_id + plan_tier from frontend auth context
+        logAICall(env, ctx, {
+          user_id: null,
+          plan_tier: 'free',
+          endpoint: '/ocr',
+          provider: 'gemini',
+          model: 'gemini-2.5-flash',
+          status: result.ok ? 'success' : 'error',
+          duration_ms: result.duration_ms,
+          tokens_in: result.tokens_in,
+          tokens_out: result.tokens_out,
+          cost_usd: computeCostUsd('gemini-2.5-flash', result.tokens_in, result.tokens_out),
+          error_class: result.ok ? null : classifyError(result.status, result.error),
+          error_message: result.ok ? null : (result.error || '').slice(0, 500),
+          metadata: { pricing_version: PRICING_VERSION, image_count: 1 },
+        });
+
+        if (!result.ok) return Response.json({ error: result.error || "Gemini error" }, { status: 500, headers: CORS });
+        const data = result.data;
         if (!data.candidates?.length) return Response.json({ error: "Could not read receipt", detail: JSON.stringify(data).slice(0,200) }, { status: 422, headers: CORS });
 
         const raw = (data.candidates?.[0]?.content?.parts?.[0]?.text || "").trim();
@@ -615,7 +799,7 @@ Rules:
           return { inline_data: { mime_type: mime, data: cleaned } };
         });
 
-        const data = await callGemini(env, {
+        const result = await callGemini(env, {
           contents: [{
             parts: [
               ...imageParts,
@@ -628,6 +812,26 @@ Rules:
             response_mime_type: "application/json",
           },
         });
+
+        // TODO Sprint E-ext: thread user_id + plan_tier from frontend auth context
+        logAICall(env, ctx, {
+          user_id: null,
+          plan_tier: 'free',
+          endpoint: '/parse-statement',
+          provider: 'gemini',
+          model: 'gemini-2.5-flash',
+          status: result.ok ? 'success' : 'error',
+          duration_ms: result.duration_ms,
+          tokens_in: result.tokens_in,
+          tokens_out: result.tokens_out,
+          cost_usd: computeCostUsd('gemini-2.5-flash', result.tokens_in, result.tokens_out),
+          error_class: result.ok ? null : classifyError(result.status, result.error),
+          error_message: result.ok ? null : (result.error || '').slice(0, 500),
+          metadata: { pricing_version: PRICING_VERSION, image_count: images.length, multi_page: images.length > 1 },
+        });
+
+        if (!result.ok) return Response.json({ error: result.error || "Gemini error" }, { status: 502, headers: CORS });
+        const data = result.data;
 
         // Extract response text
         const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
@@ -749,28 +953,37 @@ Bad (never do this):
 === OUTPUT ===
 Return ONLY the narrative text. No JSON, no markdown, no headers.`;
 
-        const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-api-key": env.ANTHROPIC_API_KEY,
-            "anthropic-version": "2023-06-01",
-          },
-          body: JSON.stringify({
-            model: "claude-haiku-4-5",
-            max_tokens: 1024,
-            system: systemPrompt,
-            messages: [{ role: "user", content: `Generate the monthly wrap narrative for ${month}.` }],
-          }),
+        const result = await callClaude(env, {
+          model: "claude-haiku-4-5",
+          max_tokens: 1024,
+          system: systemPrompt,
+          messages: [{ role: "user", content: `Generate the monthly wrap narrative for ${month}.` }],
         });
 
-        const data = await claudeRes.json();
-        if (data.error) {
+        // TODO Sprint E-ext: thread plan_tier from frontend auth context
+        // (user_id IS available from request body for this endpoint)
+        logAICall(env, ctx, {
+          user_id: user_id || null,
+          plan_tier: 'free',
+          endpoint: '/monthly-report',
+          provider: 'anthropic',
+          model: 'claude-haiku-4-5',
+          status: result.ok ? 'success' : 'error',
+          duration_ms: result.duration_ms,
+          tokens_in: result.tokens_in,
+          tokens_out: result.tokens_out,
+          cost_usd: computeCostUsd('claude-haiku-4-5', result.tokens_in, result.tokens_out),
+          error_class: result.ok ? null : classifyError(result.status, result.error),
+          error_message: result.ok ? null : (result.error || '').slice(0, 500),
+          metadata: { pricing_version: PRICING_VERSION, month_covered: month, tx_count: transactions.length },
+        });
+
+        if (!result.ok) {
           // Partial success: return stats even if narrative fails
-          return Response.json({ narrative: null, error: "narrative_failed", detail: data.error.message, stats, cached: false }, { status: 200, headers: CORS });
+          return Response.json({ narrative: null, error: "narrative_failed", detail: result.error, stats, cached: false }, { status: 200, headers: CORS });
         }
 
-        const narrative = data?.content?.[0]?.text || null;
+        const narrative = result.data?.content?.[0]?.text || null;
         if (!narrative) {
           return Response.json({ narrative: null, error: "empty_narrative", stats, cached: false }, { status: 200, headers: CORS });
         }
