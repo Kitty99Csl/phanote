@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import TacticalPlaceholder from '../components/TacticalPlaceholder'
 
 export default function AICalls() {
   useEffect(() => {
@@ -18,30 +19,13 @@ export default function AICalls() {
         Live feed of AI parse, OCR, advise activity across all worker endpoints.
       </p>
 
-      <PlaceholderPanel
-        kicker="Incoming"
+      <TacticalPlaceholder
+        code="A-02"
         title="Coming Session 16 · Item 5"
-        body="Will render live view of ai_call_log rows — endpoint, provider, model, status, duration, tokens, cost. Filterable by endpoint and status. Shows last 100 calls by default."
+        description="Will render live view of ai_call_log rows — endpoint, provider, model, status, duration, tokens, cost. Filterable by endpoint and status. Shows last 100 calls by default."
+        source="ai_call_log"
+        state="awaiting room wiring"
       />
-    </div>
-  )
-}
-
-function PlaceholderPanel({ kicker, title, body }) {
-  return (
-    <div className="bg-slate-800 border border-slate-700 p-8 relative">
-      <div className="absolute top-0 right-0 w-0 h-0 border-l-[16px] border-l-transparent border-t-[16px] border-t-ember-500/60"></div>
-      <div className="text-center">
-        <div className="text-[10px] tracking-[0.3em] text-ember-500 uppercase font-bold mb-3">
-          {kicker}
-        </div>
-        <h2 className="text-lg font-semibold text-slate-50 mb-3 uppercase tracking-wide">
-          {title}
-        </h2>
-        <p className="text-[13px] text-slate-400 max-w-md mx-auto leading-relaxed">
-          {body}
-        </p>
-      </div>
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import StatusChip from '../components/StatusChip'
 
 export default function Lobby() {
   useEffect(() => {
@@ -13,37 +14,52 @@ export default function Lobby() {
         <div className="text-[10px] tracking-[0.35em] text-ember-500 uppercase font-bold">Director</div>
       </div>
       <h1 className="text-2xl md:text-3xl font-bold text-slate-50 mb-2 uppercase tracking-tight">
-        Welcome Back, Guardian
+        System Online, Speaker
       </h1>
       <p className="text-[13px] text-slate-400 mb-8 tracking-wide italic">
         — Phajot watches your money. Tower watches Phajot. —
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-        <LobbyCard
+        <ModuleCard
           label="System Health"
-          value="NOMINAL"
-          hint="All dependencies green"
+          code="H-01"
+          readout="NOMINAL"
+          status="nominal"
+          body="All dependencies green"
+          metadata="Last sync · standby"
           to="/health"
         />
-        <LobbyCard
+        <ModuleCard
           label="AI Activity"
-          value={<span>0<span className="text-slate-500 text-sm ml-1.5 tracking-wider">calls/hr</span></span>}
-          hint="Quiet period"
+          code="A-02"
+          readout={<span>0<span className="text-slate-500 text-sm ml-1.5 tracking-wider">calls/hr</span></span>}
+          status="standby"
+          body="Quiet period"
+          metadata="Source · ai_call_log"
           to="/ai-calls"
         />
-        <LobbyCard
+        <ModuleCard
           label="Reports"
-          value="PENDING"
-          hint="Matview refresh 02:00 UTC"
+          code="D-03"
+          readout="PENDING"
+          status="standby"
+          body="Matview refresh 02:00 UTC"
+          metadata="Source · ai_daily_stats"
           to="/daily-stats"
         />
       </div>
 
       <div className="bg-slate-950 border border-slate-700 p-5">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-1.5 h-1.5 bg-success rounded-full"></div>
-          <div className="text-[10px] tracking-[0.3em] text-slate-300 uppercase font-semibold">Field Report</div>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <div
+              className="w-1.5 h-1.5 rounded-full status-pulse"
+              style={{ backgroundColor: 'var(--color-status-nominal)' }}
+            ></div>
+            <div className="text-[10px] tracking-[0.3em] text-slate-300 uppercase font-semibold">Field Report</div>
+          </div>
+          <StatusChip status="nominal">Active</StatusChip>
         </div>
         <div className="text-[12px] text-slate-100 leading-loose space-y-1">
           <div>▸ Sprint F in progress · Session 15</div>
@@ -55,7 +71,7 @@ export default function Lobby() {
   )
 }
 
-function LobbyCard({ label, value, hint, to }) {
+function ModuleCard({ label, code, readout, status, body, metadata, to }) {
   return (
     <Link
       to={to}
@@ -63,14 +79,28 @@ function LobbyCard({ label, value, hint, to }) {
     >
       <div className="absolute top-0 right-0 w-0 h-0 border-l-[12px] border-l-transparent border-t-[12px] border-t-ember-500/60 group-hover:border-t-ember-500 transition-colors"></div>
 
-      <div className="text-[10px] tracking-[0.2em] text-slate-400 uppercase font-semibold mb-2">
-        {label}
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-[10px] tracking-[0.2em] text-slate-400 uppercase font-semibold">
+          {label}
+        </div>
+        <div className="text-[9px] tracking-[0.15em] text-slate-600 font-mono uppercase">
+          Module {code}
+        </div>
       </div>
-      <div className="text-2xl font-semibold text-slate-50 tracking-tight">
-        {value}
+
+      <div className="text-2xl font-semibold text-slate-50 tracking-tight mb-1">
+        {readout}
       </div>
-      <div className="text-[10px] tracking-[0.1em] text-slate-500 uppercase mt-1.5">
-        {hint}
+
+      <div className="text-[11px] text-slate-500 mb-3">
+        {body}
+      </div>
+
+      <div className="pt-3 border-t border-slate-700/50 flex items-center justify-between">
+        <div className="text-[9px] tracking-[0.1em] text-slate-600 uppercase font-mono">
+          {metadata}
+        </div>
+        <StatusChip status={status}>{status}</StatusChip>
       </div>
     </Link>
   )

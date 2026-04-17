@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import TacticalPlaceholder from '../components/TacticalPlaceholder'
 
 export default function DailyStats() {
   useEffect(() => {
@@ -18,30 +19,13 @@ export default function DailyStats() {
         Daily aggregates of AI cost, call volume, error rates, and p95 durations.
       </p>
 
-      <PlaceholderPanel
-        kicker="Incoming"
+      <TacticalPlaceholder
+        code="D-03"
         title="Coming Session 16 · Item 6"
-        body="Will render ai_daily_stats matview rows as summary cards: total calls per day, cost, error rate, p95 duration per endpoint/provider. Trend chart over last 30 days."
+        description="Will render ai_daily_stats matview rows as summary cards: total calls per day, cost, error rate, p95 duration per endpoint/provider. Trend chart over last 30 days."
+        source="ai_daily_stats (matview)"
+        state="awaiting room wiring"
       />
-    </div>
-  )
-}
-
-function PlaceholderPanel({ kicker, title, body }) {
-  return (
-    <div className="bg-slate-800 border border-slate-700 p-8 relative">
-      <div className="absolute top-0 right-0 w-0 h-0 border-l-[16px] border-l-transparent border-t-[16px] border-t-ember-500/60"></div>
-      <div className="text-center">
-        <div className="text-[10px] tracking-[0.3em] text-ember-500 uppercase font-bold mb-3">
-          {kicker}
-        </div>
-        <h2 className="text-lg font-semibold text-slate-50 mb-3 uppercase tracking-wide">
-          {title}
-        </h2>
-        <p className="text-[13px] text-slate-400 max-w-md mx-auto leading-relaxed">
-          {body}
-        </p>
-      </div>
     </div>
   )
 }

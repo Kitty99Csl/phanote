@@ -1,11 +1,22 @@
 import { Outlet } from 'react-router-dom'
 import NavItem from '../components/NavItem'
+import HeaderStrip from '../components/HeaderStrip'
 
-const NAV_ITEMS = [
-  { path: '/', label: 'Lobby', subtitle: 'Director' },
-  { path: '/health', label: 'Health', subtitle: 'Systems' },
-  { path: '/ai-calls', label: 'AI Calls', subtitle: 'Activity' },
-  { path: '/daily-stats', label: 'Daily Stats', subtitle: 'Reports' },
+const NAV_GROUPS = [
+  {
+    label: 'Operations',
+    items: [
+      { path: '/', label: 'Lobby', subtitle: 'Director' },
+      { path: '/health', label: 'Health', subtitle: 'Systems' },
+    ],
+  },
+  {
+    label: 'Reports',
+    items: [
+      { path: '/ai-calls', label: 'AI Calls', subtitle: 'Activity' },
+      { path: '/daily-stats', label: 'Daily Stats', subtitle: 'Reports' },
+    ],
+  },
 ]
 
 export default function ShellLayout() {
@@ -25,26 +36,38 @@ export default function ShellLayout() {
           </div>
         </div>
 
-        <nav className="flex-1 py-4 px-3 space-y-0.5">
-          {NAV_ITEMS.map(item => (
-            <NavItem
-              key={item.path}
-              path={item.path}
-              label={item.label}
-              subtitle={item.subtitle}
-            />
+        <nav className="flex-1 py-4">
+          {NAV_GROUPS.map((group, idx) => (
+            <div key={group.label} className={idx > 0 ? 'mt-6' : ''}>
+              <div className="px-6 mb-2 text-[9px] tracking-[0.3em] text-slate-600 uppercase font-bold">
+                {group.label}
+              </div>
+              <div className="px-3 space-y-0.5">
+                {group.items.map(item => (
+                  <NavItem
+                    key={item.path}
+                    path={item.path}
+                    label={item.label}
+                    subtitle={item.subtitle}
+                  />
+                ))}
+              </div>
+            </div>
           ))}
         </nav>
 
         <div className="p-4 border-t border-slate-700">
           <div className="text-[9px] tracking-[0.2em] text-slate-500 uppercase font-semibold">Guardian</div>
           <div className="text-[11px] text-slate-100 mt-1 font-medium">Speaker</div>
-          <div className="text-[9px] text-slate-600 mt-2 font-mono tracking-wider">v0.2.0 // BUILD 8DF</div>
+          <div className="text-[9px] text-slate-600 mt-2 font-mono tracking-wider">v0.2.0 // BUILD 51E</div>
         </div>
       </aside>
 
-      <main className="flex-1 overflow-auto bg-slate-900">
-        <Outlet />
+      <main className="flex-1 overflow-auto flex flex-col">
+        <HeaderStrip />
+        <div className="flex-1 overflow-auto">
+          <Outlet />
+        </div>
       </main>
     </div>
   )

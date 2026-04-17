@@ -22,10 +22,20 @@
   --color-ember-400: #f7b84d;
   --color-ember-300: #fac77a;
 
+  /* Celadon — Phajot DNA — used ONLY for "nominal" / healthy status */
+  --color-celadon-400: #8BD48F;
+  --color-celadon-500: #5aae5f;
+
   /* Semantic status */
   --color-success: #10b981;
   --color-warning: #f59e0b;
   --color-danger:  #ef4444;
+
+  /* Semantic status tokens */
+  --color-status-nominal: #8BD48F;
+  --color-status-caution: #f5a623;
+  --color-status-critical: #ef4444;
+  --color-status-standby: #6b7280;
 
   /* Fontstack — Helvetica/Inter first for Destiny feel */
   --font-sans: 'Inter', 'Helvetica Neue', 'Sarabun', 'Noto Sans Lao', system-ui, sans-serif;
@@ -139,4 +149,15 @@ main.flex-1 > div {
 /* Corner cut on cards — clip-path */
 @utility corner-cut {
   clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
+}
+
+/* Status pulse — shared animation for status dots */
+@utility status-pulse {
+  animation: ember-pulse 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status-pulse {
+    animation: none;
+  }
 }
