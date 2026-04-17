@@ -18,10 +18,11 @@
  *         consistent shape, logAICall + classifyError helpers added.
  */
 
+import * as Sentry from '@sentry/cloudflare';
 import { computeCostUsd, PRICING_VERSION } from './lib/ai-costs.js';
 
 // Worker version
-const WORKER_VERSION = '4.6.0';
+const WORKER_VERSION = '4.7.0';
 
 // Build-time constant. Updated on every deploy.
 // Future (Sprint E-ext): a deploy hook will replace the
@@ -697,7 +698,7 @@ function computeWrapStats(transactions, prevMonthExpense, month) {
   };
 }
 
-export default {
+const handler = {
   async fetch(request, env, ctx) {
     if (request.method === "OPTIONS") return new Response(null, { headers: CORS });
 
@@ -1222,3 +1223,21 @@ Return ONLY the narrative text. No JSON, no markdown, no headers.`;
     return new Response("Not found", { status: 404, headers: CORS });
   },
 };
+
+// Wrap with Sentry. If env.SENTRY_DSN is missing, withSentry is a
+// safe no-op. The inner handler retains all existing behavior:
+// /health, logAICall, callClaude/callGemini, rate limiting, etc.
+export default Sentry.withSentry(
+  (env) => ({
+    dsn: env.SENTRY_DSN,
+    environment: 'production',
+    sendDefaultPii: false,
+    tracesSampleRate: 0.1,
+    release: WORKER_VERSION,
+    ignoreErrors: [
+      /rate limit/i,
+      /429/,
+    ],
+  }),
+  handler
+);

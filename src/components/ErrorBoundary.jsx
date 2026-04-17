@@ -1,4 +1,5 @@
 import { Component } from "react";
+import * as Sentry from "@sentry/react";
 import { t } from "../lib/i18n";
 
 // React ErrorBoundary
@@ -34,7 +35,6 @@ export class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    // Console only this commit. Sprint E 5b wires Sentry here.
     // SECURITY: do NOT log user input or PII; the error message +
     // component stack are usually safe but be cautious.
     console.error("ErrorBoundary caught:", {
@@ -44,9 +44,19 @@ export class ErrorBoundary extends Component {
       componentStack: errorInfo?.componentStack,
     });
 
-    // TODO Sprint E 5b: Sentry.captureException(error, {
-    //   contexts: { errorBoundary: { code, componentStack } }
-    // });
+    // Report to Sentry with Phajot context. If Sentry.init didn't
+    // run (no DSN configured), captureException is a no-op by design.
+    Sentry.captureException(error, {
+      contexts: {
+        errorBoundary: {
+          code: this.state.errorCode,
+          componentStack: errorInfo?.componentStack,
+        },
+      },
+      tags: {
+        boundary: 'root',
+      },
+    });
   }
 
   handleReload = () => {
