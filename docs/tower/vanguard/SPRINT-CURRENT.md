@@ -1,56 +1,47 @@
-# Current Sprint — E (Observability Floor)
+# Current Sprint — F (Tower Lobby)
 
-> **Status:** ✅ 8/8 complete · Sprint E closed 2026-04-17
-> **Started:** 2026-04-17 (Session 14 afternoon)
-> **Closed:** 2026-04-17 (Session 14 evening, same session)
+> **Status:** In progress · Session 15 partial (Items 1 + 3 only)
+> **Started:** 2026-04-18 (Session 15 evening)
+> **Target close:** Session 16
 
-## Sprint E — Observability Substrate (Session 14)
+## Sprint F — Tower Lobby (Session 15-16)
 
-**Status:** ✅ 8/8 complete. Closed same session it opened.
+**Goal:** First operator surface live at tower.phajot.com —
+admin-gated, Lobby with 3 rooms rendering real observability data
+from Sprint E's floor.
 
 **Items:**
 
-- ✅ 1. Tower Sentinel skeleton (0ce4820)
-- ✅ 2. Migration 006 + Rule 19 + wrangler route (caa4b1a)
-- ✅ 3. AI call instrumentation (e21d7d2)
-- ✅ 4. /health endpoint enrichment (67e8859)
-- ✅ 5a. Frontend ErrorBoundary (cbc8620)
-- ✅ 5b. Sentry wiring (4ba9788)
-- ✅ 6. UptimeRobot + Banshee STATUS (6fdd24e)
-- ✅ 7. Vanguard + Osiris Claude Projects (this commit)
+- 🔜 1. Create `tower/` Vite app + CF Pages project (Session 15)
+- ⏸ 2. Admin gate via `is_admin` flag + RLS (Migration 007) —
+  Session 16
+- 🔜 3. Tower Lobby layout + nav shell (Session 15)
+- ⏸ 4. Room 1: live /health display (Session 16)
+- ⏸ 5. Room 2: live ai_call_log recent rows (Session 16)
+- ⏸ 6. Room 3: ai_daily_stats summary cards (Session 16)
 
-**Next sprint:** F (Tower Lobby) — Session 15.
+**Session 15 partial scope:** Items 1 + 3. Skeleton + nav shell,
+no auth yet, no rooms rendering real data yet. Ends with "Tower
+exists and deploys" milestone.
 
-## Definition of done — ACHIEVED
+**Session 16 completion scope:** Items 2 + 4 + 5 + 6. Admin auth,
+three rooms live.
 
-Per ROADMAP.md Sprint E (all 6 gates):
+## Definition of done (Sprint F complete criteria)
 
-- [x] Sentry catching real errors (frontend + worker)
-- [x] `ai_call_log` has real rows from production (first /parse logged at $0.000087)
-- [x] `/health` returns enriched JSON (nested shape, status field, AI stats)
-- [x] `docs/tower/` skeleton exists (7 STATUS.md files + SPRINT-CURRENT.md)
-- [x] UptimeRobot pinging and alerting (2 monitors, 100% uptime, status page live)
-- [x] Vanguard and Osiris Claude Projects set up and testing (verified via CLAUDE-PROJECTS-SETUP.md artifact this commit)
+- [ ] tower.phajot.com resolves and serves a page
+- [ ] Admin-only access via is_admin flag (Session 16)
+- [ ] Lobby nav shell matches Phajot design system
+- [ ] 3 rooms render real data from observability floor
+- [ ] Post-sync Sentinel smoke test passes (Osiris ritual)
 
-## Session 15 handoff — Sprint F
+## Session 15 pre-sprint decisions
 
-Sprint F goal: build Tower Lobby. Minimal admin-only viewer at
-tower.phajot.com reading from the observability floor Sprint E
-shipped (ai_daily_stats matview, /health, Sentry issues,
-ai_call_log direct queries).
-
-Expected items:
-1. Create `tower/` Vite app + CF Pages project
-2. Admin gate via is_admin flag + RLS (schema change — migration 007 candidate alongside phantom-table backfill)
-3. Tower Lobby layout + navigation shell (design system match with app)
-4. Room 1: live /health display
-5. Room 2: live ai_call_log recent rows view
-6. Room 3: ai_daily_stats summary cards
-
-Expected scope: 4-6 items · 1 day · ~$3 in AI to vibe-code.
+- plan_tier placeholder acceptable through Sprint F
+- Item 2 deferred to Session 16 morning for security focus
+- Rule 20 added atomically with session open (2026-04-18)
 
 ## Changelog
 
-- 2026-04-17 · Item 7 shipped, Sprint E closed 8/8 (Session 14 evening)
-- 2026-04-17 · Items 1-6 shipped, Item 7 in progress (Session 14 afternoon)
-- 2026-04-17 · Created during Sprint E Item 1 (Session 14 morning)
+- 2026-04-18 · Sprint F opened, Session 15 partial scope locked
+- 2026-04-17 · Sprint E closed 8/8 (Session 14)
