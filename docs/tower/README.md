@@ -17,9 +17,8 @@ This folder holds the documentation, planning, and Sentinel state for **Tower**,
 ### Historical sprint plans
 
 - [`SPRINT-B-PLAN.md`](./SPRINT-B-PLAN.md) — Sprint B plan (Session 10). Historical. Sprint B shipped.
-- [`SPRINT-C-PLAN.md`](./SPRINT-C-PLAN.md) — Sprint C plan (Session 11). Historical. Sprint C shipped.
 - [`AUTH-DESIGN.md`](./AUTH-DESIGN.md) — Sprint C auth design (Session 11). Historical.
-- Sprint D + E + F — planning lived in `SPRINT-CURRENT.md` during each sprint; no separate plan docs.
+- Sprints C, D, E, F — planning lived in `SPRINT-CURRENT.md` during each sprint; no separate plan docs.
 
 ### Risks and audits
 
