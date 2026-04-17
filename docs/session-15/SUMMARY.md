@@ -58,6 +58,15 @@ Design system established:
 
 ## Open threads for Session 16
 
+Decisions for Session 16+17 were locked during Session 15 extended wrap. See [`docs/session-16/DECISIONS.md`](../session-16/DECISIONS.md) for:
+
+- Item ordering (2 first, then 4, then 5+6 in Session 17)
+- Item 2 scope boundary (gate + phantom table backfill, not full admin infrastructure)
+- Room designs (Item 4: module cards · Item 5: filtered table · Item 6: cards + 14-day table, no chart)
+- Session 16 vs 17 split (16 ships items 2+4, 17 ships 5+6)
+
+Session 16 opening ritual: sync Sentinels, read DECISIONS.md, consult Vanguard, then execute.
+
 ### Sprint F items remaining
 | Item | Status | Notes |
 |---|---|---|
