@@ -2,7 +2,7 @@
 
 ### Cross-Check Between the Phanote QA & Product Audit PDFs and Current State · Version 1.0
 
-> This document cross-references the findings from two external audits against Phajot's current state as of Session 9 (April 14, 2026) and assigns each to a specific sprint.
+> This document cross-references the findings from two external audits against Phajot's current state as of Session 15 (April 18, 2026) — last updated post-Session-15 — and assigns each to a specific sprint.
 
 ---
 
@@ -31,16 +31,16 @@ This recommendation aligns exactly with the roadmap in `docs/tower/ROADMAP.md`. 
 |---|---|---|---|---|
 | 1 | Replace pseudo-phone-auth with safer auth model | P0 | ✅ **Resolved in Session 11** · commit `770af58` + hotfix `8be34f5` · 2026-04-16 — LoginScreen rewritten with password auth, MigrationScreen for legacy accounts, deploy-verified on phone + desktop. Old `signInWithPhone` is dead code (zero callers). See `docs/session-11/SUMMARY.md`. | ~~Sprint C~~ — **done** |
 | 2 | Fix statement import navigation end-state | P1 | 🟡 **Likely still open** — not mentioned in Session 5–9 summaries. Needs verification. | Backlog — flag for a future sprint |
-| 3 | Finish i18n — hardcoded strings in login, onboarding, settings, wallet cards, modals | P1 | 🔴 **Still open** — marked as Sprint D marathon | **Sprint D** |
+| 3 | Finish i18n — hardcoded strings in login, onboarding, settings, wallet cards, modals | P1 | ✅ **Closed Session 14** (Sprint D closed; CLAUDE.md Rule 15 enforced; 4 statementError* Thai fills completed commit `44bad73`) | ~~Sprint D~~ — **done** |
 | 4 | Centralized modal / gate patterns (Pro + guest) | P1 | ✅ **Resolved in Session 10** · commits `05f8f7d` (Sheet migration) + `b6b2598` (ConfirmSheet for Pro gate) · 2026-04-15 — 9 modals now use Sheet, zero raw-div modals remain, Pro gate uses ConfirmSheet variant="upgrade". | ~~Sprint B Priority A + Sprint K~~ — **done** |
 | 5 | Error handling for optimistic writes | P1 | ✅ **Resolved in Session 10** · commit `2e99fad` (toast system) · 2026-04-15 — 5 catch sites wired with multilingual toasts. 4 deferred sites documented in `docs/session-10/SUMMARY.md`. | ~~Sprint B Priority C~~ — **done** |
-| 6 | Analytics render-time calculations (memoization) | P2 | 🟡 **Unknown** — Session 7 extracted AnalyticsScreen but memoization status not verified | Backlog — low priority, flag for Session 15 (Engine Room work) |
-| 7 | Settings overload (control center feeling) | P2 | 🔴 **Still open** — audit recommends 5 clear sections | **Sprint D** |
+| 6 | Analytics render-time calculations (memoization) | P2 | 🟡 **Unknown** — Session 7 extracted AnalyticsScreen but memoization status not verified | Defer to Sprint G (Sessions 16–19, Engine Room). Was misallocated to Sprint F/Session 15 in v1.2 changelog; Sprint G is the correct target. |
+| 7 | Settings overload (control center feeling) | P2 | ✅ **Closed Session 14** (commit `858d3a0` — Settings reorganized from 7 sections to 5 per audit) | ~~Sprint D~~ — **done** |
 | 8 | Native `alert()` / `window.confirm()` for OCR Pro lock + delete | P1 | ✅ **Resolved in Session 10** · commit `b6b2598` · 2026-04-15 — new `ConfirmSheet` component replaces all 6 sites (5 from initial grep + 1 bare `confirm()` in StatementScanFlow that the first grep missed). 9 i18n keys added (lo/th/en). | ~~Sprint C~~ — **done ahead of schedule** |
 
 ### Summary
 
-**4 of 8 audit findings closed as of April 16, 2026.** Rows 1 (auth P0), 4 (modal/gate patterns), 5 (error handling), and 8 (native alert/confirm) all resolved across Sessions 10–11. **4 of 8 remain open**: row 2 (statement import nav, backlog), row 3 (i18n hardcoded strings, Sprint D), row 6 (analytics memoization, backlog), row 7 (settings overload, Sprint D). **Zero P0 findings remain open.** The remaining 4 are P1/P2. None require net-new engineering thinking — the fixes are understood. The roadmap in `docs/tower/ROADMAP.md` is specifically structured to close these in order.
+**6 of 8 audit findings closed as of April 18, 2026 (post-Session 15). Remaining open: row 2 (P1, statement import nav), row 6 (P2, analytics memo — deferred to Sprint G).** Rows 1 (auth P0), 3 (i18n), 4 (modal/gate patterns), 5 (error handling), 7 (settings overload), and 8 (native alert/confirm) all resolved across Sessions 10–14. **Zero P0 findings remain open.** The remaining 2 are P1/P2. None require net-new engineering thinking — the fixes are understood. The roadmap in `docs/tower/ROADMAP.md` is specifically structured to close these in order.
 
 **The audit's spirit matches the roadmap:** tighten what exists before adding anything new. Sprints B/C/D are the tightening phase.
 
@@ -110,7 +110,7 @@ The same trust deficit shows up in both layers. The same mindset fixes both.
 
 The current audits were snapshots of code before Sessions 7–9. They should be re-run:
 
-- **After Sprint D (Session 12, ~April 28)** — most P0/P1 findings should be closed by then. A fresh audit will give a clearer picture of what's actually still broken vs what was just stale-reading.
+- **After Sprint D (closed Session 14, 2026-04-17) — completed.** Next scheduled audit: post-Sprint F close (Session 16 — admin gate + rooms 1-3 rendering real data).
 - **Before Sprint K (pre-launch)** — final audit before inviting strangers.
 
 Each re-run should be done by either (a) a different auditor (GPT, Gemini, a human reviewer) or (b) the same auditor with updated code, never by the same AI that wrote the fixes.
@@ -139,3 +139,10 @@ All four of these are addressed in the roadmap (`docs/tower/ROADMAP.md`) but non
 | v1.0 | 2026-04-14 | Initial cross-check. 6 of 8 QA audit findings mapped to Sprints B/C/D. All 5 homepage findings deferred to Sprint K. Two findings (statement import, analytics memoization) flagged as needing verification. |
 | v1.1 | 2026-04-15 | Session 10: rows 4, 5, 8 closed. 3 of 8 resolved. |
 | v1.2 | 2026-04-16 | Session 11: row 1 (P0 auth) closed. 4 of 8 resolved. Zero P0 findings remain. |
+
+### v1.3 — Session 15 close (2026-04-18)
+- Row 3 flipped to ✅ closed (Sprint D i18n marathon complete Session 14)
+- Row 7 flipped to ✅ closed (Settings 7→5 reorg Session 14, commit 858d3a0)
+- Row 6 sprint reference corrected (G not F/15)
+- Summary count updated 4/8 → 6/8
+- Audit re-run schedule updated: next post-Sprint F close

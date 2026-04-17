@@ -1,43 +1,72 @@
-# 🗼 docs/tower/ — What's in this folder
+# Tower docs — index
 
-This folder is the documentation home for **Tower**, Phajot's internal operator dashboard. Everything here describes Tower's mission, roadmap, team, and execution plans.
+This folder holds the documentation, planning, and Sentinel state for **Tower**, Phajot's internal operator surface. Tower lives at `tower.phajot.com` and is built under `tower/` at the repo root. This folder is docs only.
 
-If you're new to Tower, read in this order:
+## What's here
 
-1. **`CHARTER.md`** — Start here. What Tower is, why it exists, the 7 Sentinels, the architecture, the rules.
-2. **`ROADMAP.md`** — The 6-sprint path from today to a launched Phajot monitored by Tower. Timeline, dependencies, risks.
-3. **`RISKS-FROM-AUDITS.md`** — Cross-check between external audit findings and current state. Maps each finding to a specific sprint.
-4. **`SPRINT-B-PLAN.md`** — Step-by-step plan for the next session (Session 10). Open this on the morning of Sprint B.
-5. **`AUTH-DESIGN.md`** — Replacement for Phajot's pseudo-phone-auth. The Sprint C plan.
+### Core reference
 
-## What's NOT in this folder (yet)
+- [`CHARTER.md`](./CHARTER.md) — Tower's mission and scope.
+- [`ROADMAP.md`](./ROADMAP.md) — long-range sprint plan (Sprint F through K).
+- [`design-system.md`](./design-system.md) — **v1 Tower Design System**, approved Session 15. Dark tactical UI with Phajot identity. Required reading before any Tower UI work.
 
-These will be added in future sprints:
+### Active sprint
 
-- `sentinel/STATUS.md` through `ikora/STATUS.md` — one file per Sentinel, created in Sprint E (Session 13)
-- `SPRINT-C-PLAN.md` — created at the end of Session 10
-- Tower's own code — lives in `tower/` at the repo root, not here (this folder is docs only)
-- Tower's design mocks — added during Sprint F planning
+- [`vanguard/SPRINT-CURRENT.md`](./vanguard/SPRINT-CURRENT.md) — **authoritative state of the active sprint**. What's shipped, what's pending, who's blocking what. Check here first.
 
-## Rules for editing this folder
+### Historical sprint plans
 
-- **Markdown only.** No binary files, no images in v1 (add images only when they genuinely help understanding).
-- **Every file has a changelog at the bottom.** When you change a doc, add a line to its changelog.
-- **Sentinels own their own folders.** `docs/tower/vanguard/` is written by the Vanguard Claude Project, not by humans directly. The Speaker reviews and approves.
-- **`CHARTER.md` and `ROADMAP.md` are Speaker-owned.** Only Kitty edits these. Sentinels can propose changes via their STATUS files.
+- [`SPRINT-B-PLAN.md`](./SPRINT-B-PLAN.md) — Sprint B plan (Session 10). Historical. Sprint B shipped.
+- [`SPRINT-C-PLAN.md`](./SPRINT-C-PLAN.md) — Sprint C plan (Session 11). Historical. Sprint C shipped.
+- [`AUTH-DESIGN.md`](./AUTH-DESIGN.md) — Sprint C auth design (Session 11). Historical.
+- Sprint D + E + F — planning lived in `SPRINT-CURRENT.md` during each sprint; no separate plan docs.
+
+### Risks and audits
+
+- [`../RISKS.md`](../RISKS.md) — cross-project risk register (repo-wide, not Tower-specific).
+- [`RISKS-FROM-AUDITS.md`](./RISKS-FROM-AUDITS.md) — findings from periodic product/UX audits.
+
+### Sentinel state files
+
+One folder per named Sentinel. Each has a `STATUS.md` tracking what that Sentinel is currently watching.
+
+- `vanguard/` — active sprint + planning Sentinel (in use)
+- `osiris/` — docs sync Sentinel (in use)
+- `sentinel/` — reserved
+- `banshee/` — reserved (uptime alerts)
+- `hawthorne/` — reserved
+- `iron-wolf/` — reserved
+- `ikora/` — reserved
+
+Sentinel folders were scaffolded Session 14 (Sprint E Item 1, commit 0ce4820). Vanguard and Osiris are live as Claude Projects with GitHub sync.
+
+## What's NOT in this folder
+
+- **Tower's code** — lives in `tower/` at the repo root.
+- **Current execution truth** — lives in `docs/ROADMAP-LIVE.md` at the docs root. ROADMAP-LIVE is the live commit/bundle/sprint tracker; this folder is Tower-scoped docs only.
+- **Session summaries** — live in `docs/session-{N}/SUMMARY.md`.
+
+## Required reading order
+
+When picking up Tower work cold:
+
+1. [`../ROADMAP-LIVE.md`](../ROADMAP-LIVE.md) — what state is the project in right now?
+2. [`vanguard/SPRINT-CURRENT.md`](./vanguard/SPRINT-CURRENT.md) — what's the active sprint doing?
+3. [`CHARTER.md`](./CHARTER.md) — what is Tower for?
+4. [`design-system.md`](./design-system.md) — how does Tower look?
+5. Latest `docs/session-{N}/SUMMARY.md` — what just happened?
 
 ## Quick reference
 
-| I need to... | Open this file |
+| Question | File |
 |---|---|
-| Understand what Tower is | `CHARTER.md` |
-| Know what's being built next | `ROADMAP.md` |
-| Start Session 10 tomorrow | `SPRINT-B-PLAN.md` |
-| Plan Session 11 auth work | `AUTH-DESIGN.md` |
-| See what the audits said | `RISKS-FROM-AUDITS.md` |
-| Remember who the Sentinels are | `CHARTER.md` §3.2 |
-| Find the deferred work | `ROADMAP.md` Sprint K section |
+| What's Tower for? | [`CHARTER.md`](./CHARTER.md) |
+| What's shipping right now? | [`vanguard/SPRINT-CURRENT.md`](./vanguard/SPRINT-CURRENT.md) |
+| What's the long-range plan? | [`ROADMAP.md`](./ROADMAP.md) |
+| How should Tower UI look? | [`design-system.md`](./design-system.md) |
+| What are the known risks? | [`../RISKS.md`](../RISKS.md), [`RISKS-FROM-AUDITS.md`](./RISKS-FROM-AUDITS.md) |
+| Is there a live app? | Yes — `tower.phajot.com`, gated by Cloudflare Access. |
 
 ---
 
-*"Phajot watches your money. Tower watches Phajot."* 🗼
+*Last updated: 2026-04-18 (post Session 15 close). Tower live at tower.phajot.com as of Session 15 Item 1 (commit 428ad78). Visual direction: Cosmodrome (Session 15, commits ce39de5 → 2f5faa7). Design system v1: Session 15, `design-system.md`.*

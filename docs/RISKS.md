@@ -9,7 +9,7 @@ Living document. Updated at the end of each session.
 - **MEDIUM** — quality issue, user-visible but recoverable, or latent failure mode
 - **LOW** — tech debt, nice-to-have, or documentation gap
 
-**Last updated:** 2026-04-16 (Session 12)
+**Last updated:** 2026-04-18 (post Session 15 close)
 
 ---
 
@@ -44,11 +44,11 @@ Session 9 verified RLS **manually** with an adversarial SQL test in the Supabase
 
 ### [MEDIUM] Thai translations missing for 4 statementError* keys
 **Discovered:** Session 8 Sprint A Ext fetchWithTimeout sweep
-**Status:** Unfixed — Sprint D i18n marathon (~70% done in Session 12, continues Session 13)
+**Status:** ✅ Closed Session 14. Sprint D i18n marathon completed; commit `44bad73` ("4 Thai fills") resolved the remaining statementError* keys. Sprint D marked closed per ROADMAP-LIVE.md.
 
-`statementErrorParse`, `statementErrorNetwork`, `statementErrorRateLimit`, `statementErrorTimeout` all have EN + LO entries but no TH. Thai users fall back to English via the `t()` helper's implicit fallback. This is a **pre-existing gap from Session 6** — Session 9 added one more key (`statementErrorTimeout`) following the same partial pattern.
+`statementErrorParse`, `statementErrorNetwork`, `statementErrorRateLimit`, `statementErrorTimeout` all have EN + LO entries but no TH. Thai users fall back to English via the `t()` helper's implicit fallback. This was a **pre-existing gap from Session 6** — Session 9 added one more key (`statementErrorTimeout`) following the same partial pattern.
 
-**Mitigation:** Sprint D i18n marathon. Planned, not scheduled. Low urgency because English fallback is functional, just off-brand.
+**Mitigation:** Resolved via Sprint D i18n marathon (Sessions 12–14).
 
 ---
 
@@ -56,9 +56,9 @@ Session 9 verified RLS **manually** with an adversarial SQL test in the Supabase
 
 ### [LOW] `wrangler.toml` dashboard drift
 **Discovered:** Session 9 investigation
-**Status:** Documented, not fixed
+**Status:** Likely closed. Session 14 commit `caa4b1a` (Sprint E Item 2) added `api.phajot.com/*` route to `wrangler.toml` alongside legacy `api.phanote.com/*`. Both routes live as intended during migration window. Recommend: re-verify dashboard shows both routes on next worker deploy.
 
-`api.phajot.com` route is bound via the Cloudflare dashboard, not via `wrangler.toml`. The `wrangler.toml` in the repo still has:
+`api.phajot.com` route was bound via the Cloudflare dashboard, not via `wrangler.toml`. The `wrangler.toml` in the repo used to have:
 
 ```toml
 routes = [
@@ -66,9 +66,9 @@ routes = [
 ]
 ```
 
-(legacy domain, pre-rename) while the actual production route points at `api.phajot.com`. This works because CF dashboard routes override `wrangler.toml` routes, but it means the route binding is **invisible to git**. If the dashboard state is ever lost (account rotation, accidental deletion, billing issue), the route must be manually re-attached.
+(legacy domain, pre-rename) while the actual production route pointed at `api.phajot.com`. This worked because CF dashboard routes override `wrangler.toml` routes, but meant the route binding was **invisible to git**. Session 14's Sprint E Item 2 work added the phajot.com route to `wrangler.toml` so git is source of truth.
 
-**Mitigation:** Update `wrangler.toml` to include the phajot.com route binding so git is source of truth. Low priority because the current setup is stable.
+**Mitigation:** Applied in commit `caa4b1a`. Verify on next worker deploy that dashboard and `wrangler.toml` agree.
 
 ### [LOW] Dead migrations — `categories` and `recurring_rules`
 **Discovered:** Session 9 RLS investigation
@@ -84,13 +84,13 @@ Not harmful, just noise. If recurring transactions ships in a future session (Sp
 
 ### [LOW] `profiles` `handle_new_user` trigger documentation gap
 **Discovered:** Session 9 RLS investigation
-**Status:** Documented, not verified
+**Status:** Still open. Scheduled check from Session 10 never executed. Recommended: verify in Session 16 pre-work as part of Item 2 (admin gate + Migration 007) prep work — Migration 007 will touch `profiles` table directly.
 
 The trigger that auto-creates a `profiles` row when a new `auth.users` row is inserted is **critical to the signup flow working**. It was documented in `supabase/migrations/001_profiles.sql` but we haven't queried the live trigger to confirm it still exists and matches the migration definition.
 
 If the trigger drops for any reason (manual deletion, failed migration apply), new user signups will fail silently with a 403 RLS violation: the Supabase client tries to upsert into `profiles` after signup, but there's no row yet AND no INSERT policy allows the user to create one. (Session 9's `profiles_user_access` policy with `FOR ALL` does cover INSERT now, which partially mitigates this, but the trigger is still the primary path.)
 
-**Mitigation:** Run `SELECT * FROM pg_trigger WHERE tgname = 'on_auth_user_created';` in the Supabase SQL Editor at Session 10 start to verify the trigger still exists. If it does, document in RLS-HARDENING.md as confirmed. ~30 seconds.
+**Mitigation:** Run `SELECT * FROM pg_trigger WHERE tgname = 'on_auth_user_created';` in the Supabase SQL Editor at Session 16 pre-work (Item 2 prep) to verify the trigger still exists. If it does, document in RLS-HARDENING.md as confirmed. ~30 seconds.
 
 ### [LOW] Webhook probe commit `741ae93` left in history
 **Discovered:** Session 9
@@ -165,3 +165,15 @@ New shared `ConfirmSheet` component (92 lines) built on top of the existing `She
 ### ~~[HIGH] Derived-password auth (audit P0 #1)~~
 **Resolved:** Session 11 commit `770af58` · 2026-04-16
 Phone-to-email auth trick (`{countryCode}{phone}@phanote.app` + `Ph4n0te{phone}X`) replaced with user-set password auth via `src/lib/auth.js`. LoginScreen rewritten with login/register mode toggle. Legacy accounts (10 rows with `legacy_auth=true`) see MigrationScreen on first login post-deploy — pre-fills typed password, validates, calls `migrateLegacyAccount()` to update auth.users password + clear flag. Hotfix `8be34f5` fixed PinLock gate for no-PIN users and TOKEN_REFRESHED race during migration. Deploy-verified on phone + desktop (Tests A/B/C all pass). Old `signInWithPhone` function was dead code (exported, zero callers) — deleted in Session 12 commit `932a8bc`. See `docs/session-11/SUMMARY.md`.
+
+### ~~Sprint D closed~~
+**Resolved:** Session 14 · 2026-04-17
+See `docs/ROADMAP-LIVE.md` for all associated commits (streak/goal/settings/i18n/audit work). ~210 strings i18n'd across 18 screens/components. CLAUDE.md Rule 15 (no hardcoded user-facing strings) now enforced. Settings 7→5 reorganization shipped commit `858d3a0`. 4 Thai statementError* fills shipped commit `44bad73`.
+
+### ~~Sprint E observability substrate shipped~~
+**Resolved:** Session 14 · 2026-04-17
+Sentry live (frontend + worker), `ai_call_log` instrumented across 5 endpoints, `/health` enriched with deps monitoring (Supabase ping + AI stats + status field), UptimeRobot on 5-min interval, ErrorBoundary in frontend, Rule 19 (migration files required for schema changes) enforced. Worker v4.4.0 → v4.7.0. Migration 006 backfill documented observability schema drift. See Sprint E table in `docs/ROADMAP-LIVE.md`.
+
+### ~~Tower admin surface live~~
+**Resolved:** Session 15 · 2026-04-18
+`tower.phajot.com` deployed to CF Pages (project `tower-phajot`, commit `428ad78` for app scaffold, `8df2959` for Lobby + nav shell). Gated by Cloudflare Access Zero Trust application (policy ID `782108c8-7169-438e-9088-77ffb3c49080`, "Speaker only"). Tower Design System v1 approved (`docs/tower/design-system.md`). **New risk vector introduced:** CF Access account compromise → Tower exposure. Mitigated by 24h session duration + email PIN (Zero Trust Free plan). Session 16 adds defense-in-depth via Supabase `is_admin` flag on top of CF Access.
