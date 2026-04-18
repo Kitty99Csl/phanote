@@ -2,17 +2,17 @@
 
 > **Status:** Current source of truth (live roadmap, updated every session wrap-up)
 
-> Last updated: 2026-04-19 (Session 16 close — Sprint F 50% complete)
+> Last updated: 2026-04-20 (Session 17 close — Sprint F CLOSED)
 
 ## Current State
-- **Active sprint:** F (Tower Lobby) — in progress · Session 15 shipped Items 1 + 3 + Cosmodrome · Session 16 shipped Items 2 + 4 · Session 17 ships Items 5 + 6 (Sprint F closes)
-- **Session 16:** closed this commit · Session 17 next: complete Sprint F (Items 5 + 6)
-- **Production hash (Phajot):** index-BJCgj50K.js (unchanged — main app untouched in Session 16)
-- **Tower bundle:** index-C5RzeSTp.js (Room 1 /health live) — Tower live at tower.phajot.com (3-layer gate: CF Access + Supabase login + is_admin RLS)
+- **Active sprint:** G (TBD) — standby. Sprint F closed 2026-04-20.
+- **Session 17:** closed this commit · Session 18 next: scope TBD (candidates in docs/session-17/SUMMARY.md open threads)
+- **Production hash (Phajot):** index-BJCgj50K.js (unchanged — main app untouched in Session 17)
+- **Tower bundle:** index-2zR7DkDi.js (Rooms 1/2/3 all live) — Tower fully operational at tower.phajot.com (3-layer gate: CF Access + Supabase login + is_admin RLS)
 - **Worker version:** 4.7.0
-- **Latest commit:** ca85d44 (Room 1 /health module cards — Item 4 closed; this wrap commit supersedes)
-- **Next action:** Session 17 — complete Sprint F Items 5 (ai_call_log table) + 6 (ai_daily_stats cards)
-- **Notable milestone:** Three-layer defense-in-depth live — CF Access (edge) + Supabase login (app) + is_admin RLS (database)
+- **Latest commit:** ae64f16 (Session 17 wrap / Sprint F close)
+- **Next action:** Session 18 opening per docs/session-ritual.md; scope to be locked from Session 17 SUMMARY candidates
+- **Notable milestone:** Sprint F CLOSED — Tower has live admin-gated observability across /health, ai_call_log, and ai_daily_stats. 3-layer defense-in-depth fully operational.
 
 ## Sprint Progress
 
@@ -87,7 +87,7 @@
 
 **Status:** COMPLETE ✅ (8/8)
 
-### Sprint F — Tower Lobby (Sessions 15-16)
+### Sprint F — Tower Lobby (Sessions 15-17) — CLOSED 2026-04-20
 
 | Item | Status | Commit | Notes |
 |---|---|---|---|
@@ -95,8 +95,10 @@
 | 2. Admin gate via is_admin + RLS (Migration 007 + Migration 008 phantom backfill) | ✅ | c3e7307, 186a819, fc9c6d6, ae587a9, d4c58e5 | 3-layer defense-in-depth live |
 | 3. Tower Lobby layout + nav shell | ✅ | 8df2959 | Router, sidebar, 4 route placeholders |
 | 4. Room 1: live /health display | ✅ | ca85d44 | 4 module cards (Worker, Supabase, Gemini, Anthropic) + manual refresh |
-| 5. Room 2: ai_call_log filtered table | ⏸ | — | Session 17 (per DECISIONS.md Q4) |
-| 6. Room 3: ai_daily_stats summary cards + 14-day table | ⏸ | — | Session 17 (no chart per DECISIONS.md Q5) |
+| 5. Room 2: ai_call_log filtered table | ✅ | 021e7a1 | 100 rows + client-side Endpoint/Status/Provider filters + cursor-based Load more |
+| 6. Room 3: ai_daily_stats summary cards + 14-day table | ✅ | 267c37e | 4 Today (UTC) cards + 14-day aggregate table, no chart |
+| Mid-sprint: Migration 009 admin read paths | ✅ | a791872 | Additive `admins see all ai calls` policy + `admin_daily_stats` wrapper view |
+| Mid-sprint: Migration 010 drift view correction | ✅ | b963774 | DROP drift view + recreate per 009 §3 intent |
 
 **Bonus work shipped (Cosmodrome visual direction):**
 
@@ -108,7 +110,7 @@
 
 **Infrastructure (outside git):** CF Pages project `tower-phajot` live, `tower.phajot.com` custom domain active, Cloudflare Access application "Phajot Tower" gating Speaker email (policy `782108c8-7169-438e-9088-77ffb3c49080`).
 
-**Status:** IN PROGRESS — 4/6 items + bonus Cosmodrome direction (Session 16 shipped 2+4; Session 17 ships 5+6 to close Sprint F)
+**Status:** COMPLETE ✅ (6/6 items + bonus Cosmodrome direction + 2 mid-sprint migrations) — Closed 2026-04-20 Session 17
 
 ### Sprints G-J — Tower Rooms (Sessions 16-19)
 - G: Engine Room (technical health)
@@ -177,6 +179,7 @@ Rejected alternatives:
 | 15 (Sprint F partial) | BJCgj50K | BJCgj50K (unchanged) | Main app untouched — all work in `tower/`. Tower bundle: index-DYnDWyB4.js. 6 commits: 19bee35, 428ad78, 8df2959, ce39de5, 51e2192, 2f5faa7. |
 | 15 (post-wrap docs) | BJCgj50K | BJCgj50K | Docs hygiene + decisions: 28af464, a175f1e, c55152b, 9dd4ef3, b54b4bd, be2dc0b |
 | 16 (Sprint F continued) | BJCgj50K (main app unchanged) | BJCgj50K — Tower only: DYnDWyB4 → K63ln-YZ (admin gate) → C5RzeSTp (Room 1) | Items 2 + 4. Tower admin gate live (3-layer defense). Room 1 /health rendering 4 module cards with real data. 9 commits: cd78bc2, f2494c0, c3e7307, 186a819, fc9c6d6, ae587a9, d4c58e5, ca85d44, + this wrap. |
+| 17 (Sprint F close) | BJCgj50K (main app unchanged) | BJCgj50K — Tower only: C5RzeSTp → CUKk-PSf (Room 2) → DpNRTJ91 (Room 2 tweak) → CuLQfJJZ (Room 3) → 2zR7DkDi (Room 3 tweak) | Items 5 + 6 + Migrations 009 + 010. Sprint F CLOSED. 6 commits: a791872, 021e7a1, bd5109c, 267c37e, b963774, + this wrap. |
 
 ## The Tower Team
 | Name | Role |

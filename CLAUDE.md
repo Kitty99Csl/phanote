@@ -116,6 +116,13 @@ For current session, sprint progress, commit hashes, and live infrastructure sta
 
 ## Recent key learnings
 
+### Session 17 learnings (Sprint F close + Migration 009/010 saga)
+
+- **Postflight must check semantic identity, not just privilege existence.** Session 17's Migration 009 §3 silently failed during apply but postflight passed because it checked `has_table_privilege`, not view definition identity. Upgrade pattern: inspect `pg_views.definition` + column signature. Same family as Session 16's `profiles_policy` vs `profiles_user_access` drift learning. Candidate for `docs/patterns.md` promotion.
+- **SQL Editor Select-All before Run is mandatory.** Partial execution silently caused two bugs in Session 17 (Migration 009 §1+§2 re-apply, §3 swallowed error). Always Select-All, then Run.
+- **Pre-Session-14 direct-SQL drift was broader than phantom tables.** Session 14 found 3 phantom tables; Session 17 found an unreferenced drift view with wide-open grants. Session 18 backlog: targeted drift audit.
+- **Paste-back-with-file-write.** When CC writes a review-gated file (migration, security-critical component), the write instruction must bundle an immediate paste-back instruction. Summaries don't substitute for verbatim text when the reviewer needs to audit.
+
 ### Session 15 learnings (Sprint F start + Cosmodrome visual direction)
 
 - **Reality-check before edits (now Rule 21).** Audits from memory are hypotheses; verify file state before editing. Caught two near-mistakes Session 15. See `docs/patterns.md` for the pattern, `docs/session-ritual.md` for the CC-executable ritual.

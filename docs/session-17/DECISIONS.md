@@ -30,6 +30,14 @@
 ### Q4 — Order within session
 **Decision:** Probe SQL → Migration 009 file → Speaker applies via SQL Editor → Item 5 → Item 6 → Sprint F close commit.
 
-## Session 17 outcomes (to be recorded at wrap)
+### Q5 — Migration 009 §3 incomplete apply: drop-and-recreate (Migration 010)
 
-(pending)
+**Decision (locked mid-session):** Migration 009 §3 silently failed because a pre-existing undocumented view named admin_daily_stats existed in production (drift from direct SQL Editor, pre-Session 14; aggregated app_events by date; not referenced in Phajot codebase per grep). CREATE OR REPLACE VIEW errored on column signature mismatch and the error was swallowed by SQL Editor partial execution. §1 and §2 of Migration 009 had applied; only §3 was incomplete.
+
+Remediation path selected: Migration 010 does drop-and-recreate (not rename-to-legacy) because (a) the drift view is unreferenced per grep, (b) preservation buys nothing, (c) renaming leaves zombie objects. CREATE VIEW used in 010 (not CREATE OR REPLACE) avoids re-triggering the signature-mismatch trap.
+
+**Rationale for drop-and-recreate:** Grep across Phajot code (frontend, worker, Tower, migrations, docs except archive) returned zero references to admin_daily_stats outside Migration 009/010 + DailyStats.jsx + Session 17 docs. Archive-only hit (docs/archive/Phanote-session-2.md:78) was a Session 2 planning doc mentioning a never-built DAU table of the same name. Harmless namespace collision.
+
+## Session 17 outcomes (recorded 2026-04-20)
+
+All 4 original decisions executed. Q5 added mid-session (Migration 010 correcting 009 §3's silent failure). Items 5 + 6 shipped per DECISIONS-16 Q4 + Q5 specs. Sprint F closed.
