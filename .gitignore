@@ -9,3 +9,6 @@ dist
 .DS_Store
 *.log
 .vscode/
+
+# Claude Code local tooling preferences
+.claude/
