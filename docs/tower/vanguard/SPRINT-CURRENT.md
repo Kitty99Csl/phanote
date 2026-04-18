@@ -1,10 +1,10 @@
 # Current Sprint — F (Tower Lobby)
 
-> **Status:** In progress · Session 15 complete (Items 1 + 3 + Cosmodrome direction) · Session 16 picks up Items 2, 4, 5, 6
+> **Status:** In progress · Session 15 complete (Items 1 + 3 + Cosmodrome direction) · Session 16 picks up Items 2 + 4 · Session 17 picks up Items 5 + 6 (Sprint F closes)
 > **Started:** 2026-04-18 (Session 15 evening)
-> **Target close:** Session 16
+> **Target close:** Session 17 (per docs/session-16/DECISIONS.md Q6 — Session 16 ships items 2+4, Session 17 ships items 5+6)
 
-## Sprint F — Tower Lobby (Session 15-16)
+## Sprint F — Tower Lobby (Sessions 15-17)
 
 **Goal:** First operator surface live at tower.phajot.com —
 admin-gated, Lobby with 3 rooms rendering real observability data
@@ -12,12 +12,12 @@ from Sprint E's floor.
 
 **Items:**
 
-- ✅ 1. Create `tower/` Vite app + CF Pages project — shipped 428ad78
-- ⏸ 2. Admin gate via `is_admin` flag + RLS (Migration 007) — Session 16
-- ✅ 3. Tower Lobby layout + nav shell — shipped 8df2959
-- ⏸ 4. Room 1: live /health display — Session 16
-- ⏸ 5. Room 2: live ai_call_log recent rows — Session 16
-- ⏸ 6. Room 3: ai_daily_stats summary cards — Session 16
+- ✅ 1. Create `tower/` Vite app + CF Pages project — shipped Session 15 (428ad78)
+- 🔜 2. Admin gate via `is_admin` flag + RLS (Migration 007 + phantom table backfill) — Session 16 (per DECISIONS.md Q2)
+- ✅ 3. Tower Lobby layout + nav shell — shipped Session 15 (8df2959)
+- 🔜 4. Room 1: live /health display (module card grid per DECISIONS.md Q3) — Session 16
+- ⏸ 5. Room 2: live ai_call_log filtered table — Session 17
+- ⏸ 6. Room 3: ai_daily_stats summary cards + 14-day table (no chart per DECISIONS.md Q5) — Session 17
 
 ### Bonus work shipped (Cosmodrome visual direction)
 
@@ -30,8 +30,7 @@ from Sprint E's floor.
 no auth yet, no rooms rendering real data yet. Ends with "Tower
 exists and deploys" milestone.
 
-**Session 16 completion scope:** Items 2 + 4 + 5 + 6. Admin auth,
-three rooms live.
+**Session 16 scope:** Items 2 + 4. **Session 17 scope:** Items 5 + 6. Sprint F closes Session 17. See docs/session-16/DECISIONS.md Q6 for rationale.
 
 ## Definition of done (Sprint F complete criteria)
 
@@ -49,6 +48,7 @@ three rooms live.
 
 ## Changelog
 
+- 2026-04-19 · Session 16 opening — drift cleanup: ROADMAP-LIVE refreshed to be2dc0b, SPRINT-CURRENT aligned to DECISIONS.md Q6 (Sprint F closes Session 17, not 16)
 - 2026-04-18 · Session 15 wrap: Items 1 + 3 shipped + Cosmodrome visual direction established (design system v1 approved)
 - 2026-04-18 · Sprint F opened, Session 15 partial scope locked
 - 2026-04-17 · Sprint E closed 8/8 (Session 14)

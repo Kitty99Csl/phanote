@@ -2,7 +2,7 @@
 
 > **Status:** Current source of truth (live roadmap, updated every session wrap-up)
 
-> Last updated: 2026-04-18 (Session 15 wrap — Sprint F partial)
+> Last updated: 2026-04-19 (Session 15 truly closed + Session 16 opening)
 
 ## Current State
 - **Active sprint:** F (Tower Lobby) — in progress · Session 15 complete (Items 1 + 3 + bonus Cosmodrome direction) · Session 16 picks up Items 2, 4, 5, 6
@@ -10,7 +10,7 @@
 - **Production hash (Phajot):** index-BJCgj50K.js (unchanged — main app untouched in Session 15)
 - **Tower bundle:** index-DYnDWyB4.js — Tower live at tower.phajot.com (gated by Cloudflare Access)
 - **Worker version:** 4.7.0
-- **Latest commit:** 2f5faa7 (Pass 2 — Tower design spec v1 + tactical density)
+- **Latest commit:** be2dc0b (Session 16+17 decisions locked — Session 15 truly, finally closed after 12 commits)
 - **Next action:** Session 16 — complete Sprint F Items 2, 4, 5, 6 (admin gate + 3 rooms rendering real data)
 - **Notable milestone:** Tower design system v1 approved (`docs/tower/design-system.md`)
 
@@ -175,6 +175,7 @@ Rejected alternatives:
 | 14 (Sprint D close) | dqQyI8JV | B3mY1iQw | StreakModal, GoalModal, Settings reorg, EditTx toast |
 | 14 (Sprint E) | B3mY1iQw | BJCgj50K | ErrorBoundary (CLP6JP-c) → Sentry wiring (BJCgj50K). Worker 4.4.0 → 4.5.0 → 4.6.0 → 4.7.0 across commits e21d7d2, 67e8859, 4ba9788. |
 | 15 (Sprint F partial) | BJCgj50K | BJCgj50K (unchanged) | Main app untouched — all work in `tower/`. Tower bundle: index-DYnDWyB4.js. 6 commits: 19bee35, 428ad78, 8df2959, ce39de5, 51e2192, 2f5faa7. |
+| 15 (post-wrap docs) | BJCgj50K | BJCgj50K | Docs hygiene + decisions: 28af464, a175f1e, c55152b, 9dd4ef3, b54b4bd, be2dc0b |
 
 ## The Tower Team
 | Name | Role |
