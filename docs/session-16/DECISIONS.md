@@ -158,3 +158,9 @@ it.
 ---
 
 *Locked 2026-04-18 Session 15 close. Review and optionally override at Session 16 opening.*
+
+---
+
+## Session 16 outcomes (recorded 2026-04-19)
+
+All 6 decisions executed. Q2 amended mid-session (split 007/008 per Vanguard consultation). Q3 revised (manual refresh only, not 30s auto). Q6 executed as locked. Items 2 + 4 shipped; 5 + 6 confirmed for Session 17. See docs/session-16/SUMMARY.md for full session record.

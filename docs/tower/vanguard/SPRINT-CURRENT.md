@@ -1,6 +1,6 @@
 # Current Sprint — F (Tower Lobby)
 
-> **Status:** In progress · Session 15 complete (Items 1 + 3 + Cosmodrome direction) · Session 16 picks up Items 2 + 4 · Session 17 picks up Items 5 + 6 (Sprint F closes)
+> **Status:** In progress · Session 15 shipped Items 1 + 3 + Cosmodrome · Session 16 shipped Items 2 + 4 · Session 17 ships Items 5 + 6 (Sprint F closes)
 > **Started:** 2026-04-18 (Session 15 evening)
 > **Target close:** Session 17 (per docs/session-16/DECISIONS.md Q6 — Session 16 ships items 2+4, Session 17 ships items 5+6)
 
@@ -13,9 +13,9 @@ from Sprint E's floor.
 **Items:**
 
 - ✅ 1. Create `tower/` Vite app + CF Pages project — shipped Session 15 (428ad78)
-- 🔜 2. Admin gate via `is_admin` flag + RLS (Migration 007 + phantom table backfill) — Session 16 (per DECISIONS.md Q2)
+- ✅ 2. Admin gate via `is_admin` flag + RLS (Migration 007 + Migration 008 phantom backfill) — shipped Session 16 (c3e7307, 186a819, fc9c6d6, ae587a9, d4c58e5)
 - ✅ 3. Tower Lobby layout + nav shell — shipped Session 15 (8df2959)
-- 🔜 4. Room 1: live /health display (module card grid per DECISIONS.md Q3) — Session 16
+- ✅ 4. Room 1: live /health display (module card grid per DECISIONS.md Q3) — shipped Session 16 (ca85d44)
 - ⏸ 5. Room 2: live ai_call_log filtered table — Session 17
 - ⏸ 6. Room 3: ai_daily_stats summary cards + 14-day table (no chart per DECISIONS.md Q5) — Session 17
 
@@ -48,6 +48,7 @@ exists and deploys" milestone.
 
 ## Changelog
 
+- 2026-04-19 · Session 16 shipped — Items 2 (admin gate + migrations 007+008) + 4 (Room 1). Three-layer defense-in-depth operational. 9 commits.
 - 2026-04-19 · Session 16 opening — drift cleanup: ROADMAP-LIVE refreshed to be2dc0b, SPRINT-CURRENT aligned to DECISIONS.md Q6 (Sprint F closes Session 17, not 16)
 - 2026-04-18 · Session 15 wrap: Items 1 + 3 shipped + Cosmodrome visual direction established (design system v1 approved)
 - 2026-04-18 · Sprint F opened, Session 15 partial scope locked
