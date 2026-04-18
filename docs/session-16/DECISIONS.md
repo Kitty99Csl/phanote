@@ -35,6 +35,27 @@
 - Admin invitation flow — no second admin planned
 - Tower-specific RLS policies beyond the phantom tables — we don't yet know Tower's read patterns
 
+---
+
+#### Q2 amendment — Session 16 opening (2026-04-19)
+
+Vanguard consultation at Session 16 opening flagged a coupling risk in the original Q2 decision (combined migration for profiles + phantom tables). Adopted split per Chat Claude / Speaker agreement:
+
+- **Migration 007** = profiles + `is_admin BOOLEAN NOT NULL DEFAULT FALSE` column. Auth-path code, security-critical, small surface area.
+- **Migration 008** = phantom table backfill (`user_sessions`, `user_feedback`, `admin_logs`) via `CREATE TABLE IF NOT EXISTS` + RLS policies. Housekeeping, pure cleanup of Session 14 direct-SQL drift.
+
+**Rationale for split:**
+1. One purpose per migration = cleaner rollback story.
+2. Phantom-table edge cases (they already exist) can't block admin gate deployment.
+3. Auth-path code deserves minimal change surface.
+4. Time cost negligible — same SQL, two files.
+
+**Sequence this session:** 007 → deploy + verify admin gate works at Tower → 008 → Item 4.
+
+**DECISIONS.md Q2 base decision (combined migration) is superseded by this amendment.** The override is logged here per DECISIONS.md's own "pre-work, not pre-commitment" clause — this is the veto mechanism working.
+
+---
+
 ### Q3 — Item 4 (Room 1 /health) design: Option A
 **Decision:** Module card grid matching Lobby pattern. 4 cards: Worker (H-01-W), Supabase (H-01-S), Gemini (H-01-G), Anthropic (H-01-A). Fetch `/health` on mount + manual refresh button + optional 30s auto-refresh.
 
