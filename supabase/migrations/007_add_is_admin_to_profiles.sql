@@ -13,8 +13,11 @@
 --
 -- RLS CONTEXT (from migration 004):
 --   - RLS is enabled on profiles.
---   - Canonical policy profiles_user_access: FOR ALL,
+--   - Canonical policy exists with semantics: FOR ALL,
 --     USING (auth.uid() = id), WITH CHECK (auth.uid() = id).
+--   - Production policy name is 'profiles_policy' (migration 004
+--     file names it 'profiles_user_access' — naming drift,
+--     cosmetic only, see docs/RISKS.md).
 --   - No new policy needed — users reading their own is_admin
 --     is already permitted by this policy.
 --
@@ -34,6 +37,13 @@
 -- Rolls back: ALTER TABLE profiles DROP COLUMN is_admin;
 
 -- Preflight: verify expected state before making changes.
+-- Revised 2026-04-19 (Session 16 Phase 1b): policy check now asserts
+-- the security SEMANTIC invariant (FOR ALL policy with auth.uid() = id
+-- qualification) instead of a specific policy name. Production
+-- currently has 'profiles_policy'; migration 004 file specified
+-- 'profiles_user_access'. Both have identical semantics. Naming
+-- drift is cosmetic and tracked in docs/RISKS.md for later
+-- reconciliation.
 
 DO $$
 BEGIN
@@ -41,14 +51,17 @@ BEGIN
     SELECT 1 FROM pg_tables
     WHERE schemaname = 'public' AND tablename = 'profiles' AND rowsecurity = true
   ) THEN
-    RAISE EXCEPTION 'profiles table does not have RLS enabled. Expected state after migration 004. Aborting.';
+    RAISE EXCEPTION 'profiles table does not have RLS enabled. Aborting.';
   END IF;
 
   IF NOT EXISTS (
     SELECT 1 FROM pg_policies
-    WHERE schemaname = 'public' AND tablename = 'profiles' AND policyname = 'profiles_user_access'
+    WHERE schemaname = 'public'
+      AND tablename = 'profiles'
+      AND cmd = 'ALL'
+      AND qual = '(auth.uid() = id)'
   ) THEN
-    RAISE EXCEPTION 'profiles_user_access policy not found. Expected state after migration 004. Aborting.';
+    RAISE EXCEPTION 'No FOR ALL policy with (auth.uid() = id) qualification found on profiles. Expected security invariant missing. Aborting.';
   END IF;
 END $$;
 

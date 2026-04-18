@@ -98,6 +98,16 @@ If the trigger drops for any reason (manual deletion, failed migration apply), n
 
 The empty commit `741ae93 chore: nudge CF Pages redeploy (webhook probe)` was a diagnostic, not a functional change. It's safe to leave in history as documentation of the investigation path, but a future `git log` reader may find it confusing. Not worth rewriting history to remove.
 
+### [LOW] profiles RLS policy name mismatch (cosmetic)
+**Discovered:** Session 16, 2026-04-19
+**Status:** Open — reconciliation debt. Not security-sensitive.
+
+Production `profiles` table has RLS policy named `profiles_policy`. Migration file `004_capture_current_schema.sql` specifies name `profiles_user_access`. Identical semantics (FOR ALL, `auth.uid() = id` for both USING and WITH CHECK) — this is naming drift only, not a security gap. Discovered while running Migration 007, whose preflight originally required the exact name `profiles_user_access` and aborted against production. Revised to check the semantic invariant instead (commit following this RISKS.md entry).
+
+Not a Rule 19 violation at runtime (a policy with correct semantics exists and works), but indicates a prior drift between migration files and production that predates Rule 19 enforcement.
+
+**Mitigation:** Future migration (008 or 009) renames production policy to match migration files. Pseudo-SQL: `ALTER POLICY profiles_policy ON public.profiles RENAME TO profiles_user_access`. Or: accept current name and update migration 004's file to match. Either direction OK — just pick one.
+
 ---
 
 ## Resolved (historical record)
