@@ -1,49 +1,44 @@
-// Room 1 — /health live display (Sprint F Item 4, Session 16).
+// Room A-01 — /health live display (Sprint F Item 4, Session 16; redesigned Session 20 Phase 2).
 //
-// Module card grid matching Lobby pattern. 4 cards:
-//   H-01-W — Worker (top-level status + version)
-//   H-01-S — Supabase (dependencies.supabase)
-//   H-01-G — Gemini (dependencies.gemini)
-//   H-01-A — Anthropic (dependencies.anthropic)
-//
-// Manual refresh only (per DECISIONS.md Q3 revision at Session 16).
-// Auto-refresh deferred to Session 17+ if genuinely useful.
-//
-// Endpoint: api.phajot.com/health (public, no auth, permissive CORS).
+// Queries api.phajot.com/health, maps to 4 service cards (Worker / Supabase / Gemini / Anthropic).
+// Manual refresh only.
 
 import { useEffect, useState, useCallback } from "react";
-import StatusChip from "../components/StatusChip";
+import {
+  Module,
+  Stat,
+  StatusPill,
+  PageTitle,
+  Btn,
+  CornerBrackets,
+} from "../components/shared";
 
 const HEALTH_URL = "https://api.phajot.com/health";
 
-// --- status derivation helpers ------------------------------------------
+// --- status derivation helpers (preserved verbatim) --------------------
 
-// Worker: maps top-level status string to chip state.
-function workerStatus(health) {
-  if (!health) return "standby";
-  if (health.status === "ok") return "nominal";
-  if (health.status === "degraded") return "caution";
-  return "critical";
+function workerKind(health) {
+  if (!health) return "idle";
+  if (health.status === "ok") return "ok";
+  if (health.status === "degraded") return "warn";
+  return "bad";
 }
 
-// Supabase: explicit ok bool.
-function supabaseStatus(dep) {
-  if (!dep) return "standby";
-  return dep.ok ? "nominal" : "critical";
+function supabaseKind(dep) {
+  if (!dep) return "idle";
+  return dep.ok ? "ok" : "bad";
 }
 
-// Gemini / Anthropic: heuristic from call + error counts.
-// No explicit ok — quiet period (zeros/nulls) = standby, not failure.
-function aiProviderStatus(dep) {
-  if (!dep) return "standby";
+function aiProviderKind(dep) {
+  if (!dep) return "idle";
   const calls = dep.calls_last_hour ?? 0;
   const errors = dep.errors_last_hour ?? 0;
-  if (errors > 0) return calls > errors ? "caution" : "critical";
-  if (calls > 0) return "nominal";
-  return "standby";
+  if (errors > 0) return calls > errors ? "warn" : "bad";
+  if (calls > 0) return "ok";
+  return "idle";
 }
 
-// --- formatters ---------------------------------------------------------
+// --- formatters --------------------------------------------------------
 
 function formatAge(iso) {
   if (!iso) return "—";
@@ -56,44 +51,7 @@ function formatAge(iso) {
   return `${Math.floor(secs / 86400)}d ago`;
 }
 
-// --- ModuleCard (local, read-only variant of Lobby's card) --------------
-
-function ModuleCard({ label, code, readout, body, metadata, status }) {
-  return (
-    <div className="bg-slate-800 border border-slate-700 p-4 relative">
-      {/* Top-right ember corner cut */}
-      <div className="absolute top-0 right-0 w-0 h-0 border-l-[12px] border-l-transparent border-t-[12px] border-t-ember-500/60"></div>
-
-      {/* Top row: label + Module {code} */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="text-[10px] tracking-[0.2em] text-slate-400 uppercase font-semibold">
-          {label}
-        </div>
-        <div className="text-[9px] tracking-[0.15em] text-slate-600 font-mono uppercase">
-          Module {code}
-        </div>
-      </div>
-
-      {/* Readout */}
-      <div className="text-2xl font-semibold text-slate-50 tracking-tight mb-1">
-        {readout}
-      </div>
-
-      {/* Body */}
-      <div className="text-[11px] text-slate-500 mb-3">{body}</div>
-
-      {/* Bottom: metadata + StatusChip */}
-      <div className="pt-3 border-t border-slate-700/50 flex items-center justify-between">
-        <div className="text-[9px] tracking-[0.1em] text-slate-600 uppercase font-mono">
-          {metadata}
-        </div>
-        <StatusChip status={status}>{status.toUpperCase()}</StatusChip>
-      </div>
-    </div>
-  );
-}
-
-// --- main component -----------------------------------------------------
+// --- main component ----------------------------------------------------
 
 export default function Health() {
   const [health, setHealth] = useState(null);
@@ -123,120 +81,155 @@ export default function Health() {
     fetchHealth();
   }, [fetchHealth]);
 
-  // Build card data from current health snapshot
-  const cards = health
+  const services = health
     ? [
         {
-          label: "Worker",
-          code: "H-01-W",
-          readout: health.status === "ok" ? "NOMINAL" : (health.status || "UNKNOWN").toUpperCase(),
-          body: health.status_reason || `${health.service || "Phajot API"} · v${health.version}`,
-          metadata: `Deployed ${formatAge(health.deployed_at)}`,
-          status: workerStatus(health),
+          code: "A-01 · 01",
+          name: "WORKER",
+          kind: workerKind(health),
+          readout: health.status === "ok" ? "ONLINE" : (health.status || "UNKNOWN").toUpperCase(),
+          note: health.status_reason || `${health.service || "Phajot API"} · v${health.version}`,
+          meta: `deployed ${formatAge(health.deployed_at)}`,
         },
         {
-          label: "Supabase",
-          code: "H-01-S",
+          code: "A-01 · 02",
+          name: "SUPABASE",
+          kind: supabaseKind(health.dependencies?.supabase),
           readout: health.dependencies?.supabase?.ok
             ? `${health.dependencies.supabase.ping_ms}ms`
             : "DOWN",
-          body: health.dependencies?.supabase?.ok
-            ? `Ping ${health.dependencies.supabase.ping_ms}ms · cache ${health.dependencies.supabase.cache_age_seconds}s`
-            : "Database unreachable",
-          metadata: `Checked ${formatAge(health.dependencies?.supabase?.last_checked_at)}`,
-          status: supabaseStatus(health.dependencies?.supabase),
+          note: health.dependencies?.supabase?.ok
+            ? `ping ${health.dependencies.supabase.ping_ms}ms · cache ${health.dependencies.supabase.cache_age_seconds}s`
+            : "database unreachable",
+          meta: `checked ${formatAge(health.dependencies?.supabase?.last_checked_at)}`,
         },
         {
-          label: "Gemini",
-          code: "H-01-G",
-          readout: `${health.dependencies?.gemini?.calls_last_hour ?? 0} calls/hr`,
-          body:
+          code: "A-01 · 03",
+          name: "GEMINI",
+          kind: aiProviderKind(health.dependencies?.gemini),
+          readout: `${health.dependencies?.gemini?.calls_last_hour ?? 0}`,
+          note:
             (health.dependencies?.gemini?.errors_last_hour ?? 0) > 0
               ? `${health.dependencies.gemini.errors_last_hour} errors in last hour`
               : (health.dependencies?.gemini?.calls_last_hour ?? 0) === 0
-              ? "Quiet period"
-              : "No errors",
-          metadata:
-            health.dependencies?.gemini?.last_success_at
-              ? `Last success ${formatAge(health.dependencies.gemini.last_success_at)}`
-              : "No recent activity",
-          status: aiProviderStatus(health.dependencies?.gemini),
+              ? "quiet period"
+              : "no errors",
+          meta: health.dependencies?.gemini?.last_success_at
+            ? `last success ${formatAge(health.dependencies.gemini.last_success_at)}`
+            : "no recent activity",
         },
         {
-          label: "Anthropic",
-          code: "H-01-A",
-          readout: `${health.dependencies?.anthropic?.calls_last_hour ?? 0} calls/hr`,
-          body:
+          code: "A-01 · 04",
+          name: "ANTHROPIC",
+          kind: aiProviderKind(health.dependencies?.anthropic),
+          readout: `${health.dependencies?.anthropic?.calls_last_hour ?? 0}`,
+          note:
             (health.dependencies?.anthropic?.errors_last_hour ?? 0) > 0
               ? `${health.dependencies.anthropic.errors_last_hour} errors in last hour`
               : (health.dependencies?.anthropic?.calls_last_hour ?? 0) === 0
-              ? "Quiet period"
-              : "No errors",
-          metadata:
-            health.dependencies?.anthropic?.last_success_at
-              ? `Last success ${formatAge(health.dependencies.anthropic.last_success_at)}`
-              : "No recent activity",
-          status: aiProviderStatus(health.dependencies?.anthropic),
+              ? "quiet period"
+              : "no errors",
+          meta: health.dependencies?.anthropic?.last_success_at
+            ? `last success ${formatAge(health.dependencies.anthropic.last_success_at)}`
+            : "no recent activity",
         },
       ]
     : [];
 
+  const allOk = services.length > 0 && services.every(s => s.kind === "ok");
+  const bannerTone = allOk ? "good" : services.some(s => s.kind === "bad") ? "bad" : "warn";
+  const bannerBorder = bannerTone === "good" ? "border-emerald-500/20 bg-emerald-500/[0.04]"
+    : bannerTone === "warn" ? "border-amber-500/20 bg-amber-500/[0.04]"
+    : "border-red-500/20 bg-red-500/[0.04]";
+  const bannerAccent = bannerTone === "good" ? "#10b981" : bannerTone === "warn" ? "#f59e0b" : "#ef4444";
+  const bannerKicker = bannerTone === "good" ? "text-emerald-400"
+    : bannerTone === "warn" ? "text-amber-400" : "text-red-400";
+  const bannerLabel = bannerTone === "good" ? "SYSTEM · NOMINAL"
+    : bannerTone === "warn" ? "SYSTEM · DEGRADED" : "SYSTEM · CRITICAL";
+
   return (
-    <div className="max-w-7xl">
-      {/* Page header */}
-      <div className="mb-6 flex items-start justify-between gap-4">
-        <div>
-          <div className="text-[11px] tracking-[0.2em] text-ember-500 uppercase font-semibold mb-2">
-            Systems
-          </div>
-          <h1 className="text-3xl font-semibold text-slate-50 tracking-tight mb-2">
-            System Health
-          </h1>
-          <p className="text-sm text-slate-400">
-            Live operational state from api.phajot.com/health.
-          </p>
-        </div>
+    <div className="px-10 py-8 max-w-[1400px]">
+      <PageTitle
+        kicker={["SYSTEMS", "ROOM A-01"]}
+        title="System Health"
+        desc="Live operational state from api.phajot.com/health — manual refresh."
+        actions={
+          <>
+            {lastFetchAt && (
+              <span className="hud-label">
+                last sync <span className="text-slate-400 hud-data ml-1">{formatAge(lastFetchAt.toISOString())}</span>
+              </span>
+            )}
+            <Btn icon="↻" onClick={fetchHealth}>{loading ? "…" : "refresh"}</Btn>
+          </>
+        }
+      />
 
-        <button
-          onClick={fetchHealth}
-          disabled={loading}
-          className="mt-6 px-4 py-2 text-[11px] tracking-[0.15em] uppercase font-semibold border border-slate-700 text-slate-300 hover:border-ember-500 hover:text-ember-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {loading ? "Refreshing..." : "Refresh"}
-        </button>
-      </div>
-
-      {/* Error state */}
+      {/* Error banner */}
       {error && (
-        <div className="mb-4 border border-ember-500 bg-ember-500/5 p-4">
-          <div className="text-[11px] tracking-[0.15em] uppercase font-semibold text-ember-500 mb-1">
-            Fetch failed
-          </div>
+        <div className="mb-4 border border-red-500/40 bg-red-500/5 p-4 rounded-sm">
+          <div className="hud-kicker text-red-400 mb-1">FETCH FAILED</div>
           <div className="text-sm text-slate-300">{error}</div>
-          <div className="text-[11px] text-slate-500 mt-2">
-            Endpoint: {HEALTH_URL}
+          <div className="hud-label text-slate-500 mt-2">endpoint · {HEALTH_URL}</div>
+        </div>
+      )}
+
+      {/* First-fetch loading */}
+      {loading && !health && !error && (
+        <div className="mb-4 hud-label text-slate-400">fetching /health…</div>
+      )}
+
+      {/* Overall status banner */}
+      {health && (
+        <div className={`relative ${bannerBorder} border rounded-sm p-5 mb-6 flex items-center gap-6`}>
+          <CornerBrackets color={bannerAccent} opacity={0.5} />
+          <div className="flex items-center gap-3">
+            <div className="relative w-10 h-10 flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full border" style={{ borderColor: `${bannerAccent}66` }} />
+              <div className="absolute inset-1 rounded-full border pulse-dot" style={{ borderColor: `${bannerAccent}33` }} />
+              <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: bannerAccent }} />
+            </div>
+            <div>
+              <div className={`hud-kicker ${bannerKicker}`}>{bannerLabel}</div>
+              <div className="text-[15px] text-slate-200 mt-0.5">
+                {services.length} service{services.length === 1 ? "" : "s"} probed
+                {health.service && <> · <span className="text-slate-400">{health.service} v{health.version}</span></>}
+              </div>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Loading state (first fetch only) */}
-      {loading && !health && (
-        <div className="text-sm text-slate-400 mb-4">Fetching /health...</div>
-      )}
-
-      {/* Module card grid */}
-      {cards.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-          {cards.map((c) => (
-            <ModuleCard key={c.code} {...c} />
+      {/* Service grid */}
+      {services.length > 0 && (
+        <div className="grid grid-cols-2 gap-3">
+          {services.map((s) => (
+            <Module key={s.code} code={s.code} title={s.name}>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <Stat
+                    label="STATE"
+                    value={s.kind === "ok" ? "ONLINE" : s.kind === "idle" ? "STANDBY" : s.kind === "warn" ? "DEGRADED" : "OFFLINE"}
+                    tone={s.kind === "ok" ? "good" : s.kind === "warn" ? "warn" : s.kind === "bad" ? "bad" : "default"}
+                    size="md"
+                  />
+                  <div className="mt-3 hud-label text-slate-500">{s.note}</div>
+                </div>
+                <div className="text-right">
+                  <div className="hud-label">READOUT</div>
+                  <div className="hud-data text-[22px] font-semibold text-slate-100 mt-1">
+                    {s.readout}
+                  </div>
+                  <div className="mt-2">
+                    <StatusPill kind={s.kind} label={s.kind} size="sm" />
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 pt-3 border-t border-slate-800/70 hud-label text-slate-600">
+                {s.meta}
+              </div>
+            </Module>
           ))}
-        </div>
-      )}
-
-      {/* Footer metadata: last fetch time */}
-      {lastFetchAt && (
-        <div className="text-[10px] tracking-[0.15em] text-slate-600 uppercase font-mono">
-          Last synced {formatAge(lastFetchAt.toISOString())} · {lastFetchAt.toUTCString()}
         </div>
       )}
     </div>

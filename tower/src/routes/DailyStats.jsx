@@ -1,24 +1,25 @@
-// Room 3 — Daily stats: summary cards + 14-day table (Sprint F Item 6, Session 17).
+// Room B-02 — Daily stats: summary cards + 14-day table.
+// Sprint F Item 6, Session 17; redesigned Session 20 Phase 2.
 //
 // 4 "Today (UTC)" summary cards above a 14-day aggregate table.
-// No chart (per DECISIONS-16 Q5).
-//
-// Data source: public.admin_daily_stats (wrapper VIEW from Migration 009,
-// gates by is_admin inline). Tower's authenticated session cannot SELECT
-// the raw ai_daily_stats matview anymore.
-//
-// Module code: D-03.
+// Data source: public.admin_daily_stats (wrapper VIEW from Migration 009).
 
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "../lib/supabase";
-import StatusChip from "../components/StatusChip";
+import {
+  Module,
+  Stat,
+  StatusPill,
+  PageTitle,
+  Btn,
+} from "../components/shared";
 
 const WINDOW_DAYS = 14;
 
 const SELECT_COLUMNS =
   "day, endpoint, provider, plan_tier, call_count, success_count, error_count, cost_usd_total, avg_duration_ms, p95_duration_ms";
 
-// --- formatters ---------------------------------------------------------
+// --- formatters (preserved verbatim) ----------------------------------
 
 function formatAge(iso) {
   if (!iso) return "—";
@@ -48,14 +49,12 @@ function formatCost(cost) {
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-// Render a YYYY-MM-DD day string as "MMM DD" in UTC.
 function formatDay(dayStr) {
   if (!dayStr) return "—";
   const [y, m, d] = dayStr.split("-").map(Number);
   return `${MONTHS[m - 1]} ${d}`;
 }
 
-// Today UTC as YYYY-MM-DD
 function todayUTC() {
   const now = new Date();
   const y = now.getUTCFullYear();
@@ -64,7 +63,6 @@ function todayUTC() {
   return `${y}-${m}-${d}`;
 }
 
-// Date 14 days ago in YYYY-MM-DD (inclusive window)
 function windowStart() {
   const now = new Date();
   now.setUTCDate(now.getUTCDate() - WINDOW_DAYS);
@@ -74,63 +72,22 @@ function windowStart() {
   return `${y}-${m}-${d}`;
 }
 
-// --- error-rate threshold → chip status --------------------------------
-
-function errorRateStatus(errorRate, totalCalls) {
-  if (totalCalls === 0) return "standby";
-  if (errorRate < 1) return "nominal";
-  if (errorRate <= 5) return "caution";
-  return "critical";
+// Error-rate threshold → pill kind (preserved).
+function errorRatePillKind(errorRate, totalCalls) {
+  if (totalCalls === 0) return "idle";
+  if (errorRate < 1) return "ok";
+  if (errorRate <= 5) return "warn";
+  return "bad";
 }
 
-function errorRateLabel(status) {
-  if (status === "nominal") return "WITHIN LIMITS";
-  if (status === "caution") return "ELEVATED";
-  if (status === "critical") return "CRITICAL";
-  return "NO DATA";
+function errorRateStatTone(errorRate, totalCalls) {
+  if (totalCalls === 0) return "default";
+  if (errorRate < 1) return "good";
+  if (errorRate <= 5) return "warn";
+  return "bad";
 }
 
-// --- ModuleCard (local, optional status chip) --------------------------
-
-function ModuleCard({ label, code, readout, body, metadata, status, statusLabel }) {
-  return (
-    <div className="bg-slate-800 border border-slate-700 p-4 relative">
-      <div className="absolute top-0 right-0 w-0 h-0 border-l-[12px] border-l-transparent border-t-[12px] border-t-ember-500/60"></div>
-
-      <div className="flex items-center justify-between mb-3">
-        <div className="text-[10px] tracking-[0.2em] text-slate-400 uppercase font-semibold">
-          {label}
-        </div>
-        <div className="text-[9px] tracking-[0.15em] text-slate-600 font-mono uppercase">
-          Module {code}
-        </div>
-      </div>
-
-      <div className="text-2xl font-semibold text-slate-50 tracking-tight mb-1">
-        {readout}
-      </div>
-
-      <div className="text-[11px] text-slate-500 mb-3">{body}</div>
-
-      <div className="pt-3 border-t border-slate-700/50 flex items-center justify-between">
-        {status ? (
-          <>
-            <div className="text-[9px] tracking-[0.1em] text-slate-600 uppercase font-mono">
-              {metadata}
-            </div>
-            <StatusChip status={status}>{statusLabel || status.toUpperCase()}</StatusChip>
-          </>
-        ) : (
-          <div className="text-[9px] tracking-[0.1em] text-slate-600 uppercase font-mono">
-            {metadata}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// --- main component ----------------------------------------------------
+// --- main component ---------------------------------------------------
 
 export default function DailyStats() {
   const [rows, setRows] = useState([]);
@@ -164,7 +121,7 @@ export default function DailyStats() {
     fetchStats();
   }, [fetchStats]);
 
-  // Derive "today" (max day in returned rows) + per-day aggregates
+  // Derive "today" aggregates (logic preserved).
   const maxDay = rows.length > 0 ? rows[0].day : null;
   const todayRows = rows.filter((r) => r.day === maxDay);
 
@@ -173,7 +130,6 @@ export default function DailyStats() {
   const totalCost = todayRows.reduce((s, r) => s + Number(r.cost_usd_total || 0), 0);
   const errorRate = totalCalls > 0 ? (totalErrors / totalCalls) * 100 : 0;
 
-  // Weighted p95 across today's endpoints
   const p95Weighted =
     totalCalls > 0
       ? Math.round(
@@ -186,187 +142,149 @@ export default function DailyStats() {
 
   const todayEndpointCount = new Set(todayRows.map((r) => r.endpoint)).size;
   const todayFormatted = maxDay ? formatDay(maxDay) : "—";
-  const errRateChipStatus = errorRateStatus(errorRate, totalCalls);
   const todayISO = todayUTC();
 
   return (
-    <div className="max-w-7xl">
-      {/* Page header */}
-      <div className="mb-6 flex items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-1 h-5 bg-ember-500"></div>
-            <div className="text-[10px] tracking-[0.35em] text-ember-500 uppercase font-bold">
-              Reports · Room 03
-            </div>
-          </div>
-          <h1 className="text-3xl font-semibold text-slate-50 tracking-tight mb-2">
-            Daily stats
-          </h1>
-          <p className="text-sm text-slate-400">
-            Daily aggregates of AI volume, cost, error rate, and p95 latency. Materialized nightly at 02:00 UTC.
-          </p>
-        </div>
+    <div className="px-10 py-8 max-w-[1400px]">
+      <PageTitle
+        kicker={["REPORTS", "ROOM B-02"]}
+        title="Daily Stats"
+        desc="Aggregated daily rollups. Materialized nightly at 02:00 UTC. 14-day window."
+        actions={
+          <>
+            {lastFetchAt && (
+              <span className="hud-label">
+                last sync <span className="text-slate-400 hud-data ml-1">{formatAge(lastFetchAt.toISOString())}</span>
+              </span>
+            )}
+            <Btn icon="↻" onClick={fetchStats}>{loading ? "…" : "refresh"}</Btn>
+          </>
+        }
+      />
 
-        <button
-          onClick={fetchStats}
-          disabled={loading}
-          className="mt-6 px-4 py-2 text-[11px] tracking-[0.15em] uppercase font-semibold border border-slate-700 text-slate-300 hover:border-ember-500 hover:text-ember-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {loading ? "Refreshing..." : "Refresh"}
-        </button>
-      </div>
-
-      {/* Error state */}
+      {/* Error banner */}
       {error && (
-        <div className="mb-4 border border-ember-500 bg-ember-500/5 p-4">
-          <div className="text-[11px] tracking-[0.15em] uppercase font-semibold text-ember-500 mb-1">
-            Query failed
-          </div>
+        <div className="mb-4 border border-red-500/40 bg-red-500/5 p-4 rounded-sm">
+          <div className="hud-kicker text-red-400 mb-1">QUERY FAILED</div>
           <div className="text-sm text-slate-300">{error}</div>
-          <button
-            onClick={fetchStats}
-            className="mt-3 px-3 py-1.5 text-[10px] tracking-[0.15em] uppercase font-semibold border border-ember-500/50 text-ember-500 hover:bg-ember-500/10 transition-colors"
-          >
-            Retry
-          </button>
-        </div>
-      )}
-
-      {/* Initial loading state */}
-      {loading && rows.length === 0 && !error && (
-        <div className="bg-slate-800 border border-slate-700 p-6">
-          <div className="flex items-center gap-3">
-            <div className="w-2 h-2 rounded-full bg-ember-500 animate-pulse"></div>
-            <div className="text-sm text-slate-400">Connecting to Supabase...</div>
+          <div className="mt-3">
+            <Btn variant="ghost" onClick={fetchStats}>retry</Btn>
           </div>
         </div>
       )}
 
-      {/* Empty state: no rows in 14-day window */}
+      {/* Initial loading */}
+      {loading && rows.length === 0 && !error && (
+        <div className="mb-4 hud-label text-slate-400">connecting to supabase…</div>
+      )}
+
+      {/* Empty state */}
       {!loading && !error && rows.length === 0 && (
-        <div className="bg-slate-800 border border-slate-700 p-8 text-center">
+        <Module code="B-02" title="NO DATA">
           <div className="text-sm text-slate-400">No daily stats available yet.</div>
-          <div className="text-[11px] text-slate-600 mt-2">
+          <div className="hud-label text-slate-600 mt-2">
             ai_daily_stats materializes nightly at 02:00 UTC. First data lands after the first cron run following a logged AI call.
           </div>
-        </div>
+        </Module>
       )}
 
       {/* Summary cards + table */}
       {!loading && !error && rows.length > 0 && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-            <ModuleCard
-              label="Total Calls"
-              code="D-03-C"
-              readout={formatInt(totalCalls)}
-              body={`Today (UTC) · ${todayFormatted}`}
-              metadata={`Across ${todayEndpointCount} endpoint${todayEndpointCount === 1 ? "" : "s"}`}
-            />
-            <ModuleCard
-              label="Total Cost"
-              code="D-03-$"
-              readout={formatCost(totalCost)}
-              body={`Today (UTC) · ${todayFormatted}`}
-              metadata="Budget tracking · TBD"
-            />
-            <ModuleCard
-              label="Error Rate"
-              code="D-03-E"
-              readout={formatPercent(errorRate)}
-              body={`${formatInt(totalErrors)} of ${formatInt(totalCalls)} calls`}
-              metadata="Threshold · 1% / 5%"
-              status={errRateChipStatus}
-              statusLabel={errorRateLabel(errRateChipStatus)}
-            />
-            <ModuleCard
-              label="Avg p95"
-              code="D-03-P"
-              readout={p95Weighted == null ? "—" : `${p95Weighted}ms`}
-              body="Weighted across endpoints"
-              metadata="Window · last 24h (UTC day)"
-            />
+          <div className="grid grid-cols-4 gap-3 mb-6">
+            <Module code="B-02 · CALLS" title="TOTAL CALLS">
+              <Stat
+                label=""
+                value={formatInt(totalCalls)}
+                sub={`today (UTC) · ${todayFormatted}`}
+                size="md"
+              />
+              <div className="mt-3 hud-label text-slate-500">
+                across {todayEndpointCount} endpoint{todayEndpointCount === 1 ? "" : "s"}
+              </div>
+            </Module>
+            <Module code="B-02 · COST" title="TOTAL COST">
+              <Stat
+                label=""
+                value={formatCost(totalCost)}
+                sub={`today (UTC) · ${todayFormatted}`}
+                tone="accent"
+                size="md"
+              />
+              <div className="mt-3 hud-label text-slate-500">budget tracking · TBD</div>
+            </Module>
+            <Module code="B-02 · ERR" title="ERROR RATE">
+              <Stat
+                label=""
+                value={formatPercent(errorRate)}
+                sub={`${formatInt(totalErrors)} of ${formatInt(totalCalls)} calls`}
+                tone={errorRateStatTone(errorRate, totalCalls)}
+                size="md"
+              />
+              <div className="mt-3">
+                <StatusPill
+                  kind={errorRatePillKind(errorRate, totalCalls)}
+                  label={errorRate < 1 ? "within limits" : errorRate <= 5 ? "elevated" : totalCalls === 0 ? "no data" : "critical"}
+                  size="sm"
+                />
+              </div>
+            </Module>
+            <Module code="B-02 · P95" title="AVG P95">
+              <Stat
+                label=""
+                value={p95Weighted == null ? "—" : formatInt(p95Weighted)}
+                unit={p95Weighted == null ? undefined : "ms"}
+                sub="weighted across endpoints"
+                size="md"
+              />
+              <div className="mt-3 hud-label text-slate-500">window · last 24h (UTC day)</div>
+            </Module>
           </div>
 
           {/* 14-day table */}
-          <div className="bg-slate-800 border border-slate-700 p-4 relative">
-            <div className="absolute top-0 right-0 w-0 h-0 border-l-[12px] border-l-transparent border-t-[12px] border-t-ember-500/60"></div>
-
-            <table className="w-full text-left">
-              <thead>
-                <tr className="bg-slate-900 border-b border-slate-700">
-                  <Th className="w-24">Day</Th>
-                  <Th className="w-24">Endpoint</Th>
-                  <Th className="w-20">Provider</Th>
-                  <Th className="w-20 text-right">Calls</Th>
-                  <Th className="w-20 text-right">Errors</Th>
-                  <Th className="w-24 text-right">Cost</Th>
-                  <Th className="w-20 text-right">p95 ms</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r, i) => {
-                  const isError = Number(r.error_count || 0) > 0;
-                  const isToday = r.day === todayISO;
-                  return (
-                    <tr
-                      key={`${r.day}-${r.endpoint}-${r.provider}-${r.plan_tier}-${i}`}
-                      className={`border-b border-slate-700/30 text-[11px] text-slate-300 ${
-                        isError
-                          ? "bg-ember-950/20 hover:bg-ember-950/30"
-                          : "hover:bg-slate-800/50"
-                      }`}
-                    >
-                      <td className="py-2 px-2 whitespace-nowrap" title={r.day}>
-                        {formatDay(r.day)}
-                        {isToday && (
-                          <span className="ml-2 text-[9px] tracking-[0.15em] text-ember-500 font-mono font-semibold uppercase">
-                            Today
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-2 px-2 whitespace-nowrap">{r.endpoint}</td>
-                      <td className="py-2 px-2 whitespace-nowrap">{r.provider}</td>
-                      <td className="py-2 px-2 text-right whitespace-nowrap font-mono">
-                        {formatInt(r.call_count)}
-                      </td>
-                      <td className="py-2 px-2 text-right whitespace-nowrap font-mono">
-                        {formatInt(r.error_count)}
-                      </td>
-                      <td className="py-2 px-2 text-right whitespace-nowrap font-mono">
-                        {formatCost(r.cost_usd_total)}
-                      </td>
-                      <td className="py-2 px-2 text-right whitespace-nowrap font-mono">
-                        {r.p95_duration_ms == null ? "—" : formatInt(r.p95_duration_ms)}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <Module code="B-02 · TABLE" title={`14-DAY ROLLUP · ${rows.length} ROW${rows.length === 1 ? "" : "S"}`}>
+            <div className="font-mono text-[12.5px]">
+              <div className="grid grid-cols-[110px_110px_90px_90px_90px_110px_90px] gap-3 px-2 py-2 hud-label text-slate-500 border-b border-slate-800/70">
+                <span>DAY</span>
+                <span>ENDPOINT</span>
+                <span>PROVIDER</span>
+                <span className="text-right">CALLS</span>
+                <span className="text-right">ERRORS</span>
+                <span className="text-right">COST</span>
+                <span className="text-right">P95 MS</span>
+              </div>
+              {rows.map((r, i) => {
+                const isError = Number(r.error_count || 0) > 0;
+                const isToday = r.day === todayISO;
+                return (
+                  <div
+                    key={`${r.day}-${r.endpoint}-${r.provider}-${r.plan_tier}-${i}`}
+                    className={`grid grid-cols-[110px_110px_90px_90px_90px_110px_90px] gap-3 px-2 py-2.5 items-center border-b border-slate-800/30 hover:bg-slate-800/20 ${isError ? "bg-amber-500/[0.04]" : ""}`}
+                    title={r.day}
+                  >
+                    <span className="hud-data text-slate-300">
+                      {formatDay(r.day)}
+                      {isToday && (
+                        <span className="ml-2 hud-label text-orange-400">today</span>
+                      )}
+                    </span>
+                    <span className="text-slate-200">{r.endpoint}</span>
+                    <span className="text-slate-400">{r.provider}</span>
+                    <span className="text-right hud-data text-slate-300">{formatInt(r.call_count)}</span>
+                    <span className={`text-right hud-data ${Number(r.error_count || 0) > 0 ? "text-amber-400" : "text-slate-500"}`}>
+                      {formatInt(r.error_count)}
+                    </span>
+                    <span className="text-right hud-data text-slate-400">{formatCost(r.cost_usd_total)}</span>
+                    <span className="text-right hud-data text-slate-400">
+                      {r.p95_duration_ms == null ? "—" : formatInt(r.p95_duration_ms)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </Module>
         </>
       )}
-
-      {/* Footer metadata */}
-      {rows.length > 0 && lastFetchAt && (
-        <div className="mt-4 text-[10px] tracking-[0.15em] text-slate-600 uppercase font-mono">
-          Source · admin_daily_stats (view over ai_daily_stats) &nbsp;·&nbsp; Last refresh {formatAge(lastFetchAt.toISOString())} &nbsp;·&nbsp; Module D-03 &nbsp;·&nbsp; {rows.length} row{rows.length === 1 ? "" : "s"} across {WINDOW_DAYS} days
-        </div>
-      )}
     </div>
-  );
-}
-
-// --- small helpers -----------------------------------------------------
-
-function Th({ children, className = "" }) {
-  return (
-    <th
-      className={`py-2 px-2 text-[10px] tracking-[0.15em] text-slate-400 uppercase font-mono font-medium ${className}`}
-    >
-      {children}
-    </th>
   );
 }
