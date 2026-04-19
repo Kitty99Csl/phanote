@@ -12,7 +12,7 @@ Phajot (ພາຈົດ) — multi-currency personal finance PWA for Laos (LAK, 
 
 ## Second product: Tower
 
-Phajot now has a sister product called **Tower** — an internal operator dashboard for Kitty (the Speaker) to oversee Phajot's health, chat with AI departments (Sentinels), investigate users, and plan work. Tower is being built in Sprints F–J (Sessions 14–18). Before Tower can be built, Sprints B, C, D, and E must ship the prerequisites.
+Phajot now has a sister product called **Tower** — an internal operator dashboard for Kitty (the Speaker) to oversee Phajot's health, chat with AI departments (Sentinels), investigate users, and plan work. Tower is being built in Sprints F–J (Sessions 14–20+). Before Tower can be built, Sprints B, C, D, and E must ship the prerequisites.
 
 - **Domain:** `tower.phajot.com` (live — Sprint F, Session 15)
 - **Access:** Solo — Speaker (Kitty) only in v1
@@ -116,6 +116,18 @@ For current session, sprint progress, commit hashes, and live infrastructure sta
 
 ## Recent key learnings
 
+### Session 19 learnings (Sprint H-2 close — Language Strings + shared/ extraction)
+
+- **Cross-codebase Vite alias imports are a tree-shaking trap.** `@app → ../src` pulls transitive deps (Supabase client) into the consumer bundle even if only one file is imported. Fix: extract pure data to `shared/` directory with zero imports. Standard monorepo pattern. Session 19 identified this when Tower's Phase 3 import of `@app/lib/i18n` added a duplicate Supabase client (+275KB). Resolved by `shared/i18n-data.js` extraction (−187KB net).
+
+- **For any generated file > ~500 lines, write a generator script instead of inlining via LLM.** CC hit the 32k output token limit mid-session while writing a 425-row SQL seed block. Pattern going forward: write `scripts/seed-*.mjs` (or similar), run it, commit the output. The script is the canonical source; the SQL file is the artifact.
+
+- **"Never committed" is a silent failure mode.** Phase 3 + 3b worked correctly in the working tree but were never staged. CF Pages had nothing to deploy. Symptom: blank Tower page. Diagnosis: `git status` + bundle hash check. Lesson: always verify `git status` before declaring a phase "done." Don't assume the commit happened.
+
+- **shared/ directory convention established.** `shared/` (sibling to `src/` and `tower/`) is the Rule 16-compliant extraction point for code shared between Phajot and Tower. Files in `shared/` must be pure data or pure logic with zero imports from either app. Vite alias `@shared → ../shared` set in both `vite.config.js` files.
+
+- **Migration count is now 013.** Phase 1 shipped Migration 012 (translations table) and Phase 1b shipped Migration 013 (425-row seed).
+
 ### Session 18 learnings (Sprint G close + Migration 011 drift reconciliation)
 
 - **Trust-summary mode for non-security file edits.** Paste-back stays mandatory for migrations, auth, worker code, RLS. For React components, docs, configs: summary is sufficient. Speaker confirmed explicitly mid-session. Reduces friction without sacrificing security posture.
@@ -211,4 +223,4 @@ Thresholds and design decisions:
 
 ---
 
-*Last updated: 2026-04-18 (post Session 15 close) · Maintained by Speaker + Chat Claude · Used by Claude Code · For live state see docs/ROADMAP-LIVE.md*
+*Last updated: 2026-04-20 (post Session 19 close) · Maintained by Speaker + Chat Claude · Used by Claude Code · For live state see docs/ROADMAP-LIVE.md*

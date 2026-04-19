@@ -22,8 +22,8 @@
 └──────────────────────────────────────────────────────────┘
                           ▲
 ┌──────────────────────────────────────────────────────────┐
-│  FLOOR 4 — Tower v1 (Sprints F–J) ✅ F+G COMPLETE       │
-│  Lobby ✅ · Engine Room ✅ · Admin · Chat+OCR · Workshop  │
+│  FLOOR 4 — Tower v1 (Sprints F–J) ✅ F+G+H-2 COMPLETE   │
+│  Lobby ✅ · Engine Room ✅ · Lang Strings ✅ · Admin · Chat+OCR · Workshop │
 └──────────────────────────────────────────────────────────┘
                           ▲
 ┌──────────────────────────────────────────────────────────┐
@@ -241,43 +241,33 @@ Shipped: System Integrity HUD (D3 design — 4 stat cards + 4 endpoint telemetry
 
 Key commits: `274ee14` (initial), `fa1f216` (iframe fallback), `65a2086` (HUD), `857a2ca` (endpoint fix), `82f7221` (Migration 011 drift reconciliation — companion Item 2).
 
-### Sprint H — Room 5: The Admin Panel (Session 16)
+### Sprint H — Room 5: The Admin Panel (Session 20) + Language Strings ✅ (Session 19)
+
+#### Language Strings ✅ CLOSED Session 19, 2026-04-20
+
+**Shipped:** DB-backed i18n with Tower admin UI. Full production path from code → DB → admin panel → live app.
+
+Architecture shipped:
+- Supabase `translations` table (Migration 012): `id`, `code` (unique), `en`, `lo`, `th`, `used_in`, `notes`, `created_at`, `updated_at`, `updated_by`. RLS: read = all authenticated; write = is_admin only.
+- Seed (Migration 013): 425 rows from `src/lib/i18n.js`, ON CONFLICT DO NOTHING. 38 TH nulls (wife fills via admin panel).
+- Runtime (`src/lib/translations.js`): fire-and-forget init, 7-day localStorage cache, silent fallback on fetch failure.
+- Fallback chain: DB lang → DB EN → code lang → code EN → key string. App never shows raw key.
+- `shared/i18n-data.js`: Rule 16-compliant extraction of pure i18n dictionary. Shared by both Phajot and Tower. Zero imports, zero side effects.
+
+Tower admin UI (`tower.phajot.com/admin/language-strings`, Module A-05):
+- Inline click-to-edit: EN, LO, TH, USED_IN columns — blur/Enter saves, Escape cancels
+- Optimistic updates with revert on DB error
+- Search (code/en/lo/th, case-insensitive) + "Filter by screen" used_in dropdown
+- "Show missing only" checkbox — surfaces rows where lo OR th IS NULL
+- Missing-row visual: ember left border + ◌ prefix + italic em-dash in NULL cells
+- Sync from code button: diffs bundled shared/i18n-data.js against DB, upserts missing keys
+- Just-saved row flash: bg-green-500/10 for 1500ms after each save
+
+Key commits: da185fd (012), 9648feb (013 + script), 02ec8d0 (Phase 2), c7adb4a (Phase 3 + 3b), 48324bf (Phase 3c)
+
+#### Admin Panel (user investigation) — Session 20
+
 User investigation. **Read-only in v1.** Search users, view profile/transactions/errors. Every read logs to `tower_admin_reads`. PDPA-compliant access controls.
-
-#### Language Strings Admin Panel
-
-Purpose: Replace code-level i18n editing with a data-driven admin panel. Admins edit translations without redeploying. Wife and other Lao/Thai reviewers can adjust strings directly.
-
-Reference implementation: office.bj88laos.com/setting/language-strings — inline table with Code/English/Lao/Thai/Used In columns, search, filter, inline edit, create button.
-
-Architecture:
-- Supabase `translations` table: `id`, `code` (unique), `en`, `lo`, `th`, `used_in`, `notes`, `created_at`, `updated_at`, `updated_by`
-- Runtime: app fetches translations on mount, caches in localStorage with 7-day TTL
-- Fallback chain: DB translation → code-level `i18n.js` → English → key name. App works offline, works if Supabase down.
-- Migration: seed script copies current ~154 keys from `src/lib/i18n.js` into DB on first deploy
-- Code-level `i18n.js` stays as permanent fallback (not deleted)
-
-Admin UI (Tower Room 5, `tower.phajot.com/admin/language-strings`):
-- Search by code or string content (in any language)
-- Filter by `used_in` (Settings, Home, Onboarding, etc.)
-- Inline edit: code | en | lo | th | used_in
-- Create new key button (+CREATE)
-- Soft-delete with audit log (`updated_by` tracks who changed what)
-- Export JSON (for backup and emergency sync)
-- Import JSON (for bulk updates from external translators)
-
-Estimated time: ~2 days within Sprint H's total budget.
-
-Benefits:
-- Wife/admins can fix bad translations without waiting for Kitty
-- New languages (Vietnamese, Khmer, etc.) become admin tasks, not code changes
-- Audit trail via `updated_by`/`updated_at`
-- Decouples translation work from deploy cycles
-
-Prerequisites from earlier sprints:
-- Sprint C auth (done) — needed for admin login
-- Sprint D code-level i18n complete (in progress) — provides migration seed data
-- Sprint E Sentry (planned) — monitors admin panel errors
 
 ### Sprint I — Command Center + OCR Reliability Room (Session 18)
 
@@ -413,6 +403,7 @@ Approximately **11–12 weeks** from this plan to a public-launch-ready Phajot m
 | v1.2 | 2026-04-16 | Sprint L (OCR Pipeline Hardening) inserted between J and K. OCR Reliability Room added to Sprint I. External advisor decision: treat OCR as pipeline problem, not model problem. Closes OQ-015. |
 | v1.3 | 2026-04-20 | LINE bot removed from Sprint K (Session 18). Laos is not LINE-oriented; WhatsApp/Messenger dominate. Native app publishing (App Store + Google Play) promoted to Phase 6 final milestone via codex update. |
 | v1.4 | 2026-04-19 | Sprint G CLOSED (Session 18). Engine Room live: System Integrity HUD + hourly AI chart. Migration 011 closes 4 drift items. Floor 4 updated: F+G complete. |
+| v1.5 | 2026-04-20 | Sprint H-2 CLOSED (Session 19). Language Strings live: DB-backed i18n (Migrations 012+013) + Tower admin UI at /admin/language-strings + shared/i18n-data.js extraction (Rule 16 + -187KB bundle). Floor 4 updated: F+G+H-2 complete. H-1 (Admin Panel) deferred to Session 20. |
 
 ---
 

@@ -9,7 +9,7 @@ Living document. Updated at the end of each session.
 - **MEDIUM** — quality issue, user-visible but recoverable, or latent failure mode
 - **LOW** — tech debt, nice-to-have, or documentation gap
 
-**Last updated:** 2026-04-19 (post Session 18 close)
+**Last updated:** 2026-04-20 (post Session 19 close)
 
 ---
 
@@ -132,9 +132,30 @@ Production ai_memory carried 3 stale policies (`'Users update own memory'`, `'Us
 
 ### [LOW] Tower bundle past Vite 500KB warning threshold
 **Discovered:** Session 18, 2026-04-19
-**Status:** Accepted, documented
+**Status:** Accepted, documented — partially reduced Session 19
 
-Tower bundle reached 793.25KB raw / 229.64KB gzip after Recharts install (commit `274ee14`). Vite warning fires at 500KB. Tower is admin-only internal surface; accepted for Session 18. Future Tower rooms must reuse existing Recharts (already bundled) rather than adding new chart libraries. If bundle approaches 1.2MB gzip, evaluate dynamic import() code-splitting.
+Session 18 baseline: 793KB raw / 230KB gzip (Engine Room).
+Session 19 trajectory: Phase 3 caused bloat to 1068KB (duplicate Supabase client via transitive import); Phase 3b (shared/ extraction) reclaimed 187KB → 881KB; Phase 3c (+lucide-react + polish) → 884KB raw / 253KB gzip.
+
+Current 884KB is **honest** — all content is reviewed and intentional: i18n dictionary (~110KB, needed for Sync button), Recharts, Supabase, app code, lucide-react (~1KB Pencil icon). Vite warning still fires (admin-only internal surface; accepted). Future Tower rooms must reuse existing Recharts rather than adding new chart libraries. If bundle approaches 1.2MB raw, evaluate dynamic import() code-splitting.
+
+### [LOW] Language Strings font sizing too small for sustained editing
+**Discovered:** Session 19, 2026-04-20
+**Status:** Open
+
+Admin table uses `text-[11px]` / `text-[9px]` — appropriate for monitoring dashboards, potentially fatiguing for the wife's translation editing sessions (Lao/Thai script, 10–30 min per session). Phase 3d or Session 20 polish. Options: bump body to `text-[12px]`, or add density toggle. Not blocking.
+
+### [LOW] lucide-react added as Tower dependency
+**Discovered:** Session 19, 2026-04-20
+**Status:** Accepted
+
+`lucide-react@1.8.0` added for Pencil cell-edit affordance. Tower previously used zero icon library deps. At 1 icon today, bundle impact is negligible (~1KB). Revisit if Tower icon count exceeds ~5 — inline SVG is always an option for Tower's limited icon surface.
+
+### [LOW] 38 translation keys missing Thai (th) in DB
+**Discovered:** Session 19, 2026-04-20
+**Status:** Open — wife's work via admin panel
+
+Pre-existing gap from `src/lib/i18n.js`: 38 keys have Lao but no Thai. Visible in Language Strings panel via `◌` prefix + ember highlight + "Show missing only" filter. Thai users fall back to English for these keys. Not blocking for current user base. Low priority before Thai-language public marketing.
 
 ---
 

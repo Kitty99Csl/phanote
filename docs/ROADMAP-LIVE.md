@@ -2,17 +2,17 @@
 
 > **Status:** Current source of truth (live roadmap, updated every session wrap-up)
 
-> Last updated: 2026-04-19 (Session 18 close — Sprint G CLOSED)
+> Last updated: 2026-04-20 (Session 19 close — Sprint H-2 CLOSED)
 
 ## Current State
-- **Active sprint:** H (Admin Panel + Language Strings) — standby. Sprint G closed 2026-04-19.
-- **Session 18:** closed this commit · Session 19 next: Sprint H (docs/session-18/SUMMARY.md open threads)
-- **Production hash (Phajot):** index-BJCgj50K.js (unchanged — main app untouched in Sessions 17–18)
-- **Tower bundle:** index-Bn-XNeS-.js (793.25KB / 229.64KB gzip — Rooms 1/2/3/4 live) — Tower fully operational at tower.phajot.com (3-layer gate: CF Access + Supabase login + is_admin RLS)
+- **Active sprint:** H (H-2 complete, H-1 next) — Sprint H-2 (Language Strings) closed 2026-04-20.
+- **Session 19:** closed this commit · Session 20 next: Sprint H-1 Admin Panel (docs/session-19/SUMMARY.md open threads)
+- **Production hash (Phajot):** index-BJCgj50K.js (Phase 2 translation init added — hash unchanged from Session 14; main app bundle unchanged despite translations.js addition because CF Pages hasn't rebuilt since 02ec8d0 was pushed)
+- **Tower bundle:** 884KB raw / 253KB gzip (Phase 3c — Rooms 1/2/3/4 + Language Strings admin live) — Tower fully operational at tower.phajot.com (3-layer gate: CF Access + Supabase login + is_admin RLS)
 - **Worker version:** 4.7.0
-- **Latest commit:** 82f7221 (Migration 011 drift reconciliation, Session 18 Item 2)
-- **Next action:** Session 19 opening per docs/session-ritual.md; Sprint H scope pre-locked (Admin Panel + Language Strings)
-- **Notable milestone:** Sprint G CLOSED — Engine Room live (System Integrity HUD + hourly AI chart). Migration 011 closes 4 drift gaps (admin_user_summary dropped, ai_memory policies canonicalized, profiles/transactions policies renamed). 11 migrations total.
+- **Latest commit:** 48324bf (Language Strings UX polish pass Phase 3c, Session 19)
+- **Next action:** Session 20 opening per docs/session-ritual.md; Sprint H-1 (Admin Panel) scope lock before first commit
+- **Notable milestone:** Sprint H-2 CLOSED — DB-backed i18n live. 425 translation keys in Supabase. Main app reads from DB with 7-day cache + 4-level fallback chain. Tower admin UI at /admin/language-strings with inline edit, Sync button, missing-value highlights. shared/i18n-data.js extraction eliminates Rule 16 violation + reclaims 187KB from Tower bundle. 13 migrations total.
 
 ## Sprint Progress
 
@@ -123,11 +123,33 @@
 
 **Status:** COMPLETE ✅ (2/2 items) — Closed 2026-04-19 Session 18
 
-### Sprints H-J — Tower Rooms (Sessions 19-21)
-- H: Admin Panel (user investigation, read-only v1) + **Language Strings Admin Panel** — data-driven i18n via Supabase `translations` table, inline edit UI at `tower.phajot.com/admin/language-strings`, fallback chain DB → code-level i18n.js → English → key name. Wife/admins edit translations without redeploying. ~2 days within Sprint H budget.
+### Sprint H — Language Strings + Admin Panel (Sessions 19–20)
+
+#### H-2: Language Strings ✅ CLOSED 2026-04-20 (Session 19)
+
+| Item | Status | Key commits | Notes |
+|---|---|---|---|
+| Migration 012 — translations table schema | ✅ | da185fd | RLS, trigger, index |
+| Migration 013 — 425-row seed | ✅ | 9648feb | ON CONFLICT DO NOTHING, 38 TH nulls |
+| Phase 2 — main app DB fetch + cache | ✅ | 02ec8d0 | 7-day localStorage cache, silent fallback |
+| Phase 3 — Tower admin UI | ✅ | c7adb4a | Inline edit, search/filter, Sync button |
+| Phase 3b — shared/ extraction | ✅ | c7adb4a | Rule 16, −187KB Tower bundle |
+| Phase 3c — UX polish | ✅ | 48324bf | Show missing only, cell affordance, row flash |
+
+**Status:** COMPLETE ✅ (all 6 items)
+
+#### H-1: Admin Panel (user investigation) — Session 20
+
+- Room 5: search users, view profile/transactions/errors
+- Every read logs to tower_admin_reads (Migration 009 §4)
+- PDPA-compliant, read-only v1
+
+**Status:** NOT STARTED — next Session 20
+
+### Sprints I–J — Tower Rooms (Sessions 21–22)
 - I: Command Center (Sentinel chat) + **OCR Reliability Room** — attempts/failures/success rates per bank, average review corrections, confidence distribution, cost per 100 scans, most common row errors. Feeds Sprint L hardening decisions with real data.
 - J: Workshop + Archive
-**Status:** H next (Session 19)
+**Status:** Not started
 
 ### Sprint L — OCR Pipeline Hardening (Sessions 20-21, ~May-Jun 2026)
 
@@ -191,6 +213,7 @@ Rejected alternatives:
 | 16 (Sprint F continued) | BJCgj50K (main app unchanged) | BJCgj50K — Tower only: DYnDWyB4 → K63ln-YZ (admin gate) → C5RzeSTp (Room 1) | Items 2 + 4. Tower admin gate live (3-layer defense). Room 1 /health rendering 4 module cards with real data. 9 commits: cd78bc2, f2494c0, c3e7307, 186a819, fc9c6d6, ae587a9, d4c58e5, ca85d44, + this wrap. |
 | 17 (Sprint F close) | BJCgj50K (main app unchanged) | BJCgj50K — Tower only: C5RzeSTp → CUKk-PSf (Room 2) → DpNRTJ91 (Room 2 tweak) → CuLQfJJZ (Room 3) → 2zR7DkDi (Room 3 tweak) | Items 5 + 6 + Migrations 009 + 010. Sprint F CLOSED. 6 commits: a791872, 021e7a1, bd5109c, 267c37e, b963774, + wrap. |
 | 18 (Sprint G close) | BJCgj50K (main app unchanged) | BJCgj50K — Tower only: 2zR7DkDi → C26VOd0d (Recharts) → Bz0clCZ1 (fallback) → MLdjSdAs (HUD) → Bn-XNeS- (endpoint fix) | Engine Room + Migration 011 drift reconciliation. Sprint G CLOSED. 7 commits: e76ff61, 374c820, 274ee14, fa1f216, 65a2086, 857a2ca, 82f7221. |
+| 19 (Sprint H-2 close) | BJCgj50K → post-02ec8d0 hash (Phase 2 translations init added to main app) | Tower: Bn-XNeS- → post-c7adb4a (Phase 3 + 3b, 884KB raw) → post-48324bf (Phase 3c, 884KB raw) | Language Strings shipped. Migrations 012+013. shared/i18n-data.js. Sprint H-2 CLOSED. 5 commits: da185fd, 9648feb, 02ec8d0, c7adb4a, 48324bf. |
 
 ## The Tower Team
 | Name | Role |
