@@ -9,6 +9,7 @@ import {
 import { updateStreak } from "./lib/streak";
 import { DEFAULT_EXPENSE_CATS, DEFAULT_INCOME_CATS, findCat } from "./lib/categories";
 import { t } from "./lib/i18n";
+import { initTranslations } from "./lib/translations";
 import { showToast } from "./lib/toast";
 import { Logo } from "./components/Logo";
 import { ToastContainer } from "./components/Toast";
@@ -147,6 +148,7 @@ export default function App(){
         });
         supabase.from("profiles").update({ last_seen_at: new Date().toISOString() }).eq("id", uid).then(()=>{});
         dbTrackEvent(uid, "app_open").then(()=>{});
+        initTranslations(); // fire and forget — DB wins per D19-Q1
       } else if (!dbProfile) {
         await supabase.auth.signOut(); setUserId(null);
       }

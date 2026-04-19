@@ -1,5 +1,6 @@
 // Internationalization dictionaries for English, Lao, and Thai.
 // Extracted from App.jsx in Session 7.
+import { getDBMap } from './translations';
 
 export const i18n={
   en:{
@@ -962,4 +963,12 @@ export const i18n={
     levelChampion:"แชมป์",
   },
 };
-export const t=(lang,key)=>i18n[lang]?.[key]||i18n.en[key]||key;
+export const t = (lang, key) => {
+  const db = getDBMap();
+  if (db && db[key]) {
+    const row = db[key];
+    if (row[lang]) return row[lang];
+    if (row.en) return row.en;
+  }
+  return i18n[lang]?.[key] || i18n.en[key] || key;
+};
