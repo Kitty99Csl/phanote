@@ -214,7 +214,7 @@ export default function LanguageStrings() {
   }
 
   return (
-    <div className="p-6 space-y-5 font-mono">
+    <div className="p-6 space-y-5 font-mono min-w-0">
 
       {/* Toast */}
       {toast && (
@@ -319,7 +319,7 @@ export default function LanguageStrings() {
 
       {/* Table */}
       {!loading && !error && (
-        <div className="relative border border-slate-700 bg-slate-800">
+        <div className="relative border border-slate-700 bg-slate-800 min-w-0">
           <CornerBrackets />
           <div className="overflow-x-auto">
             <table className="w-full text-[11px]">
