@@ -10,7 +10,7 @@
 - **Production hash (Phajot):** index-BJCgj50K.js (unchanged — main app untouched in Session 17)
 - **Tower bundle:** index-2zR7DkDi.js (Rooms 1/2/3 all live) — Tower fully operational at tower.phajot.com (3-layer gate: CF Access + Supabase login + is_admin RLS)
 - **Worker version:** 4.7.0
-- **Latest commit:** ae64f16 (Session 17 wrap / Sprint F close)
+- **Latest commit:** bb75f7f (Session 17 wrap / Sprint F close)
 - **Next action:** Session 18 opening per docs/session-ritual.md; scope to be locked from Session 17 SUMMARY candidates
 - **Notable milestone:** Sprint F CLOSED — Tower has live admin-gated observability across /health, ai_call_log, and ai_daily_stats. 3-layer defense-in-depth fully operational.
 
