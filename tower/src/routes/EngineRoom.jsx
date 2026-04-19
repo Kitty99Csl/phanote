@@ -25,7 +25,7 @@ import {
 const WINDOW_HOURS = 24;   // Section 2 chart window
 const WINDOW_DAYS = 7;     // Section 1 integrity window
 const SELECT_COLUMNS = "created_at, provider, endpoint, status";
-const KNOWN_ENDPOINTS = ["parse", "ocr", "advise", "monthly-report"];
+const KNOWN_ENDPOINTS = ["/parse", "/ocr", "/advise", "/monthly-report"];
 
 // --- helpers -----------------------------------------------------------
 
@@ -135,7 +135,7 @@ function EndpointRow({ ep }) {
     <div className={`flex items-center gap-3 py-2.5 border-b border-slate-700/30 ${isIdle ? "opacity-50" : ""}`}>
       <div className="w-36 flex items-center gap-1.5 font-mono text-[11px]">
         <span className={prefixClass}>{prefix}</span>
-        <span className={isIdle ? "text-slate-600" : "text-slate-300"}>/{endpoint}</span>
+        <span className={isIdle ? "text-slate-600" : "text-slate-300"}>{endpoint}</span>
       </div>
       <div className="w-16 text-[11px] font-mono text-slate-400 text-right">
         {isIdle ? "—" : `${success}/${total}`}
