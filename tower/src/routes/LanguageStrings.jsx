@@ -17,6 +17,7 @@
 //   Supabase client, no translations.js pulled into Tower's bundle.
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { Pencil } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { i18nData as i18n } from "@shared/i18n-data";
 
@@ -49,10 +50,12 @@ export default function LanguageStrings() {
   const [lastFetchAt, setLastFetchAt] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [usedInFilter, setUsedInFilter] = useState("ALL");
+  const [showMissingOnly, setShowMissingOnly] = useState(false);
   const [editingCell, setEditingCell] = useState(null); // { rowId, field }
   const [editValue, setEditValue] = useState("");
   const [syncing, setSyncing] = useState(false);
   const [toast, setToast] = useState(null); // { type: 'success'|'error', message }
+  const [lastSavedRowId, setLastSavedRowId] = useState(null);
 
   useEffect(() => {
     if (!toast) return;
@@ -83,6 +86,9 @@ export default function LanguageStrings() {
     if (usedInFilter !== "ALL") {
       r = r.filter(row => row.used_in === usedInFilter);
     }
+    if (showMissingOnly) {
+      r = r.filter(row => row.lo == null || row.th == null);
+    }
     if (searchTerm.trim()) {
       const q = searchTerm.toLowerCase();
       r = r.filter(row =>
@@ -93,7 +99,7 @@ export default function LanguageStrings() {
       );
     }
     return r;
-  }, [rows, searchTerm, usedInFilter]);
+  }, [rows, searchTerm, usedInFilter, showMissingOnly]);
 
   const uniqueUsedIn = useMemo(() => {
     const vals = new Set(rows.map(r => r.used_in).filter(Boolean));
@@ -126,6 +132,8 @@ export default function LanguageStrings() {
       setToast({ type: "error", message: `Save failed: ${err.message}` });
     } else {
       setToast({ type: "success", message: "Saved" });
+      setLastSavedRowId(rowId);
+      setTimeout(() => setLastSavedRowId(null), 1500);
     }
   }
 
@@ -190,9 +198,15 @@ export default function LanguageStrings() {
       <span
         onClick={() => startEdit(row.id, field, display)}
         title="Click to edit"
-        className="block w-full cursor-text text-slate-300 text-[11px] font-mono truncate hover:text-slate-100 hover:bg-slate-700/30 px-1 py-0.5 rounded-sm min-h-[20px]"
+        className="group/cell relative flex items-center w-full cursor-text text-slate-300 text-[11px] font-mono hover:text-slate-100 hover:bg-slate-700/30 px-1 py-0.5 rounded-sm min-h-[20px]"
       >
-        {display || <span className="text-slate-600 italic">—</span>}
+        <span className="flex-1 truncate">
+          {display || <span className="text-slate-600 italic">—</span>}
+        </span>
+        <Pencil
+          size={10}
+          className="flex-shrink-0 ml-1 opacity-0 group-hover/cell:opacity-40 text-slate-400 transition-opacity"
+        />
       </span>
     );
   }
@@ -219,7 +233,8 @@ export default function LanguageStrings() {
         </div>
         <h1 className="text-2xl font-semibold text-slate-100 tracking-tight">Language Strings</h1>
         <p className="text-[11px] text-slate-500 mt-1 tracking-wide max-w-xl">
-          Edit translations without redeploys. Changes propagate within 7 days (cache TTL) or on user hard-refresh.
+          Edit translations one at a time. Missing values are highlighted.
+          Changes propagate within 7 days (cache TTL) or on user hard-refresh.
         </p>
       </div>
 
@@ -253,24 +268,41 @@ export default function LanguageStrings() {
 
       {/* Search + filter */}
       {!loading && !error && (
-        <div className="flex items-center gap-3">
+        <div className="flex items-end gap-3">
           <input
             type="text"
-            placeholder="Search code, EN, LO, TH…"
+            placeholder="Search by word, phrase, or code..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             className="flex-1 bg-slate-800 border border-slate-700 text-slate-300 text-[11px] font-mono px-3 py-1.5 outline-none focus:border-slate-600 placeholder:text-slate-600"
           />
-          <select
-            value={usedInFilter}
-            onChange={e => setUsedInFilter(e.target.value)}
-            className="bg-slate-800 border border-slate-700 text-slate-400 text-[10px] font-mono px-2 py-1.5 outline-none focus:border-slate-600 uppercase tracking-wider"
-          >
-            {uniqueUsedIn.map(v => (
-              <option key={v} value={v}>{v}</option>
-            ))}
-          </select>
-          <span className="text-[9px] text-slate-600 tracking-wider whitespace-nowrap">
+          <div className="flex flex-col gap-1">
+            <span className="text-[9px] tracking-[0.2em] text-slate-500 uppercase font-mono">Filter by screen</span>
+            <select
+              value={usedInFilter}
+              onChange={e => setUsedInFilter(e.target.value)}
+              className="bg-slate-800 border border-slate-700 text-slate-400 text-[10px] font-mono px-2 py-1.5 outline-none focus:border-slate-600 uppercase tracking-wider"
+            >
+              {uniqueUsedIn.map(v => (
+                <option key={v} value={v}>{v}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-col gap-1 pb-0.5">
+            <label className="flex items-center gap-1.5 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={showMissingOnly}
+                onChange={e => setShowMissingOnly(e.target.checked)}
+                className="w-3 h-3 accent-ember-500 cursor-pointer"
+              />
+              <span className="text-[10px] tracking-[0.1em] text-slate-400 uppercase group-hover:text-slate-300 transition-colors">
+                Show missing only
+              </span>
+            </label>
+            <span className="text-[9px] text-slate-600 tracking-wider">Find untranslated strings</span>
+          </div>
+          <span className="text-[9px] text-slate-600 tracking-wider whitespace-nowrap pb-0.5">
             {filteredRows.length} / {rows.length} rows
           </span>
         </div>
@@ -293,11 +325,11 @@ export default function LanguageStrings() {
                 <tr className="border-b border-slate-700">
                   {[
                     { label: "CODE",    cls: "w-40" },
-                    { label: "EN",      cls: "w-56" },
-                    { label: "LO",      cls: "w-56" },
-                    { label: "TH",      cls: "w-56" },
-                    { label: "USED_IN", cls: "w-32" },
-                    { label: "UPDATED", cls: "w-24" },
+                    { label: "EN",      cls: "" },
+                    { label: "LO",      cls: "" },
+                    { label: "TH",      cls: "" },
+                    { label: "USED_IN", cls: "w-28" },
+                    { label: "UPDATED", cls: "w-20 text-right" },
                   ].map(({ label, cls }) => (
                     <th key={label} className={`${cls} text-left px-3 py-2 text-[9px] tracking-[0.2em] text-slate-500 uppercase font-normal`}>
                       {label}
@@ -306,24 +338,40 @@ export default function LanguageStrings() {
                 </tr>
               </thead>
               <tbody>
-                {filteredRows.map(row => (
-                  <tr key={row.id} className="border-b border-slate-700/30 hover:bg-slate-700/20 transition-colors">
-                    <td className="px-3 py-1.5 font-mono text-[11px] text-slate-400 whitespace-nowrap">
-                      {row.code}
-                    </td>
-                    <td className="px-1 py-1">{renderCell(row, "en")}</td>
-                    <td className="px-1 py-1">{renderCell(row, "lo")}</td>
-                    <td className="px-1 py-1">{renderCell(row, "th")}</td>
-                    <td className="px-1 py-1">{renderCell(row, "used_in")}</td>
-                    <td className="px-3 py-1.5 text-[9px] text-slate-600 whitespace-nowrap">
-                      {formatAge(row.updated_at)}
-                    </td>
-                  </tr>
-                ))}
+                {filteredRows.map(row => {
+                  const isMissing = row.lo == null || row.th == null;
+                  const isSaved = row.id === lastSavedRowId;
+                  return (
+                    <tr
+                      key={row.id}
+                      className={[
+                        "border-b border-slate-700/30 transition-colors duration-500",
+                        isMissing ? "border-l-2 border-l-ember-500/40 bg-ember-500/[0.03]" : "",
+                        isSaved ? "bg-green-500/10" : "hover:bg-slate-700/20",
+                      ].join(" ")}
+                    >
+                      <td className="px-3 py-3.5 font-mono text-[11px] text-slate-400 whitespace-nowrap w-40">
+                        {isMissing && (
+                          <span className="text-ember-500/60 mr-1">◌</span>
+                        )}
+                        {row.code}
+                      </td>
+                      <td className="px-1 py-2">{renderCell(row, "en")}</td>
+                      <td className="px-1 py-2">{renderCell(row, "lo")}</td>
+                      <td className="px-1 py-2">{renderCell(row, "th")}</td>
+                      <td className="px-1 py-2 w-28">{renderCell(row, "used_in")}</td>
+                      <td className="px-3 py-3.5 text-[9px] text-slate-600 whitespace-nowrap w-20 text-right">
+                        {formatAge(row.updated_at)}
+                      </td>
+                    </tr>
+                  );
+                })}
                 {filteredRows.length === 0 && (
                   <tr>
                     <td colSpan={6} className="px-3 py-8 text-center text-[11px] text-slate-600">
-                      {searchTerm || usedInFilter !== "ALL" ? "No rows match filter" : "No translations found"}
+                      {searchTerm || usedInFilter !== "ALL" || showMissingOnly
+                        ? "No rows match filter"
+                        : "No translations found"}
                     </td>
                   </tr>
                 )}
