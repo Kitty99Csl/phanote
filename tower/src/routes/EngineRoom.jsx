@@ -1,8 +1,11 @@
-// Room 4 — Engine Room: external uptime embed + hourly AI traffic chart (Sprint G Item 1, Session 18).
+// Room 4 — Engine Room: System Integrity HUD + hourly AI traffic chart (Sprint G Item 1, Session 18).
 //
-// Section 1: UptimeRobot status page embedded via iframe (no Supabase dependency).
-// Section 2: Line chart of ai_call_log rows bucketed by UTC hour, last 24h.
+// Section 1: Native "System Integrity" tactical HUD — derives uptime from ai_call_log signal
+//   traffic over a 7-day window. 4 aggregate stat cards + per-endpoint telemetry rows.
+//   UptimeRobot kept as secondary "External ping ↗" affordance in footer.
+// Section 2: Recharts line chart of ai_call_log rows bucketed by UTC hour, last 24h.
 //
+// Single Supabase query covers both sections (7-day window; chart uses last 24h slice).
 // Data source: Supabase ai_call_log table via tower/src/lib/supabase.js.
 // Pattern source: AICalls.jsx (header/footer/error/loading), DailyStats.jsx (useMemo aggregation).
 // Module code: E-04.
@@ -19,8 +22,10 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-const WINDOW_HOURS = 24;
-const SELECT_COLUMNS = "created_at, provider";
+const WINDOW_HOURS = 24;   // Section 2 chart window
+const WINDOW_DAYS = 7;     // Section 1 integrity window
+const SELECT_COLUMNS = "created_at, provider, endpoint, status";
+const KNOWN_ENDPOINTS = ["parse", "ocr", "advise", "monthly-report"];
 
 // --- helpers -----------------------------------------------------------
 
@@ -44,6 +49,119 @@ function hourBucket(date) {
   return `${y}-${mo}-${d}T${h}`;
 }
 
+function integrityStatus(pct, totalCalls) {
+  if (totalCalls === 0) return "standby";
+  if (pct >= 99.5) return "nominal";
+  if (pct >= 95) return "caution";
+  return "critical";
+}
+
+function statusCardClass(status) {
+  if (status === "nominal") return "border-green-500/40 bg-green-500/5";
+  if (status === "caution") return "border-ember-500/60 bg-ember-500/5";
+  if (status === "critical") return "border-red-500/40 bg-red-500/5";
+  return "border-slate-700 bg-slate-800";
+}
+
+function statusTextClass(status) {
+  if (status === "nominal") return "text-green-500";
+  if (status === "caution") return "text-ember-500";
+  if (status === "critical") return "text-red-500";
+  return "text-slate-500";
+}
+
+// --- sub-components ----------------------------------------------------
+
+function CornerBrackets() {
+  return (
+    <>
+      <span className="absolute top-2 left-2 w-3 h-3 border-t border-l border-ember-500/50" />
+      <span className="absolute top-2 right-2 w-3 h-3 border-t border-r border-ember-500/50" />
+      <span className="absolute bottom-2 left-2 w-3 h-3 border-b border-l border-ember-500/50" />
+      <span className="absolute bottom-2 right-2 w-3 h-3 border-b border-r border-ember-500/50" />
+    </>
+  );
+}
+
+function StatCard({ label, readout, meta, status, showPulse }) {
+  return (
+    <div className={`relative border p-3 ${statusCardClass(status)}`}>
+      {showPulse && status === "nominal" && (
+        <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shadow-[0_0_6px_rgba(34,197,94,0.8)]" />
+      )}
+      <div className="text-[9px] tracking-[0.2em] text-slate-500 uppercase font-mono mb-1.5">
+        {label}
+      </div>
+      <div className={`text-2xl font-semibold tracking-tight mb-1 ${statusTextClass(status)}`}>
+        {readout}
+      </div>
+      <div className="text-[9px] tracking-[0.15em] text-slate-600 uppercase font-mono">
+        {meta}
+      </div>
+    </div>
+  );
+}
+
+function EndpointRow({ ep }) {
+  const { endpoint, total, success, uptimePct } = ep;
+  const isIdle = total === 0;
+  const hasErrors = !isIdle && success < total;
+  const isOk = !isIdle && !hasErrors;
+
+  const prefix = isIdle ? "◌" : "▲";
+  const prefixClass = isIdle ? "text-slate-600" : "text-ember-500";
+
+  let badgeText, badgeClass;
+  if (isIdle) {
+    badgeText = "◌ IDLE";
+    badgeClass = "text-slate-600";
+  } else if (isOk) {
+    badgeText = "◉ OK";
+    badgeClass = "text-green-500";
+  } else {
+    badgeText = "▲ WARN";
+    badgeClass = "text-ember-500";
+  }
+
+  const pctDisplay = uptimePct != null ? `${uptimePct.toFixed(1)}%` : "—";
+  const barFill = uptimePct ?? 0;
+  const barFillClass = isOk
+    ? "bg-green-500/70 shadow-[0_0_4px_rgba(34,197,94,0.5)]"
+    : hasErrors
+    ? "bg-ember-500/70"
+    : "bg-slate-700";
+
+  return (
+    <div className={`flex items-center gap-3 py-2.5 border-b border-slate-700/30 ${isIdle ? "opacity-50" : ""}`}>
+      <div className="w-36 flex items-center gap-1.5 font-mono text-[11px]">
+        <span className={prefixClass}>{prefix}</span>
+        <span className={isIdle ? "text-slate-600" : "text-slate-300"}>/{endpoint}</span>
+      </div>
+      <div className="w-16 text-[11px] font-mono text-slate-400 text-right">
+        {isIdle ? "—" : `${success}/${total}`}
+      </div>
+      <div
+        className={`w-16 text-[11px] font-mono text-right ${
+          isOk ? "text-green-500" : hasErrors ? "text-ember-500" : "text-slate-600"
+        }`}
+      >
+        {pctDisplay}
+      </div>
+      <div className="flex-1">
+        <div className="w-full h-1.5 bg-slate-900 overflow-hidden">
+          <div
+            className={`h-full transition-all ${barFillClass}`}
+            style={{ width: `${barFill}%` }}
+          />
+        </div>
+      </div>
+      <div className={`w-16 text-[9px] tracking-[0.1em] font-mono uppercase text-right ${badgeClass}`}>
+        {badgeText}
+      </div>
+    </div>
+  );
+}
+
 // --- main component ----------------------------------------------------
 
 export default function EngineRoom() {
@@ -55,7 +173,8 @@ export default function EngineRoom() {
   const fetchCalls = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const since = new Date(Date.now() - WINDOW_HOURS * 3_600_000).toISOString();
+    // 7-day window covers both Section 1 (integrity, 7d) and Section 2 (chart, last 24h slice).
+    const since = new Date(Date.now() - WINDOW_DAYS * 24 * 3_600_000).toISOString();
     const { data, error: qError } = await supabase
       .from("ai_call_log")
       .select(SELECT_COLUMNS)
@@ -77,7 +196,26 @@ export default function EngineRoom() {
     fetchCalls();
   }, [fetchCalls]);
 
-  // Build 24 UTC hourly buckets and count rows per provider.
+  // Section 1: 7-day integrity aggregation.
+  const integrityStats = useMemo(() => {
+    const totalSignals = rows.length;
+    const totalSuccess = rows.filter((r) => r.status === "success").length;
+    const anomalies = totalSignals - totalSuccess;
+    const integrity = totalSignals > 0 ? (totalSuccess / totalSignals) * 100 : null;
+
+    const endpoints = KNOWN_ENDPOINTS.map((ep) => {
+      const epRows = rows.filter((r) => r.endpoint === ep);
+      const total = epRows.length;
+      const success = epRows.filter((r) => r.status === "success").length;
+      const uptimePct = total > 0 ? (success / total) * 100 : null;
+      return { endpoint: ep, total, success, uptimePct };
+    });
+
+    const activeEndpoints = endpoints.filter((e) => e.total > 0).length;
+    return { totalSignals, totalSuccess, anomalies, integrity, endpoints, activeEndpoints };
+  }, [rows]);
+
+  // Section 2: 24h hourly chart bucketing (rows outside last 24h are naturally skipped).
   const chartData = useMemo(() => {
     const now = new Date();
     const buckets = [];
@@ -101,6 +239,16 @@ export default function EngineRoom() {
     }
     return buckets;
   }, [rows]);
+
+  const { totalSignals, anomalies, integrity, endpoints, activeEndpoints } = integrityStats;
+  const integrityStat = integrityStatus(integrity ?? 0, totalSignals);
+  const anomalyStatus =
+    totalSignals === 0 ? "standby" : anomalies === 0 ? "nominal" : "critical";
+  const integrityMetaLabel =
+    integrityStat === "nominal" ? "▲ NOMINAL · 7D"
+    : integrityStat === "caution" ? "▲ CAUTION · 7D"
+    : integrityStat === "critical" ? "▲ CRITICAL · 7D"
+    : "◌ NO DATA · 7D";
 
   return (
     <div className="max-w-7xl">
@@ -146,42 +294,103 @@ export default function EngineRoom() {
         </div>
       )}
 
-      {/* Section 1: UptimeRobot external link */}
-      <div className="bg-slate-800 border border-slate-700 p-4 relative mb-4">
-        <div className="absolute top-0 right-0 w-0 h-0 border-l-[12px] border-l-transparent border-t-[12px] border-t-ember-500/60"></div>
+      {/* Section 1: System Integrity HUD */}
+      <div className="bg-slate-800 border border-slate-700 p-5 relative mb-4">
+        <CornerBrackets />
 
-        <div className="flex items-center justify-between mb-3">
-          <div className="text-[10px] tracking-[0.2em] text-slate-400 uppercase font-semibold">
-            Uptime Monitor
-          </div>
-          <div className="text-[9px] tracking-[0.15em] text-slate-600 font-mono uppercase">
-            Module E-04-U
-          </div>
-        </div>
-
-        <div className="py-6 flex items-center justify-between gap-6">
+        {/* Header */}
+        <div className="flex items-start justify-between mb-5">
           <div>
-            <div className="text-sm text-slate-300 mb-1">
-              External status page. Opens in new tab.
+            <div className="text-[10px] tracking-[0.35em] text-ember-500 uppercase font-bold">
+              ▲ System Integrity · Real-Time
             </div>
-            <div className="text-[11px] text-slate-500">
-              Tower does not mirror external uptime data yet.
+            <div className="text-[9px] tracking-[0.15em] text-slate-600 font-mono mt-0.5">
+              derived from signal traffic · ai_call_log
             </div>
           </div>
-
-          <a
-            href="https://stats.uptimerobot.com/FbQp9qBnJr"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="shrink-0 px-5 py-2.5 text-[11px] tracking-[0.15em] uppercase font-semibold border border-ember-500/60 text-ember-500 hover:bg-ember-500/10 hover:border-ember-500 transition-colors"
-          >
-            Open Status Page ↗
-          </a>
+          <div className="text-[9px] tracking-[0.15em] text-ember-500/70 font-mono uppercase">
+            Module · E-04-U
+          </div>
         </div>
 
-        <div className="mt-3 pt-3 border-t border-slate-700/50 text-[9px] tracking-[0.15em] text-slate-600 font-mono uppercase">
-          Source: UptimeRobot · External · CF Access active
-        </div>
+        {/* Loading state */}
+        {loading && rows.length === 0 && !error && (
+          <div className="py-8">
+            <div className="flex items-center gap-3">
+              <div className="w-2 h-2 rounded-full bg-ember-500 animate-pulse"></div>
+              <div className="text-sm text-slate-400">Connecting to Supabase...</div>
+            </div>
+          </div>
+        )}
+
+        {!loading && !error && (
+          <>
+            {/* 4 stat cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+              <StatCard
+                label="Integrity"
+                readout={integrity != null ? `${integrity.toFixed(1)}%` : "—"}
+                meta={integrityMetaLabel}
+                status={integrityStat}
+                showPulse
+              />
+              <StatCard
+                label="Signals"
+                readout={totalSignals.toLocaleString("en-US")}
+                meta="Total · 7D"
+                status="standby"
+              />
+              <StatCard
+                label="Anomalies"
+                readout={anomalies.toLocaleString("en-US")}
+                meta="Errors + Timeouts"
+                status={anomalyStatus}
+              />
+              {/* Active card: N/4 with N in color */}
+              <div className={`relative border p-3 ${statusCardClass(activeEndpoints > 0 ? "nominal" : "standby")}`}>
+                <div className="text-[9px] tracking-[0.2em] text-slate-500 uppercase font-mono mb-1.5">
+                  Active
+                </div>
+                <div className="text-2xl font-semibold tracking-tight mb-1">
+                  <span className={activeEndpoints > 0 ? "text-green-500" : "text-slate-500"}>
+                    {activeEndpoints}
+                  </span>
+                  <span className="text-slate-500">/4</span>
+                </div>
+                <div className="text-[9px] tracking-[0.15em] text-slate-600 uppercase font-mono">
+                  Endpoints
+                </div>
+              </div>
+            </div>
+
+            {/* Endpoint telemetry section label */}
+            <div className="text-[9px] tracking-[0.3em] text-ember-500/60 uppercase font-mono font-bold mb-2">
+              ◢ Endpoint Telemetry
+            </div>
+
+            {/* Per-endpoint rows */}
+            <div>
+              {endpoints.map((ep) => (
+                <EndpointRow key={ep.endpoint} ep={ep} />
+              ))}
+            </div>
+
+            {/* Section 1 footer */}
+            <div className="mt-4 pt-3 border-t border-slate-700/50 flex items-center justify-between">
+              <div className="text-[9px] tracking-[0.15em] text-slate-600 font-mono uppercase">
+                ▲ Source · ai_call_log · Observed · idle endpoints dimmed
+              </div>
+              <a
+                href="https://stats.uptimerobot.com/FbQp9qBnJr"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[9px] tracking-[0.15em] font-mono uppercase text-slate-600 hover:text-ember-500 transition-colors"
+              >
+                External ping ↗
+              </a>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Section 2: AI traffic chart */}
