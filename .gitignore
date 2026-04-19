@@ -12,3 +12,4 @@ dist
 
 # Claude Code local tooling preferences
 .claude/
+docs/session-20/design-reference/check_tower/

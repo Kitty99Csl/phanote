@@ -57,6 +57,8 @@ export default function LanguageStrings() {
   const [toast, setToast] = useState(null); // { type: 'success'|'error', message }
   const [lastSavedRowId, setLastSavedRowId] = useState(null);
 
+  useEffect(() => { document.title = "Tower · Language Strings"; }, []);
+
   useEffect(() => {
     if (!toast) return;
     const id = setTimeout(() => setToast(null), 2000);

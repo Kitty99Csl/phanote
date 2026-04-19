@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import ShellLayout from "./layouts/ShellLayout";
+import Shell from "./layouts/Shell";
 import Lobby from "./routes/Lobby";
 import Health from "./routes/Health";
 import AICalls from "./routes/AICalls";
@@ -46,7 +46,7 @@ export default function App() {
           path="/*"
           element={
             <AdminGate>
-              <ShellLayout />
+              <Shell />
             </AdminGate>
           }
         >
