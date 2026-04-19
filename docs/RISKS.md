@@ -9,7 +9,7 @@ Living document. Updated at the end of each session.
 - **MEDIUM** — quality issue, user-visible but recoverable, or latent failure mode
 - **LOW** — tech debt, nice-to-have, or documentation gap
 
-**Last updated:** 2026-04-18 (post Session 15 close)
+**Last updated:** 2026-04-19 (post Session 18 close)
 
 ---
 
@@ -98,15 +98,43 @@ If the trigger drops for any reason (manual deletion, failed migration apply), n
 
 The empty commit `741ae93 chore: nudge CF Pages redeploy (webhook probe)` was a diagnostic, not a functional change. It's safe to leave in history as documentation of the investigation path, but a future `git log` reader may find it confusing. Not worth rewriting history to remove.
 
-### [LOW] profiles RLS policy name mismatch (cosmetic)
+### ~~[LOW] profiles RLS policy name mismatch (cosmetic)~~
 **Discovered:** Session 16, 2026-04-19
-**Status:** Open — reconciliation debt. Not security-sensitive.
+**Status:** ✅ Resolved Session 18 — Migration 011 Item 3 (commit `82f7221`)
 
-Production `profiles` table has RLS policy named `profiles_policy`. Migration file `004_capture_current_schema.sql` specifies name `profiles_user_access`. Identical semantics (FOR ALL, `auth.uid() = id` for both USING and WITH CHECK) — this is naming drift only, not a security gap. Discovered while running Migration 007, whose preflight originally required the exact name `profiles_user_access` and aborted against production. Revised to check the semantic invariant instead (commit following this RISKS.md entry).
+Production `profiles_policy` renamed to `profiles_user_access` (canonical per Migration 004). Semantic preflight guard verified correct shape before renaming. Idempotent skip if canonical already present.
 
-Not a Rule 19 violation at runtime (a policy with correct semantics exists and works), but indicates a prior drift between migration files and production that predates Rule 19 enforcement.
+---
 
-**Mitigation:** Future migration (008 or 009) renames production policy to match migration files. Pseudo-SQL: `ALTER POLICY profiles_policy ON public.profiles RENAME TO profiles_user_access`. Or: accept current name and update migration 004's file to match. Either direction OK — just pick one.
+### ~~[LOW] transactions RLS policy name mismatch (cosmetic)~~
+**Discovered:** Session 18 drift audit, 2026-04-19
+**Status:** ✅ Resolved Session 18 — Migration 011 Item 4 (commit `82f7221`)
+
+Production `transactions_policy` renamed to `transactions_user_access` (canonical per Migration 004). Same pattern as profiles drift. Discovered in same audit pass.
+
+---
+
+### ~~[MEDIUM] admin_user_summary view with wide-open grants~~
+**Discovered:** Session 18 drift audit, 2026-04-19
+**Status:** ✅ Resolved Session 18 — Migration 011 Item 1 (commit `82f7221`)
+
+Pre-Session-14 drift view over profiles + transactions. Zero code references outside docs/archive/. Held GRANT SELECT/INSERT/UPDATE/DELETE/TRUNCATE/REFERENCES/TRIGGER to anon + authenticated. RLS on underlying tables provided practical mitigation (view inherits querying user's auth context), but defense-in-depth gap existed. Dropped with CASCADE.
+
+---
+
+### ~~[LOW] ai_memory stale policies (Migration 004 canonical policy never landed)~~
+**Discovered:** Session 18 drift audit, 2026-04-19
+**Status:** ✅ Resolved Session 18 — Migration 011 Item 2 (commit `82f7221`)
+
+Production ai_memory carried 3 stale policies (`'Users update own memory'`, `'Users write own memory'`, `'users own ai_memory'`) predating Migration 004's intended canonical `ai_memory_user_access`. All 3 dropped; canonical policy created (FOR ALL, auth.uid() = user_id).
+
+---
+
+### [LOW] Tower bundle past Vite 500KB warning threshold
+**Discovered:** Session 18, 2026-04-19
+**Status:** Accepted, documented
+
+Tower bundle reached 793.25KB raw / 229.64KB gzip after Recharts install (commit `274ee14`). Vite warning fires at 500KB. Tower is admin-only internal surface; accepted for Session 18. Future Tower rooms must reuse existing Recharts (already bundled) rather than adding new chart libraries. If bundle approaches 1.2MB gzip, evaluate dynamic import() code-splitting.
 
 ---
 

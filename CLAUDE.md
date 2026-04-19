@@ -14,7 +14,7 @@ Phajot (ພາຈົດ) — multi-currency personal finance PWA for Laos (LAK, 
 
 Phajot now has a sister product called **Tower** — an internal operator dashboard for Kitty (the Speaker) to oversee Phajot's health, chat with AI departments (Sentinels), investigate users, and plan work. Tower is being built in Sprints F–J (Sessions 14–18). Before Tower can be built, Sprints B, C, D, and E must ship the prerequisites.
 
-- **Domain:** `tower.phajot.com` (not yet live)
+- **Domain:** `tower.phajot.com` (live — Sprint F, Session 15)
 - **Access:** Solo — Speaker (Kitty) only in v1
 - **Location in repo:** `tower/` folder (sibling to `src/` and `landing/`)
 - **Deployment:** Separate Cloudflare Pages project
@@ -63,7 +63,7 @@ telling you about your money over coffee, not a bank dashboard.
 ## Tech stack
 - Frontend: React 19 + Vite 8, src/App.jsx is **432 lines** (after Session 7 refactor from 5,480 lines, grew in Sprint C auth wiring; thin root shell, logic lives in src/lib/, src/hooks/, src/components/, src/modals/, src/screens/)
 - DB: Supabase (Singapore)
-- Worker: Cloudflare Workers at workers/phanote-api-worker.js (v4.4.0), name "phanote-parser" (filename preserved post-rename)
+- Worker: Cloudflare Workers at workers/phanote-api-worker.js (v4.7.0), name "phanote-parser" (filename preserved post-rename)
 - AI parse: Gemini 2.5 Flash
 - AI advise: Claude Haiku 4.5
 - AI OCR: Gemini 2.5 Flash Vision
@@ -116,11 +116,20 @@ For current session, sprint progress, commit hashes, and live infrastructure sta
 
 ## Recent key learnings
 
+### Session 18 learnings (Sprint G close + Migration 011 drift reconciliation)
+
+- **Trust-summary mode for non-security file edits.** Paste-back stays mandatory for migrations, auth, worker code, RLS. For React components, docs, configs: summary is sufficient. Speaker confirmed explicitly mid-session. Reduces friction without sacrificing security posture.
+- **CC paste output can duplicate content while file on disk is correct.** Before declaring a file broken based on visual output, verify via `wc -l` + `grep -c`. Migration 011 appeared doubled in chat; on-disk file was clean (190 lines, 1 header).
+- **Don't pre-fill commit hashes in wrap docs.** Use `[pending]` placeholders, fill after commit runs. Session 18 opened with a fix (e76ff61) for this exact pattern.
+- **Third-party iframes fail via X-Frame-Options without browser warning in development.** For every external embed, have a fallback plan before first production deploy. UptimeRobot X-Frame-Options: deny cost ~15 min.
+- **When aggregation returns zero, check the join key first.** DB stored `/parse`; client had `parse`. One-character mismatch zeroed all endpoint rows. Verify string equality assumptions at system boundaries before debugging logic.
+- **Native observability derived from existing data beats external integration.** "Observed uptime" from ai_call_log shows whether service worked for real users; synthetic pings show only reachability. More honest framing for an operator HUD.
+
 ### Session 17 learnings (Sprint F close + Migration 009/010 saga)
 
 - **Postflight must check semantic identity, not just privilege existence.** Session 17's Migration 009 §3 silently failed during apply but postflight passed because it checked `has_table_privilege`, not view definition identity. Upgrade pattern: inspect `pg_views.definition` + column signature. Same family as Session 16's `profiles_policy` vs `profiles_user_access` drift learning. Candidate for `docs/patterns.md` promotion.
 - **SQL Editor Select-All before Run is mandatory.** Partial execution silently caused two bugs in Session 17 (Migration 009 §1+§2 re-apply, §3 swallowed error). Always Select-All, then Run.
-- **Pre-Session-14 direct-SQL drift was broader than phantom tables.** Session 14 found 3 phantom tables; Session 17 found an unreferenced drift view with wide-open grants. Session 18 backlog: targeted drift audit.
+- **Pre-Session-14 direct-SQL drift was broader than phantom tables.** Session 14 found 3 phantom tables; Session 17 found 1 drift view; Session 18 found admin_user_summary view + 3 stale ai_memory policies + 2 policy naming drifts. Migration 011 closed all. Future: any new schema area should start with a pg_catalog probe.
 - **Paste-back-with-file-write.** When CC writes a review-gated file (migration, security-critical component), the write instruction must bundle an immediate paste-back instruction. Summaries don't substitute for verbatim text when the reviewer needs to audit.
 
 ### Session 15 learnings (Sprint F start + Cosmodrome visual direction)

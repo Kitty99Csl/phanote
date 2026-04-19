@@ -2,17 +2,17 @@
 
 > **Status:** Current source of truth (live roadmap, updated every session wrap-up)
 
-> Last updated: 2026-04-20 (Session 17 close — Sprint F CLOSED)
+> Last updated: 2026-04-19 (Session 18 close — Sprint G CLOSED)
 
 ## Current State
-- **Active sprint:** G (TBD) — standby. Sprint F closed 2026-04-20.
-- **Session 17:** closed this commit · Session 18 next: scope TBD (candidates in docs/session-17/SUMMARY.md open threads)
-- **Production hash (Phajot):** index-BJCgj50K.js (unchanged — main app untouched in Session 17)
-- **Tower bundle:** index-2zR7DkDi.js (Rooms 1/2/3 all live) — Tower fully operational at tower.phajot.com (3-layer gate: CF Access + Supabase login + is_admin RLS)
+- **Active sprint:** H (Admin Panel + Language Strings) — standby. Sprint G closed 2026-04-19.
+- **Session 18:** closed this commit · Session 19 next: Sprint H (docs/session-18/SUMMARY.md open threads)
+- **Production hash (Phajot):** index-BJCgj50K.js (unchanged — main app untouched in Sessions 17–18)
+- **Tower bundle:** index-Bn-XNeS-.js (793.25KB / 229.64KB gzip — Rooms 1/2/3/4 live) — Tower fully operational at tower.phajot.com (3-layer gate: CF Access + Supabase login + is_admin RLS)
 - **Worker version:** 4.7.0
-- **Latest commit:** bb75f7f (Session 17 wrap / Sprint F close)
-- **Next action:** Session 18 opening per docs/session-ritual.md; scope to be locked from Session 17 SUMMARY candidates
-- **Notable milestone:** Sprint F CLOSED — Tower has live admin-gated observability across /health, ai_call_log, and ai_daily_stats. 3-layer defense-in-depth fully operational.
+- **Latest commit:** 82f7221 (Migration 011 drift reconciliation, Session 18 Item 2)
+- **Next action:** Session 19 opening per docs/session-ritual.md; Sprint H scope pre-locked (Admin Panel + Language Strings)
+- **Notable milestone:** Sprint G CLOSED — Engine Room live (System Integrity HUD + hourly AI chart). Migration 011 closes 4 drift gaps (admin_user_summary dropped, ai_memory policies canonicalized, profiles/transactions policies renamed). 11 migrations total.
 
 ## Sprint Progress
 
@@ -112,12 +112,22 @@
 
 **Status:** COMPLETE ✅ (6/6 items + bonus Cosmodrome direction + 2 mid-sprint migrations) — Closed 2026-04-20 Session 17
 
-### Sprints G-J — Tower Rooms (Sessions 16-19)
-- G: Engine Room (technical health)
-- H: Admin Panel (user investigation) + **Language Strings Admin Panel** — data-driven i18n via Supabase `translations` table, inline edit UI at `tower.phajot.com/admin/language-strings`, fallback chain DB → code-level i18n.js → English → key name. Wife/admins edit translations without redeploying. ~2 days within Sprint H budget.
+### Sprint G — Engine Room (Session 18) — CLOSED 2026-04-19
+
+| Item | Status | Key commits | Notes |
+|---|---|---|---|
+| G-1: Room 4 Engine Room | ✅ | 274ee14, fa1f216, 65a2086, 857a2ca | System Integrity HUD + hourly AI traffic chart |
+| G-2: Migration 011 drift reconciliation | ✅ | 82f7221 | 4 drift items: admin_user_summary dropped, ai_memory policies canonicalized, profiles/transactions policies renamed |
+
+**Also shipped:** e76ff61 (hash placeholder fix), 374c820 (LINE roadmap removal)
+
+**Status:** COMPLETE ✅ (2/2 items) — Closed 2026-04-19 Session 18
+
+### Sprints H-J — Tower Rooms (Sessions 19-21)
+- H: Admin Panel (user investigation, read-only v1) + **Language Strings Admin Panel** — data-driven i18n via Supabase `translations` table, inline edit UI at `tower.phajot.com/admin/language-strings`, fallback chain DB → code-level i18n.js → English → key name. Wife/admins edit translations without redeploying. ~2 days within Sprint H budget.
 - I: Command Center (Sentinel chat) + **OCR Reliability Room** — attempts/failures/success rates per bank, average review corrections, confidence distribution, cost per 100 scans, most common row errors. Feeds Sprint L hardening decisions with real data.
 - J: Workshop + Archive
-**Status:** NOT STARTED
+**Status:** H next (Session 19)
 
 ### Sprint L — OCR Pipeline Hardening (Sessions 20-21, ~May-Jun 2026)
 
@@ -179,7 +189,8 @@ Rejected alternatives:
 | 15 (Sprint F partial) | BJCgj50K | BJCgj50K (unchanged) | Main app untouched — all work in `tower/`. Tower bundle: index-DYnDWyB4.js. 6 commits: 19bee35, 428ad78, 8df2959, ce39de5, 51e2192, 2f5faa7. |
 | 15 (post-wrap docs) | BJCgj50K | BJCgj50K | Docs hygiene + decisions: 28af464, a175f1e, c55152b, 9dd4ef3, b54b4bd, be2dc0b |
 | 16 (Sprint F continued) | BJCgj50K (main app unchanged) | BJCgj50K — Tower only: DYnDWyB4 → K63ln-YZ (admin gate) → C5RzeSTp (Room 1) | Items 2 + 4. Tower admin gate live (3-layer defense). Room 1 /health rendering 4 module cards with real data. 9 commits: cd78bc2, f2494c0, c3e7307, 186a819, fc9c6d6, ae587a9, d4c58e5, ca85d44, + this wrap. |
-| 17 (Sprint F close) | BJCgj50K (main app unchanged) | BJCgj50K — Tower only: C5RzeSTp → CUKk-PSf (Room 2) → DpNRTJ91 (Room 2 tweak) → CuLQfJJZ (Room 3) → 2zR7DkDi (Room 3 tweak) | Items 5 + 6 + Migrations 009 + 010. Sprint F CLOSED. 6 commits: a791872, 021e7a1, bd5109c, 267c37e, b963774, + this wrap. |
+| 17 (Sprint F close) | BJCgj50K (main app unchanged) | BJCgj50K — Tower only: C5RzeSTp → CUKk-PSf (Room 2) → DpNRTJ91 (Room 2 tweak) → CuLQfJJZ (Room 3) → 2zR7DkDi (Room 3 tweak) | Items 5 + 6 + Migrations 009 + 010. Sprint F CLOSED. 6 commits: a791872, 021e7a1, bd5109c, 267c37e, b963774, + wrap. |
+| 18 (Sprint G close) | BJCgj50K (main app unchanged) | BJCgj50K — Tower only: 2zR7DkDi → C26VOd0d (Recharts) → Bz0clCZ1 (fallback) → MLdjSdAs (HUD) → Bn-XNeS- (endpoint fix) | Engine Room + Migration 011 drift reconciliation. Sprint G CLOSED. 7 commits: e76ff61, 374c820, 274ee14, fa1f216, 65a2086, 857a2ca, 82f7221. |
 
 ## The Tower Team
 | Name | Role |

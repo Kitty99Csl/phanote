@@ -22,8 +22,8 @@
 └──────────────────────────────────────────────────────────┘
                           ▲
 ┌──────────────────────────────────────────────────────────┐
-│  FLOOR 4 — Tower v1 (Sprints F–J)                        │
-│  Lobby → Engine Room → Admin → Chat+OCR Room → Workshop  │
+│  FLOOR 4 — Tower v1 (Sprints F–J) ✅ F+G COMPLETE       │
+│  Lobby ✅ · Engine Room ✅ · Admin · Chat+OCR · Workshop  │
 └──────────────────────────────────────────────────────────┘
                           ▲
 ┌──────────────────────────────────────────────────────────┐
@@ -235,8 +235,11 @@
 
 One room per session, in this order. Each sprint is estimated at 4–6 hours.
 
-### Sprint G — Room 4: The Engine Room (Session 15)
-The technical health dashboard. Uptime graphs, error feed, AI cost tracker, traffic, worker health, parser accuracy. Read-only. Most data-dense room; builds directly on Sprint E observability work.
+### Sprint G — Room 4: The Engine Room ✅ CLOSED 2026-04-19 (Session 18)
+
+Shipped: System Integrity HUD (D3 design — 4 stat cards + 4 endpoint telemetry rows derived from ai_call_log, 7-day window) + hourly AI traffic line chart (Recharts, 24h, gemini/anthropic). Parser accuracy deferred to Sprint I OCR Reliability Room.
+
+Key commits: `274ee14` (initial), `fa1f216` (iframe fallback), `65a2086` (HUD), `857a2ca` (endpoint fix), `82f7221` (Migration 011 drift reconciliation — companion Item 2).
 
 ### Sprint H — Room 5: The Admin Panel (Session 16)
 User investigation. **Read-only in v1.** Search users, view profile/transactions/errors. Every read logs to `tower_admin_reads`. PDPA-compliant access controls.
@@ -409,6 +412,7 @@ Approximately **11–12 weeks** from this plan to a public-launch-ready Phajot m
 | v1.1 | 2026-04-16 | Language Strings Admin Panel locked into Sprint H. Speaker confirmed Option A after reviewing bj88laos reference. |
 | v1.2 | 2026-04-16 | Sprint L (OCR Pipeline Hardening) inserted between J and K. OCR Reliability Room added to Sprint I. External advisor decision: treat OCR as pipeline problem, not model problem. Closes OQ-015. |
 | v1.3 | 2026-04-20 | LINE bot removed from Sprint K (Session 18). Laos is not LINE-oriented; WhatsApp/Messenger dominate. Native app publishing (App Store + Google Play) promoted to Phase 6 final milestone via codex update. |
+| v1.4 | 2026-04-19 | Sprint G CLOSED (Session 18). Engine Room live: System Integrity HUD + hourly AI chart. Migration 011 closes 4 drift items. Floor 4 updated: F+G complete. |
 
 ---
 
