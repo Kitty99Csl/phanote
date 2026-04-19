@@ -146,29 +146,41 @@ export default function EngineRoom() {
         </div>
       )}
 
-      {/* Section 1: UptimeRobot embed */}
+      {/* Section 1: UptimeRobot external link */}
       <div className="bg-slate-800 border border-slate-700 p-4 relative mb-4">
         <div className="absolute top-0 right-0 w-0 h-0 border-l-[12px] border-l-transparent border-t-[12px] border-t-ember-500/60"></div>
 
         <div className="flex items-center justify-between mb-3">
           <div className="text-[10px] tracking-[0.2em] text-slate-400 uppercase font-semibold">
-            Uptime
+            Uptime Monitor
           </div>
           <div className="text-[9px] tracking-[0.15em] text-slate-600 font-mono uppercase">
             Module E-04-U
           </div>
         </div>
 
-        <iframe
-          src="https://stats.uptimerobot.com/FbQp9qBnJr"
-          width="100%"
-          height="500"
-          frameBorder="0"
-          title="UptimeRobot status"
-        />
+        <div className="py-6 flex items-center justify-between gap-6">
+          <div>
+            <div className="text-sm text-slate-300 mb-1">
+              External status page. Opens in new tab.
+            </div>
+            <div className="text-[11px] text-slate-500">
+              Tower does not mirror external uptime data yet.
+            </div>
+          </div>
 
-        <div className="mt-3 text-[9px] tracking-[0.15em] text-slate-600 font-mono uppercase">
-          Source: UptimeRobot · External · Not native Tower data
+          <a
+            href="https://stats.uptimerobot.com/FbQp9qBnJr"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="shrink-0 px-5 py-2.5 text-[11px] tracking-[0.15em] uppercase font-semibold border border-ember-500/60 text-ember-500 hover:bg-ember-500/10 hover:border-ember-500 transition-colors"
+          >
+            Open Status Page ↗
+          </a>
+        </div>
+
+        <div className="mt-3 pt-3 border-t border-slate-700/50 text-[9px] tracking-[0.15em] text-slate-600 font-mono uppercase">
+          Source: UptimeRobot · External · CF Access active
         </div>
       </div>
 
