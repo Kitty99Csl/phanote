@@ -353,8 +353,9 @@ OCR, AI Advisor, Analytics, Goals, Streaks/XP, Safe-to-Spend, PIN security. **DO
 8. RLS security fix — 🔜 Still pending, blocking public launch
 9. Recurring transactions — 🔜 Deferred to Session 8+
 
-### 🔜 Phase 4 — LINE Bot + Payments
-- LINE bot webhook (`/line` endpoint)
+> **Updated [2026-04-20] (Session 18):** LINE bot removed from roadmap. Laos is not LINE-oriented — WhatsApp and Facebook Messenger dominate locally. Chat-based logging via any platform is deferred indefinitely; the web app + future native apps are the primary surfaces. App Store + Google Play publishing promoted to Phase 6 final milestone (previously tucked into Phase 5 as a PWA footnote).
+
+### 🔜 Phase 4 — Payments + Referral + Viral
 - Pro payments: PromptPay → BCEL QR → Stripe
 - Referral system
 - Monthly Wrap share card (viral loop)
@@ -363,15 +364,15 @@ OCR, AI Advisor, Analytics, Goals, Streaks/XP, Safe-to-Spend, PIN security. **DO
 - Public launch (50 beta users Vientiane)
 - Boun festival calendar + Pi Mai budget planner
 - Export CSV/Excel
-- App Store / Play Store submission (PWA)
 - Family accounts
 
-### 🌏 Phase 6 — Long Term
-- Small business mode ("Business toggle")
-- Telegram bot
+### 🌏 Phase 6 — Native App Publishing (Final)
+- App Store submission (iOS — TWA via PWABuilder or native shell)
+- Google Play submission (Android — TWA preferred, full native if store policy requires)
 - PWA offline support (Workbox)
 - Live LAK/THB/USD exchange rates
 - AI fine-tuning on anonymized Lao transaction data
+- Small business mode ("Business toggle")
 
 ---
 

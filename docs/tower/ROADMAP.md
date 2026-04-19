@@ -13,7 +13,7 @@
 ```
 ┌──────────────────────────────────────────────────────────┐
 │  FLOOR 6 — Public Launch (Sprint K+)                     │
-│  Landing rewrite · LINE bot · Payments · PDPA · App Store│
+│  Landing rewrite · Payments · PDPA · App Store + Play    │
 └──────────────────────────────────────────────────────────┘
                           ▲
 ┌──────────────────────────────────────────────────────────┐
@@ -363,9 +363,9 @@ Combined sprint because both are markdown-backed. Workshop reads `docs/tower/van
 - **AI Advisor Pro gating** — close the OQ-009 / audit gap
 - **Privacy Policy + ToS** via Termly or iubenda, translated to Lao + Thai
 - **PDPA review** — one human lawyer consult (Lao + Thai), budget $200–500
-- **LINE OTP at registration** — close the signup loop for strangers
+- **OTP at registration** — SMS-based or email-based, to close the signup loop for strangers (Laos-first, not LINE)
 - **Payment system** — PromptPay first, BCEL QR second, Stripe last
-- **LINE bot integration** — the deferred feature finally builds on the stable foundation
+- **Native app publishing prep** — PWABuilder evaluation for iOS TWA, Google Play TWA submission planning (becomes Phase 6 post-launch)
 
 ---
 
@@ -394,7 +394,7 @@ Approximately **11–12 weeks** from this plan to a public-launch-ready Phajot m
 | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|
 | Sprint E observability slips → Tower can't be built | Medium | High | Sprint E is small in code. If it slips, don't skip it — delay Sprint F and keep stabilization going. |
-| Scope creep inside a sprint (wanting to add features) | High | Medium | Hold the line on deferred features (LINE bot, recurring, CSV). The codex rule 8 "phase discipline" applies here too. |
+| Scope creep inside a sprint (wanting to add features) | High | Medium | Hold the line on deferred features (recurring, CSV, native apps). The codex rule 8 "phase discipline" applies here too. |
 | Wife stops testing | Low | High | She validated the slogan would make her pay yearly. Keep her involved in Sprint D i18n review. |
 | Tower v1 becomes v2 mid-sprint | Medium | Medium | Every deferred Tower feature goes to an explicit "Tower v2" section in CHARTER.md. No mid-sprint scope changes. |
 | Sentinels overlap or conflict | Low | Low | Each Sentinel owns one folder in `docs/tower/`. No cross-writes. Conflicts are resolved by the Speaker. |
@@ -408,6 +408,7 @@ Approximately **11–12 weeks** from this plan to a public-launch-ready Phajot m
 | v1.0 | 2026-04-14 | Initial roadmap. Sprints B through K defined. Timeline estimated. Dependencies chained. |
 | v1.1 | 2026-04-16 | Language Strings Admin Panel locked into Sprint H. Speaker confirmed Option A after reviewing bj88laos reference. |
 | v1.2 | 2026-04-16 | Sprint L (OCR Pipeline Hardening) inserted between J and K. OCR Reliability Room added to Sprint I. External advisor decision: treat OCR as pipeline problem, not model problem. Closes OQ-015. |
+| v1.3 | 2026-04-20 | LINE bot removed from Sprint K (Session 18). Laos is not LINE-oriented; WhatsApp/Messenger dominate. Native app publishing (App Store + Google Play) promoted to Phase 6 final milestone via codex update. |
 
 ---
 
