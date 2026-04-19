@@ -18,6 +18,12 @@ const NAV_GROUPS = [
       { path: '/daily-stats', label: 'Daily Stats', subtitle: 'Reports' },
     ],
   },
+  {
+    label: 'Admin',
+    items: [
+      { path: '/admin/language-strings', label: 'Language Strings', subtitle: 'Translations' },
+    ],
+  },
 ]
 
 export default function ShellLayout() {

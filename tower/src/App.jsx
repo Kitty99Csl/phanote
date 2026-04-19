@@ -5,6 +5,7 @@ import Health from "./routes/Health";
 import AICalls from "./routes/AICalls";
 import DailyStats from "./routes/DailyStats";
 import EngineRoom from "./routes/EngineRoom";
+import LanguageStrings from "./routes/LanguageStrings";
 import Login from "./routes/Login";
 import Denied from "./routes/Denied";
 import { useAdminGate } from "./hooks/useAdminGate";
@@ -54,6 +55,7 @@ export default function App() {
           <Route path="ai-calls" element={<AICalls />} />
           <Route path="daily-stats" element={<DailyStats />} />
           <Route path="engine-room" element={<EngineRoom />} />
+          <Route path="admin/language-strings" element={<LanguageStrings />} />
         </Route>
       </Routes>
     </BrowserRouter>
