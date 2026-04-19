@@ -8,6 +8,7 @@ const NAV_GROUPS = [
     items: [
       { path: '/', label: 'Lobby', subtitle: 'Director' },
       { path: '/health', label: 'Health', subtitle: 'Systems' },
+      { path: '/engine-room', label: 'Engine Room', subtitle: 'Traffic' },
     ],
   },
   {
