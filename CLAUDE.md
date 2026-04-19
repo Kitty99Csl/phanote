@@ -12,7 +12,7 @@ Phajot (ພາຈົດ) — multi-currency personal finance PWA for Laos (LAK, 
 
 ## Second product: Tower
 
-Phajot now has a sister product called **Tower** — an internal operator dashboard for Kitty (the Speaker) to oversee Phajot's health, chat with AI departments (Sentinels), investigate users, and plan work. Tower is being built in Sprints F–J (Sessions 14–20+). Before Tower can be built, Sprints B, C, D, and E must ship the prerequisites.
+Phajot now has a sister product called **Tower** — an internal operator dashboard for Kitty (the Speaker) to oversee Phajot's health, chat with AI departments (Sentinels), investigate users, and plan work. Tower is being built in Sprints F–J (Sessions 14–20). Before Tower can be built, Sprints B, C, D, and E must ship the prerequisites.
 
 - **Domain:** `tower.phajot.com` (live — Sprint F, Session 15)
 - **Access:** Solo — Speaker (Kitty) only in v1
@@ -115,6 +115,18 @@ telling you about your money over coffee, not a bank dashboard.
 For current session, sprint progress, commit hashes, and live infrastructure state, see `docs/ROADMAP-LIVE.md`. This file (CLAUDE.md) holds operating rules, stack info, and environment notes only — not operational state. Rule 20 codifies this separation: live execution truth lives in ROADMAP-LIVE.md and SPRINT-CURRENT.md, not here.
 
 ## Recent key learnings
+
+### Session 20 learnings (Sprint H close — Tower UX redesign across all 6 rooms)
+
+- **Design reference packages accelerate redesign massively.** Session 20's `docs/session-20/design-reference/check_tower.zip` contained `Tower Redesign.html` + 6 room JSX files + 7 screenshots. CC ported with adaptations for ES modules + react-router. Without the reference, a full UX redesign would have been 3x slower with more iteration. Prototype > description for complex visual work.
+
+- **`min-w-0` on flex children is critical when wrapping tables inside flex layouts.** Old `ShellLayout` had `overflow-auto` on multiple levels, masking missing `min-w-0` in room containers. New `Shell` properly propagated `min-w-0` from main, exposing the latent bug — Language Strings table rendered with only the TH column visible (CODE/EN/LO collapsed to zero width). Default `min-width: auto` on flex children prevents columns from shrinking below intrinsic content width; when parent narrows, auto-width table columns collapse to zero. Hotfix `dec20c0` added `min-w-0` to LanguageStrings outer container + table wrapper. Future rooms with internal tables MUST add `min-w-0` to room's outermost container and any flex-child wrapping the table.
+
+- **Phased redesign works — each phase shippable if fatigue or quota hits.** Session 20 split into 4 phases (foundation → monitoring rooms → editing room → wrap), each independently mergeable. Phase 1 alone gave a working (degraded) Tower; Phase 2 added primitive ports; Phase 3 the editor surface. The hotfix demonstrated phase isolation works for emergency intervention — stash Phase 2 work tree, commit fix on top of Phase 1, restore Phase 2 work tree. Clean separation kept the hotfix a 2-line diff.
+
+- **Editor surfaces need different typography + density rules than monitoring.** Tower's tactical HUD (mono 11px / 9px) suits at-a-glance dashboards. Sustained editing (10-30 min translation sessions) needs sans-serif body, 15px minimum, generous padding. One-size-fits-all hurt the Language Strings room until Phase 3 redesigned it with Noto Sans Lao/Thai for proper script rendering.
+
+- **Google Fonts CDN acceptable for admin-only surfaces.** Adds 0 bundle cost via external hosting. Trade-off: requires public CDN availability; not appropriate for offline-first user-facing apps. Tower is admin-only operator UI — this trade is fine. Self-hosting Noto Sans Lao + Noto Sans Thai + IBM Plex Sans + IBM Plex Mono would have added ~200KB to a 1-user surface.
 
 ### Session 19 learnings (Sprint H-2 close — Language Strings + shared/ extraction)
 
@@ -223,4 +235,4 @@ Thresholds and design decisions:
 
 ---
 
-*Last updated: 2026-04-20 (post Session 19 close) · Maintained by Speaker + Chat Claude · Used by Claude Code · For live state see docs/ROADMAP-LIVE.md*
+*Last updated: 2026-04-20 (post Session 20 close) · Maintained by Speaker + Chat Claude · Used by Claude Code · For live state see docs/ROADMAP-LIVE.md*

@@ -2,17 +2,17 @@
 
 > **Status:** Current source of truth (live roadmap, updated every session wrap-up)
 
-> Last updated: 2026-04-20 (Session 19 close — Sprint H-2 CLOSED)
+> Last updated: 2026-04-20 (Session 20 close — Sprint H CLOSED)
 
 ## Current State
-- **Active sprint:** H (H-2 complete, H-1 next) — Sprint H-2 (Language Strings) closed 2026-04-20.
-- **Session 19:** closed this commit · Session 20 next: Sprint H-1 Admin Panel (docs/session-19/SUMMARY.md open threads)
-- **Production hash (Phajot):** index-BJCgj50K.js (Phase 2 translation init added — hash unchanged from Session 14; main app bundle unchanged despite translations.js addition because CF Pages hasn't rebuilt since 02ec8d0 was pushed)
-- **Tower bundle:** 884KB raw / 253KB gzip (Phase 3c — Rooms 1/2/3/4 + Language Strings admin live) — Tower fully operational at tower.phajot.com (3-layer gate: CF Access + Supabase login + is_admin RLS)
+- **Active sprint:** H CLOSED 2026-04-20 (H-2 Session 19 + H-3 Tower UX redesign Session 20). Sprint I (Admin Panel user investigation) next.
+- **Session 20:** closed this commit · Session 21 next: Sprint I (Admin Panel) + wife first-day verify of redesigned Language Strings (docs/session-20/SUMMARY.md open threads)
+- **Production hash (Phajot):** index-BJCgj50K.js (main app unchanged this session)
+- **Tower bundle:** 890.55KB raw / 256KB gzip — `index-DJwN4vkN.js` (post-Phase-4 wrap). All 6 rooms on unified design system. Tower fully operational at tower.phajot.com (3-layer gate: CF Access + Supabase login + is_admin RLS).
 - **Worker version:** 4.7.0
-- **Latest commit:** 48324bf (Language Strings UX polish pass Phase 3c, Session 19)
-- **Next action:** Session 20 opening per docs/session-ritual.md; Sprint H-1 (Admin Panel) scope lock before first commit
-- **Notable milestone:** Sprint H-2 CLOSED — DB-backed i18n live. 425 translation keys in Supabase. Main app reads from DB with 7-day cache + 4-level fallback chain. Tower admin UI at /admin/language-strings with inline edit, Sync button, missing-value highlights. shared/i18n-data.js extraction eliminates Rule 16 violation + reclaims 187KB from Tower bundle. 13 migrations total.
+- **Latest commit:** `<this wrap>` (Session 20 wrap — orphan deletion + docs)
+- **Next action:** Session 21 opening per docs/session-ritual.md; Sprint I (Admin Panel user investigation) scope lock before first commit; observe wife usage of redesigned Language Strings.
+- **Notable milestone:** Sprint H CLOSED — Tower on unified design system. 10 shared primitives in `tower/src/components/shared.jsx`. New Shell + Sidebar. Language Strings full editor-first redesign with 380px side panel, coverage widget, Noto Sans Lao/Thai fonts, pill filter (All / Missing / Recently edited 7d). Monitoring rooms (Lobby, Health, Engine Room, AI Calls, Daily Stats) all ported with data logic preserved verbatim. Orphan files deleted (ShellLayout.jsx, StatusChip.jsx). 13 migrations total — no schema changes this session.
 
 ## Sprint Progress
 
@@ -123,7 +123,7 @@
 
 **Status:** COMPLETE ✅ (2/2 items) — Closed 2026-04-19 Session 18
 
-### Sprint H — Language Strings + Admin Panel (Sessions 19–20)
+### Sprint H — Language Strings + Tower UX Redesign (Sessions 19–20) — CLOSED 2026-04-20
 
 #### H-2: Language Strings ✅ CLOSED 2026-04-20 (Session 19)
 
@@ -138,13 +138,30 @@
 
 **Status:** COMPLETE ✅ (all 6 items)
 
-#### H-1: Admin Panel (user investigation) — Session 20
+#### H-3: Tower UX Redesign ✅ CLOSED 2026-04-20 (Session 20)
 
-- Room 5: search users, view profile/transactions/errors
+| Item | Status | Key commits | Notes |
+|---|---|---|---|
+| Phase 1 — Foundation: shared primitives + Shell + Sidebar | ✅ | 85f0480 | 10 primitives, new layout, Google Fonts CDN |
+| Hotfix — Language Strings min-w-0 column collapse | ✅ | dec20c0 | 2-line fix between Phase 1 and Phase 2 |
+| Phase 2 — Port 5 monitoring rooms to primitives | ✅ | a7816be | Lobby/Health/Engine/AI Calls/Daily Stats; data logic preserved verbatim |
+| Phase 3 — Language Strings full editor-first redesign | ✅ | 42de77e | 380px side panel + coverage widget + pill filter + Noto Sans Lao/Thai |
+| Phase 4 — Wrap + orphan deletion + docs | ✅ | `<this>` | ShellLayout.jsx + StatusChip.jsx deleted |
+
+**Status:** COMPLETE ✅ (5/5 commits, zero rollbacks)
+
+#### Admin Panel (user investigation) — moved to Sprint I
+
+Original H-1 Admin Panel item re-classified as Sprint I work — Session 20 closed Sprint H by shipping the design system that Sprint I builds on top of. Admin Panel will be the first room implemented post-redesign.
+
+### Sprint I — Admin Panel (user investigation) — Session 21
+
+- Room 6: search users, view profile/transactions/errors
 - Every read logs to tower_admin_reads (Migration 009 §4)
 - PDPA-compliant, read-only v1
+- Reuses Session 20 primitives — no new design system work
 
-**Status:** NOT STARTED — next Session 20
+**Status:** NOT STARTED — next Session 21
 
 ### Sprints I–J — Tower Rooms (Sessions 21–22)
 - I: Command Center (Sentinel chat) + **OCR Reliability Room** — attempts/failures/success rates per bank, average review corrections, confidence distribution, cost per 100 scans, most common row errors. Feeds Sprint L hardening decisions with real data.
@@ -214,6 +231,7 @@ Rejected alternatives:
 | 17 (Sprint F close) | BJCgj50K (main app unchanged) | BJCgj50K — Tower only: C5RzeSTp → CUKk-PSf (Room 2) → DpNRTJ91 (Room 2 tweak) → CuLQfJJZ (Room 3) → 2zR7DkDi (Room 3 tweak) | Items 5 + 6 + Migrations 009 + 010. Sprint F CLOSED. 6 commits: a791872, 021e7a1, bd5109c, 267c37e, b963774, + wrap. |
 | 18 (Sprint G close) | BJCgj50K (main app unchanged) | BJCgj50K — Tower only: 2zR7DkDi → C26VOd0d (Recharts) → Bz0clCZ1 (fallback) → MLdjSdAs (HUD) → Bn-XNeS- (endpoint fix) | Engine Room + Migration 011 drift reconciliation. Sprint G CLOSED. 7 commits: e76ff61, 374c820, 274ee14, fa1f216, 65a2086, 857a2ca, 82f7221. |
 | 19 (Sprint H-2 close) | BJCgj50K → post-02ec8d0 hash (Phase 2 translations init added to main app) | Tower: Bn-XNeS- → post-c7adb4a (Phase 3 + 3b, 884KB raw) → post-48324bf (Phase 3c, 884KB raw) | Language Strings shipped. Migrations 012+013. shared/i18n-data.js. Sprint H-2 CLOSED. 5 commits: da185fd, 9648feb, 02ec8d0, c7adb4a, 48324bf. |
+| 20 (Sprint H close — UX redesign) | BJCgj50K (main app unchanged) | Tower: post-48324bf (884KB) → D0mfT_w2 (Phase 1, 886KB) → U46bquEx (Phase 2, 886KB) → B-SBURXM (Phase 3, 890KB) → DJwN4vkN (Phase 4 wrap, 890KB) | Tower UX redesign. 10 shared primitives + new Shell + Sidebar + 5 monitoring rooms ported + Language Strings full editor-first redesign + orphan cleanup. Sprint H CLOSED. 6 commits: 85f0480, dec20c0, a7816be, 42de77e, + this wrap. |
 
 ## The Tower Team
 | Name | Role |

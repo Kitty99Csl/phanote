@@ -9,7 +9,7 @@ Living document. Updated at the end of each session.
 - **MEDIUM** — quality issue, user-visible but recoverable, or latent failure mode
 - **LOW** — tech debt, nice-to-have, or documentation gap
 
-**Last updated:** 2026-04-20 (post Session 19 close)
+**Last updated:** 2026-04-20 (post Session 20 close)
 
 ---
 
@@ -132,24 +132,43 @@ Production ai_memory carried 3 stale policies (`'Users update own memory'`, `'Us
 
 ### [LOW] Tower bundle past Vite 500KB warning threshold
 **Discovered:** Session 18, 2026-04-19
-**Status:** Accepted, documented — partially reduced Session 19
+**Status:** Accepted, documented — Session 20 close baseline 890KB
 
 Session 18 baseline: 793KB raw / 230KB gzip (Engine Room).
 Session 19 trajectory: Phase 3 caused bloat to 1068KB (duplicate Supabase client via transitive import); Phase 3b (shared/ extraction) reclaimed 187KB → 881KB; Phase 3c (+lucide-react + polish) → 884KB raw / 253KB gzip.
+Session 20 trajectory: Phase 1 +2KB primitives → 886KB; Phase 3 +4.63KB Language Strings redesign (side panel + coverage widget) → 890.54KB; Phase 4 orphan deletion (already tree-shaken) → 890.55KB.
 
-Current 884KB is **honest** — all content is reviewed and intentional: i18n dictionary (~110KB, needed for Sync button), Recharts, Supabase, app code, lucide-react (~1KB Pencil icon). Vite warning still fires (admin-only internal surface; accepted). Future Tower rooms must reuse existing Recharts rather than adding new chart libraries. If bundle approaches 1.2MB raw, evaluate dynamic import() code-splitting.
+Current 890KB is **honest** — all content reviewed: i18n dictionary (~110KB), Recharts, Supabase, app code, 10 design primitives. Still under 1MB internal soft budget. Vite warning still fires (admin-only surface; accepted). Future Tower rooms (Sprint I+) must reuse existing primitives + Recharts. If bundle approaches 1.2MB raw, evaluate dynamic import() code-splitting.
 
-### [LOW] Language Strings font sizing too small for sustained editing
+### ~~[LOW] Language Strings font sizing too small for sustained editing~~
 **Discovered:** Session 19, 2026-04-20
-**Status:** Open
+**Status:** ✅ Resolved Session 20 Phase 3 (commit `42de77e`)
 
-Admin table uses `text-[11px]` / `text-[9px]` — appropriate for monitoring dashboards, potentially fatiguing for the wife's translation editing sessions (Lao/Thai script, 10–30 min per session). Phase 3d or Session 20 polish. Options: bump body to `text-[12px]`, or add density toggle. Not blocking.
+Phase 3 redesign abandoned tactical HUD typography for the editing surface. New rules: ENGLISH 15px IBM Plex Sans, LAO 15px Noto Sans Lao (script-native), THAI 15px Noto Sans Thai (script-native), `py-3.5` row padding. KEY column kept mono 13px (operator reference, not editing surface). The wife can now edit translations comfortably for 10-30 min sessions.
 
 ### [LOW] lucide-react added as Tower dependency
 **Discovered:** Session 19, 2026-04-20
-**Status:** Accepted
+**Status:** Accepted — note for Session 21 follow-up
 
-`lucide-react@1.8.0` added for Pencil cell-edit affordance. Tower previously used zero icon library deps. At 1 icon today, bundle impact is negligible (~1KB). Revisit if Tower icon count exceeds ~5 — inline SVG is always an option for Tower's limited icon surface.
+Session 20 Phase 3 removed the only Tower import of `lucide-react` (Pencil icon, replaced by stronger cell-click affordance). The dep is currently unused in Tower. Consider deleting from `tower/package.json` in Session 21+ if no other Tower component needs it. Bundle impact would be negligible (~1KB) but reduces dep surface.
+
+### [LOW] min-w-0 required on flex children with tables inside new Shell
+**Discovered:** Session 20 hotfix, 2026-04-20 (commit `dec20c0`)
+**Status:** Documented; lesson for future room development
+
+New Shell.jsx correctly sets `min-w-0` on `<main>` to allow proper flex shrinking. Downstream room containers + table wrappers must ALSO set `min-w-0` or auto-width table columns will collapse to zero. Old ShellLayout had `overflow-auto` on multiple levels, masking this. Manifestation: Phase 1 deployed, Language Strings table rendered with only TH column visible. Hotfix `dec20c0` added `min-w-0` to LanguageStrings outer container + table wrapper. Future rooms with internal tables must add `min-w-0` to room's outermost container and any flex-child wrapping the table.
+
+### [LOW] "Recently edited" filter shows all 425 rows initially
+**Discovered:** Session 20 Phase 3, 2026-04-20
+**Status:** Self-correcting; documented
+
+Migration 013 seeded all 425 translation rows with the same `updated_at` timestamp. The "Recently edited" pill filter (D20-Q6, 7-day window) shows all 425 rows initially. As real edits accumulate via the redesigned admin panel, the filter will start to mean what it says. Self-corrects within 7 days of first non-seed edit. No code change needed.
+
+### [MEDIUM] Light mode deferred — wife-usage data needed before committing
+**Discovered:** Session 20 close, 2026-04-20
+**Status:** Deferred decision
+
+Building a light mode toggle is 4-6 hours: token system overhaul, every primitive in both modes, every room verified in both. Without wife-usage data on dark mode editing comfort, the priority is unclear. If the wife uses redesigned Language Strings dark mode for a week without complaint, light mode stays deferred indefinitely. If she reports eye strain, light mode becomes Sprint priority. Re-evaluate Session 21+ after first sustained editing session.
 
 ### [LOW] 38 translation keys missing Thai (th) in DB
 **Discovered:** Session 19, 2026-04-20

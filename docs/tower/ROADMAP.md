@@ -22,8 +22,9 @@
 └──────────────────────────────────────────────────────────┘
                           ▲
 ┌──────────────────────────────────────────────────────────┐
-│  FLOOR 4 — Tower v1 (Sprints F–J) ✅ F+G+H-2 COMPLETE   │
+│  FLOOR 4 — Tower v1 (Sprints F–J) ✅ F+G+H COMPLETE     │
 │  Lobby ✅ · Engine Room ✅ · Lang Strings ✅ · Admin · Chat+OCR · Workshop │
+│  All 6 rooms ✅ on unified design system (Session 20)    │
 └──────────────────────────────────────────────────────────┘
                           ▲
 ┌──────────────────────────────────────────────────────────┐
@@ -404,6 +405,7 @@ Approximately **11–12 weeks** from this plan to a public-launch-ready Phajot m
 | v1.3 | 2026-04-20 | LINE bot removed from Sprint K (Session 18). Laos is not LINE-oriented; WhatsApp/Messenger dominate. Native app publishing (App Store + Google Play) promoted to Phase 6 final milestone via codex update. |
 | v1.4 | 2026-04-19 | Sprint G CLOSED (Session 18). Engine Room live: System Integrity HUD + hourly AI chart. Migration 011 closes 4 drift items. Floor 4 updated: F+G complete. |
 | v1.5 | 2026-04-20 | Sprint H-2 CLOSED (Session 19). Language Strings live: DB-backed i18n (Migrations 012+013) + Tower admin UI at /admin/language-strings + shared/i18n-data.js extraction (Rule 16 + -187KB bundle). Floor 4 updated: F+G+H-2 complete. H-1 (Admin Panel) deferred to Session 20. |
+| v1.6 | 2026-04-20 | Sprint H CLOSED (Session 20). Tower UX redesign across all 6 rooms: 10 shared primitives in `tower/src/components/shared.jsx` + new Shell layout + new Sidebar with reset room codes (A-00 / A-01 / A-02 / B-01 / B-02 / C-01) + Language Strings full editor-first redesign (380px side panel + coverage widget + pill filter + Noto Sans Lao/Thai). Monitoring rooms (Lobby, Health, Engine Room, AI Calls, Daily Stats) ported to primitives with all data logic preserved verbatim. Orphan files deleted (ShellLayout.jsx, StatusChip.jsx). Tower bundle 884KB → 890KB (+6KB for entire redesign; fonts external CDN at 0 bundle cost). Admin Panel item re-classified as Sprint I. Floor 4 updated: F+G+H complete; all 6 rooms on unified design system. |
 
 ---
 
