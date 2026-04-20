@@ -2,17 +2,17 @@
 
 > **Status:** Current source of truth (live roadmap, updated every session wrap-up)
 
-> Last updated: 2026-04-20 (Session 20 close — Sprint H CLOSED)
+> Last updated: 2026-04-20 (Session 21 close — Sprint I Part 1 CLOSED; Session 21.5 hotfix inserted before Part 2)
 
 ## Current State
-- **Active sprint:** H CLOSED 2026-04-20 (H-2 Session 19 + H-3 Tower UX redesign Session 20). Sprint I (Admin Panel user investigation) next.
-- **Session 20:** closed this commit · Session 21 next: Sprint I (Admin Panel) + wife first-day verify of redesigned Language Strings (docs/session-20/SUMMARY.md open threads)
-- **Production hash (Phajot):** index-BJCgj50K.js (main app unchanged this session)
-- **Tower bundle:** 890.55KB raw / 256KB gzip — `index-DJwN4vkN.js` (post-Phase-4 wrap). All 6 rooms on unified design system. Tower fully operational at tower.phajot.com (3-layer gate: CF Access + Supabase login + is_admin RLS).
-- **Worker version:** 4.7.0
-- **Latest commit:** `<this wrap>` (Session 20 wrap — orphan deletion + docs)
-- **Next action:** Session 21 opening per docs/session-ritual.md; Sprint I (Admin Panel user investigation) scope lock before first commit; observe wife usage of redesigned Language Strings.
-- **Notable milestone:** Sprint H CLOSED — Tower on unified design system. 10 shared primitives in `tower/src/components/shared.jsx`. New Shell + Sidebar. Language Strings full editor-first redesign with 380px side panel, coverage widget, Noto Sans Lao/Thai fonts, pill filter (All / Missing / Recently edited 7d). Monitoring rooms (Lobby, Health, Engine Room, AI Calls, Daily Stats) all ported with data logic preserved verbatim. Orphan files deleted (ShellLayout.jsx, StatusChip.jsx). 13 migrations total — no schema changes this session.
+- **Active sprint:** I Part 1 CLOSED 2026-04-20 (Session 21 — DB + worker + main-app Forgot PIN flow). Session 21.5 hotfix next (R21-13 PIN persistence), then Sprint I Part 2 Tower Room 6 UI (Session 22).
+- **Session 21:** closed this commit · Session 21.5 next: R21-13 HIGH `savePinConfig` DB persistence audit + Commit 3 browser smoke verification (Scenarios B/D/E deferred from Session 21 close)
+- **Production hash (Phajot):** index-xMpsmdvy.js (CF Pages production post-Commit-3; local build was index-InDWwRPz.js — hash differs by design per Session 9 learning, CF Pages rebuilds in its own Node/npm env)
+- **Tower bundle:** 890.55KB raw / 256KB gzip — `index-DJwN4vkN.js` (unchanged this session — no Tower work). All 6 rooms on unified design system. Tower fully operational at tower.phajot.com (3-layer gate: CF Access + Supabase login + is_admin RLS).
+- **Worker version:** 4.8.1 (deployed_at 2026-04-20T10:57:56Z). 8 new endpoints added this session across `/recovery/*` + `/admin/users/*`.
+- **Latest commit:** `<this wrap>` (Session 21 wrap — docs atomic per Rule 20)
+- **Next action:** Session 21.5 opening per docs/session-ritual.md; R21-13 PIN persistence fix + browser smoke test scenarios B/D/E. Then Sprint I Part 2 (Tower Room 6 UI) in Session 22.
+- **Notable milestone:** Sprint I Part 1 CLOSED — Admin-Approved Recovery System shipped end-to-end across DB + worker + main app. 3 commits, 2 migrations (014 + 015), 8 worker endpoints, 9/9 smoke tests passed, 17 i18n keys × 3 languages. Migration 015 same-session hotfix for Migration 014 RLS self-reference recursion bug (42P17) caught via deliberate adversarial probe — introduced `public.is_admin()` SECURITY DEFINER helper. Fallback A pattern for PostgREST embedded-resource failure (Commit 2 Group D).
 
 ## Sprint Progress
 
@@ -154,14 +154,42 @@
 
 Original H-1 Admin Panel item re-classified as Sprint I work — Session 20 closed Sprint H by shipping the design system that Sprint I builds on top of. Admin Panel will be the first room implemented post-redesign.
 
-### Sprint I — Admin Panel (user investigation) — Session 21
+### Sprint I — Admin-Approved Recovery System (Sessions 21 + 21.5 + 22)
 
-- Room 6: search users, view profile/transactions/errors
-- Every read logs to tower_admin_reads (Migration 009 §4)
-- PDPA-compliant, read-only v1
-- Reuses Session 20 primitives — no new design system work
+**Part 1 — DB + worker + main-app UI (Session 21, CLOSED 2026-04-20)**
 
-**Status:** NOT STARTED — next Session 21
+| # | Commit | What | Status |
+|---|--------|------|--------|
+| 1 | 22c5e86 | Migrations 014 + 015 — recovery state + admin read paths + is_admin() SECURITY DEFINER recursion fix | ✅ |
+| 2 | e4393b0 | Worker v4.8.1 — 8 endpoints (3 user recovery + 2 admin approval + 3 admin summary) + Fallback A | ✅ |
+| 3 | a9eda3c | Main-app Forgot PIN flow — i18n + `src/lib/recovery.js` + `<SetNewPin>` + PinLock Forgot button + App.jsx recovery hook | ✅ |
+| 4 | `<this wrap>` | Session 21 wrap docs | ✅ |
+
+**Status:** Part 1 COMPLETE ✅
+
+**Part 1 definition of done — all met:**
+- 15 migrations applied (014 + 015 new)
+- Worker v4.8.1 live, all 8 endpoints smoke-tested via curl (9/9 pass)
+- Main app Commit 3 built clean, bundle hash verified on production (index-xMpsmdvy.js ≠ pre-Session-21 baseline)
+- Rule 17 preserved (worker writes all credential state)
+- Rule 15 preserved (17 new i18n keys × en/lo/th)
+- Rule 20 atomic SPRINT-CURRENT + ROADMAP-LIVE update this commit
+- Rule 11 production hash verified
+
+**Session 21.5 — Hotfix inserted (R21-13 HIGH)**
+
+Single scope: `savePinConfig` PIN persistence bug + browser smoke scenarios B/D/E deferred from Session 21.
+
+**Part 2 — Tower Room 6 Admin Support Console UI (Session 22)**
+
+- Room 6: pending requests queue (manual refresh), search + summary side panel, approve buttons wired to Commit 2 endpoints, view recent transactions accordion
+- Every read logs to `tower_admin_reads` + `tower_admin_actions` per privacy-sensitive contract (already worker-side; Tower UI just triggers)
+- Additional Migration 016 bundle: R21-6 unauthorized admin attempt audit + R21-8 atomic `complete_pin_reset` RPC
+- R21-10 support-console.js split (Option 2b)
+- R21-11 PostgREST embed investigation
+- R21-12 app_events schema audit
+
+**Status:** Part 2 NOT STARTED — Session 22
 
 ### Sprints I–J — Tower Rooms (Sessions 21–22)
 - I: Command Center (Sentinel chat) + **OCR Reliability Room** — attempts/failures/success rates per bank, average review corrections, confidence distribution, cost per 100 scans, most common row errors. Feeds Sprint L hardening decisions with real data.
@@ -232,6 +260,7 @@ Rejected alternatives:
 | 18 (Sprint G close) | BJCgj50K (main app unchanged) | BJCgj50K — Tower only: 2zR7DkDi → C26VOd0d (Recharts) → Bz0clCZ1 (fallback) → MLdjSdAs (HUD) → Bn-XNeS- (endpoint fix) | Engine Room + Migration 011 drift reconciliation. Sprint G CLOSED. 7 commits: e76ff61, 374c820, 274ee14, fa1f216, 65a2086, 857a2ca, 82f7221. |
 | 19 (Sprint H-2 close) | BJCgj50K → post-02ec8d0 hash (Phase 2 translations init added to main app) | Tower: Bn-XNeS- → post-c7adb4a (Phase 3 + 3b, 884KB raw) → post-48324bf (Phase 3c, 884KB raw) | Language Strings shipped. Migrations 012+013. shared/i18n-data.js. Sprint H-2 CLOSED. 5 commits: da185fd, 9648feb, 02ec8d0, c7adb4a, 48324bf. |
 | 20 (Sprint H close — UX redesign) | BJCgj50K (main app unchanged) | Tower: post-48324bf (884KB) → D0mfT_w2 (Phase 1, 886KB) → U46bquEx (Phase 2, 886KB) → B-SBURXM (Phase 3, 890KB) → DJwN4vkN (Phase 4 wrap, 890KB) | Tower UX redesign. 10 shared primitives + new Shell + Sidebar + 5 monitoring rooms ported + Language Strings full editor-first redesign + orphan cleanup. Sprint H CLOSED. 6 commits: 85f0480, dec20c0, a7816be, 42de77e, + this wrap. |
+| 21 (Sprint I Part 1 close) | BJCgj50K → RVdx7aXp (CF rebuild on Session 20 docs-only commit) → xMpsmdvy (CF Pages production post-Commit-3) | Tower: DJwN4vkN (unchanged — no Tower work this session) | Admin-Approved Recovery System. 2 migrations (014 + 015 — M015 same-session hotfix for M014 RLS recursion bug). Worker v4.7.0 → v4.8.0 → v4.8.1 (v4.8.1 added Fallback A for PostgREST embed failure). 8 worker endpoints. Main-app Forgot PIN flow. 4 commits: 22c5e86, e4393b0, a9eda3c, `<this wrap>`. Speaker-built local bundle was index-InDWwRPz.js; CF Pages serves index-xMpsmdvy.js (different by design per Session 9 lesson). |
 
 ## The Tower Team
 | Name | Role |

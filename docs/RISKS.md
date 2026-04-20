@@ -9,11 +9,21 @@ Living document. Updated at the end of each session.
 - **MEDIUM** — quality issue, user-visible but recoverable, or latent failure mode
 - **LOW** — tech debt, nice-to-have, or documentation gap
 
-**Last updated:** 2026-04-20 (post Session 20 close)
+**Last updated:** 2026-04-20 (post Session 21 close)
 
 ---
 
 ## HIGH
+
+### [HIGH] Settings PIN change doesn't persist to `profiles.pin_config` — R21-13
+**Discovered:** Session 21 Speaker manual testing
+**Status:** Open — blocker for Session 21.5 hotfix
+
+`savePinConfig` in App.jsx:57-67 updates localStorage but the DB write is fire-and-forget inside an IIFE that doesn't await and may silently fail. Symptom: user changes PIN in Settings → works on current device → clears localStorage or logs in from new device → DB `profiles.pin_config` still has old PIN → user locked out. Also blocks clean test of recovery-completion persistence (Commit 3 Scenario D).
+
+**Mitigation:** Session 21.5 hotfix scope. Audit error handling, verify DB write succeeds synchronously, add test harness for PIN persistence across sessions.
+
+See `docs/session-21/RISKS.md` R21-13 for full context.
 
 ### [HIGH] Silent CF Pages deploy failures
 **Discovered:** Session 9
@@ -53,6 +63,24 @@ Session 9 verified RLS **manually** with an adversarial SQL test in the Supabase
 ---
 
 ## LOW
+
+### [LOW] Session 21 admin-read paths shipped — admin-gated additive policies now live on profiles/transactions/app_events
+**Discovered/Shipped:** Session 21 Migrations 014 + 015
+**Status:** Shipped + adversarially verified
+
+Migration 014 added additive FOR SELECT admin-read policies on `profiles`, `transactions`, `app_events`, `user_recovery_state`. Migration 015 fixed a 42P17 recursion bug in those policies by introducing `public.is_admin()` SECURITY DEFINER helper. All policies now reference `is_admin()` instead of inline EXISTS subquery.
+
+**Pre-public-launch review:** when RLS re-tightening pass is done before public launch, audit admin-read surface — does Session 22+ Tower code need less-privileged read paths, or are admin reads acceptable as-is given `is_admin=true` is Speaker-only?
+
+See `docs/session-21/RISKS.md` R21-3 + R21-11 for context.
+
+### [LOW] `workers/lib/support-console.js` at 1300 lines — Rule 7 deferred split (R21-10)
+**Discovered:** Session 21
+**Status:** Deferred to Session 22
+
+Worker subsystem module grew past Rule 7 threshold (800 lines) during Sprint I Part 1. Natural split boundaries identified: helpers / user-recovery / admin-approve / admin-summary (Option 2b). Session 22 Tower Room 6 UI doesn't grow this file, so post-Session-22 is the natural split moment.
+
+Main worker `phanote-api-worker.js` also in violation at 1263 lines (pre-existing, separate backlog).
 
 ### [LOW] `wrangler.toml` dashboard drift
 **Discovered:** Session 9 investigation

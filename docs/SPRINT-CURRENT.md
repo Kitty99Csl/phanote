@@ -4,37 +4,6 @@
 
 ---
 
-## Sprint G — CLOSED 2026-04-19
-
-**Session:** 18
-**Theme:** Engine Room + drift reconciliation
-
-### Items shipped
-
-| # | Item | Status | Key commits |
-|---|------|--------|-------------|
-| G-1 | Room 4 Engine Room (System Integrity HUD + hourly AI traffic chart) | ✅ | 274ee14, fa1f216, 65a2086, 857a2ca |
-| G-2 | Migration 011 drift reconciliation (4 drift items resolved) | ✅ | 82f7221 |
-
-### Also shipped this session (not Sprint G scope)
-
-| Commit | What |
-|--------|------|
-| e76ff61 | chore: fill pending hash placeholders (ROADMAP-LIVE + RISKS) |
-| 374c820 | chore: remove LINE from roadmap, promote native app publishing to Phase 6 |
-
-### Sprint G final state
-
-- Tower `/engine-room` live at tower.phajot.com/engine-room
-- Section 1: D3 Tactical HUD — 4 stat cards + 4 endpoint telemetry rows derived from ai_call_log (7-day window)
-- Section 2: Recharts hourly AI traffic line chart (24h, gemini + anthropic)
-- Tower bundle: index-Bn-XNeS-.js (793.25KB raw / 229.64KB gzip)
-- Migration 011 applied and postflight-verified clean
-
-**Status: COMPLETE ✅ — Closed Session 18, 2026-04-19**
-
----
-
 ## Sprint H — CLOSED 2026-04-20
 
 **Session:** 19 (H-2 Language Strings closed) → 20 (Tower UX redesign across all 6 rooms)
@@ -59,40 +28,78 @@
 
 **Status: COMPLETE ✅ — Closed Session 20, 2026-04-20**
 
-### Admin Panel (user investigation) — moved to Sprint I
+---
 
-The Admin Panel item originally tracked as H-1 (deferred from Session 19) has been re-classified as Sprint I work — Session 20 closed Sprint H by shipping the design system that Sprint I will build on top of. Admin Panel will be the first room implemented post-redesign.
+## Sprint I — Part 1 CLOSED 2026-04-20
+
+**Session:** 21
+**Theme:** Admin-Approved Recovery System (DB + worker + main-app UI)
+
+### Items shipped
+
+| # | Item | Status | Key commits |
+|---|------|--------|-------------|
+| I-1 | Migrations 014 + 015 — `user_recovery_state` + `tower_admin_actions` + additive admin-read policies + `is_admin()` SECURITY DEFINER recursion fix | ✅ | 22c5e86 |
+| I-2 | Worker v4.8.1 — 8 endpoints across 3 groups (user recovery / admin approval / admin summary) + Fallback A for PostgREST embed failure | ✅ | e4393b0 |
+| I-3 | Main-app Forgot PIN flow — i18n 17 keys × 3 langs + `src/lib/recovery.js` + `<SetNewPin>` + PinLock Forgot button + App.jsx recovery detection hook | ✅ | a9eda3c |
+
+### Sprint I Part 1 final state
+
+- 15 migrations applied (001–015; 014 + 015 shipped this session)
+- Worker v4.8.1 live at `api.phajot.com` — 8 new endpoints (3 `/recovery/*`, 5 `/admin/users/*`)
+- Main app bundle on CF Pages: `index-xMpsmdvy.js` (production) — Rule 11 verified ≠ pre-Session-21 baseline `index-RVdx7aXp.js`
+- Speaker's PIN temporarily set to `9999` during Commit 2 smoke test (live per acknowledgment); serves as marker for "just recovered" state until Speaker restores via Settings
+- Smoke test 9/9 pass on Commit 2 adversarial curl sequence
+
+**Deferred items:**
+- Browser smoke test Scenarios B/D/E (Forgot PIN UI, recovery completion, expired recovery) → Session 21.5 opening
+- R21-10 worker file split (support-console.js at 1300 lines) → Session 22 natural boundary
+
+**Status: Part 1 COMPLETE ✅ — Closed Session 21, 2026-04-20**
 
 ---
 
-## Sprint I — Admin Panel (user investigation) — NEXT
+## Sprint I.5 — INSERTED 2026-04-20 — Hotfix session
 
-**Session:** 21
-**Theme:** First post-redesign room build
+**Session:** 21.5
+**Theme:** R21-13 HIGH — PIN persistence bug in `savePinConfig`
 
 ### Items
 
 | # | Item | Status | Notes |
 |---|------|--------|-------|
-| I-1 | Room 6: Admin Panel — user investigation (read-only v1) | ⏭️ next session | Built on Session 20 primitives + Shell |
-| I-2 | Wife first-day verify of redesigned Language Strings | ⏭️ Session 21 morning | Observation, not code |
+| I.5-1 | Audit `savePinConfig` in App.jsx:57-67 — DB write is fire-and-forget IIFE that may silently fail | ⏭️ next session | R21-13 HIGH |
+| I.5-2 | Walk browser smoke Scenarios B/D/E from Session 21 Phase 3G | ⏭️ next session | Deferred from Session 21 close |
+| I.5-3 | Rule 11 production hash verification post-fix | ⏭️ next session | |
 
-### I-1 pre-conditions for Session 21
+### I.5 pre-conditions
 
-- [ ] Session 21 opening reality check (per docs/session-ritual.md)
-- [ ] Verify `tower_admin_reads` table exists (Migration 009 §4 created it)
-- [ ] Scope locked before first commit (Rule 14)
-- [ ] Reuse Session 20 primitives — no new design system work
+- [ ] Reality check per `docs/session-ritual.md`
+- [ ] Confirm Session 21 commits in main: `22c5e86`, `e4393b0`, `a9eda3c`, `<wrap commit>`
+- [ ] Confirm current production hash is from `a9eda3c` build (post-wrap)
+- [ ] Scope locked to R21-13 + Scenarios B/D/E only — no scope creep
 
-### I-1 definition of done
+**Status: NOT STARTED — next Session 21.5**
 
-- Room 6 (likely C-02 or A-03 code) live at tower.phajot.com/admin
-- Search users + profile/transactions/errors view
-- Every admin read logged to `tower_admin_reads`
-- PDPA-compliant access controls
-- Session 21 wrap: SPRINT-CURRENT.md + ROADMAP-LIVE.md updated atomically (Rule 20)
+---
 
-**Status: NOT STARTED — next Session 21**
+## Sprint I — Part 2 — Tower UI (Session 22)
+
+**Session:** 22
+**Theme:** Tower Room 6 (Admin Support Console UI) — consumes worker endpoints built in Sprint I Part 1
+
+### Items
+
+| # | Item | Status | Notes |
+|---|------|--------|-------|
+| I-4 | Tower Room 6 Admin Support Console UI (C-02) | ⏭️ Session 22 | Pending requests queue (manual refresh), search + summary side panel, approve buttons, confirm dialogs, view recent transactions accordion |
+| I-5 | R21-11 PostgREST embedded resource investigation | ⏭️ Session 22 | If resolvable, migrate Fallback A back to embeds for perf |
+| I-6 | R21-6 unauthorized admin attempt audit (Migration 016) | ⏭️ Session 22 | Extends tower_admin_actions.action_type CHECK |
+| I-7 | R21-8 atomic `complete_pin_reset` RPC (bundle with R21-6 Migration 016) | ⏭️ Session 22 | |
+| I-8 | R21-10 support-console.js split (Option 2b) | ⏭️ Session 22 | Natural post-Tower-UI split |
+| I-9 | R21-12 app_events schema audit | ⏭️ Session 22 | |
+
+**Status: NOT STARTED — Session 22**
 
 ---
 
@@ -109,3 +116,4 @@ The Admin Panel item originally tracked as H-1 (deferred from Session 19) has be
 | H-2 | 2026-04-20 | 19 | docs/session-19/SUMMARY.md |
 | H-3 | 2026-04-20 | 20 | docs/session-20/SUMMARY.md |
 | H | 2026-04-20 | 20 | (sprint closed end of Session 20) |
+| I Part 1 | 2026-04-20 | 21 | docs/session-21/SUMMARY.md |

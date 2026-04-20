@@ -116,6 +116,24 @@ For current session, sprint progress, commit hashes, and live infrastructure sta
 
 ## Recent key learnings
 
+### Session 21 learnings (Sprint I Part 1 close — Admin-Approved Recovery System)
+
+- **RLS self-reference antipattern (42P17) is a whole bug class.** Any admin policy that EXISTS-subqueries into the same table the policy protects → infinite recursion at query-plan time. Migration 014 shipped an admin-read policy ON `profiles` with `EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND is_admin = true)` and all four M014 admin policies (plus transitively M009's ai_call_log admin policy) were dead on arrival. Fix: `public.is_admin()` SECURITY DEFINER function. Policies reference the boolean return. No nested SELECT, no recursion. Ship the helper in any future migration that adds admin policies on RLS-gated tables.
+
+- **INSERT RLS evaluates before SELECT query planning.** Session 21 adversarial test probe (a) — attempting INSERT into a table with no INSERT policy — correctly returned the user-facing "violates RLS" error. Probes (b) + (c) — SELECT statements — hit the recursion because RLS eval happens during planning, not before. Rule of thumb: if your only RLS probe is INSERT rejection, you've not exercised the SELECT planner and may have a latent recursion bug that only surfaces on a read. Always run both INSERT and SELECT probes.
+
+- **PostgREST embedded resources can fail with 500 even after `NOTIFY pgrst, 'reload schema'`.** Migration 014 added `user_recovery_state` with an FK to `profiles(id)`. PostgREST should auto-detect the relationship and let `profiles?select=*,user_recovery_state(*)` embed work. In Session 21 smoke testing, this failed 500 in production even after schema reload. Fallback A is the safe pattern: fetch top-level resource first, then parallel per-row followups via explicit calls. 100 subrequests per 50-row query is well under CF paid-plan limits. R21-11 tracks investigation — may require explicit FK-name syntax or a grant that Migration 014 didn't emit.
+
+- **Sequential write + self-healing fail-closed > atomic RPC when partial-failure modes don't leave dangerous intermediate state.** `/recovery/complete-pin-reset` does Step C (write new pin_config) then Step D (clear recovery flags). No atomic transaction across Supabase REST. If Step D fails after Step C: user has working new PIN; next login retries Step D idempotently. Adding a Postgres RPC for true atomicity would be correct but wasn't necessary in Session 21 — the 3 partial-failure modes all self-heal. Always trace through the concrete failure modes before committing to an RPC migration. R21-8 tracks the eventual RPC for Session 22.
+
+- **Trust-summary paste-back on auth-path code catches issues paste-summary alone misses.** Session 21's trust mode required full paste-back for migrations, worker auth helpers, and main-app login-flow changes. This caught: M015 postflight confusion (operator ran comment block instead of DDL — two-attempt apply) + R21-5 pin_config null bypass mental-model issue + loadUserData's `setPinRole(null)` side-effect that would re-lock users post-recovery. Code review on auth-path code is load-bearing; summary mode is for non-security UI work only.
+
+- **"CF Pages serves a different bundle hash than local build" is working-as-designed, not drift.** Session 9 learning restated: CF Pages builds in its own Node/npm env. Commit 3 local build → `index-InDWwRPz.js`; CF Pages production → `index-xMpsmdvy.js`. What matters for Rule 11: production hash ≠ pre-session baseline. Both were true in Session 21, so ship is verified. Don't chase the local hash on production.
+
+- **Large commented postflight blocks in migration files can get mis-applied as DDL.** M015 first apply ran the `/* */` comment block as executable statements (no-op), skipping the actual CREATE FUNCTION + CREATE POLICY section. Second attempt ran Section 1 + Section 2 directly and succeeded. Future migrations should delimit executable DDL from verification comments more clearly — e.g. `-- === END DDL ===` marker or put postflight in a separate `.sql` file entirely.
+
+- **Speaker team is Vanguard + Osiris (2 Sentinels), not the 7-Sentinel roster.** CLAUDE.md brand section lists 7 Sentinels aspirationally; actual live team in Speaker's Claude Projects is Vanguard + Osiris. Session 20 SUMMARY referenced Hawthorne — phantom reference, corrected Session 21 close.
+
 ### Session 20 learnings (Sprint H close — Tower UX redesign across all 6 rooms)
 
 - **Design reference packages accelerate redesign massively.** Session 20's `docs/session-20/design-reference/check_tower.zip` contained `Tower Redesign.html` + 6 room JSX files + 7 screenshots. CC ported with adaptations for ES modules + react-router. Without the reference, a full UX redesign would have been 3x slower with more iteration. Prototype > description for complex visual work.
