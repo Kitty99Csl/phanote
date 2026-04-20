@@ -16,6 +16,7 @@
 import { useState } from "react";
 import { T, CURR } from "../lib/theme";
 import { t } from "../lib/i18n";
+import { showToast } from "../lib/toast";
 import { AVATARS, EMOJI_PICKS } from "../lib/constants";
 import { getLevel } from "../lib/streak";
 import { Flag } from "../components/Flag";
@@ -187,7 +188,17 @@ export function SettingsScreen({profile,transactions,onUpdateProfile,onReset,pin
           </div>
           <div style={{display:"flex",gap:6,flexShrink:0}}>
             {pinConfig.guest && (
-              <button onClick={()=>savePinConfig({...pinConfig,guest:null})} style={{fontSize:12,fontWeight:700,color:"#C0392B",background:"rgba(255,179,167,0.2)",border:"none",borderRadius:9999,padding:"6px 12px",cursor:"pointer",fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"settingsPinRemove")}</button>
+              <button onClick={async () => {
+                // R21-13 fix — savePinConfig is now async + throws on DB
+                // errors. On failure: revert local state (best-effort) +
+                // surface toast. See App.jsx savePinConfig for details.
+                const prev = pinConfig;
+                try { await savePinConfig({...pinConfig, guest: null}); }
+                catch {
+                  savePinConfig(prev).catch(() => {});
+                  showToast(t(lang, "pinSaveFailed"), "error");
+                }
+              }} style={{fontSize:12,fontWeight:700,color:"#C0392B",background:"rgba(255,179,167,0.2)",border:"none",borderRadius:9999,padding:"6px 12px",cursor:"pointer",fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"settingsPinRemove")}</button>
             )}
             <button onClick={()=>setPinSetupMode("set-guest")} style={{fontSize:12,fontWeight:700,color:"#2A7A40",background:"rgba(172,225,175,0.2)",border:"none",borderRadius:9999,padding:"6px 14px",cursor:"pointer",fontFamily:"'Noto Sans',sans-serif",whiteSpace:"nowrap"}}>
               {pinConfig.guest ? t(lang,"settingsPinChange") : t(lang,"settingsPinSetup")}

@@ -72,15 +72,32 @@ export default function App(){
   const [pinSetupStep, setPinSetupStep] = useState("enter");
   const [pinSetupFirst, setPinSetupFirst] = useState("");
 
-  const savePinConfig = (cfg) => {
+  // R21-13 (Session 21.5) fix — was fire-and-forget IIFE with
+  // catch {} that swallowed all DB errors. Now async + checks the
+  // { error } response shape + throws on failure. Callers are
+  // responsible for reverting optimistic local state + surfacing
+  // the error to the user (e.g. handleSetupKey uses a pinSaveFailed
+  // toast + best-effort revert via a second savePinConfig call).
+  //
+  // Order: optimistic local update FIRST (user sees instant UI
+  // feedback), then DB write awaited. On throw, caller reverts.
+  // Supabase JS does NOT throw on RLS / constraint / permission
+  // errors — those land in `error` on the returned object, so the
+  // explicit shape check is necessary (a try/catch alone wouldn't
+  // have caught the original bug).
+  const savePinConfig = async (cfg) => {
     if (userId) store.set(`phanote_pins_${userId}`, cfg); // per-user, authoritative
     store.set("phanote_pins", cfg);                       // global, last-known-user cache
     setPinConfig(cfg);
     if (userId) {
-      (async () => {
-        try { await supabase.from("profiles").update({ pin_config: cfg }).eq("id", userId); }
-        catch {}
-      })();
+      const { error } = await supabase
+        .from("profiles")
+        .update({ pin_config: cfg })
+        .eq("id", userId);
+      if (error) {
+        console.error("savePinConfig DB write failed:", error);
+        throw new Error(error.message || "pin_config_write_failed");
+      }
     }
   };
   const handlePinKey = (key) => {
@@ -97,15 +114,29 @@ export default function App(){
     if (key === "⌫") { setPinInput(p => p.slice(0,-1)); return; }
     const next = pinInput + key; setPinInput(next);
     if (next.length < 4) return;
-    setTimeout(() => {
+    // setTimeout callback is now async so we can await savePinConfig
+    // and handle DB errors properly (R21-13 fix).
+    setTimeout(async () => {
       if (pinSetupStep === "enter") {
         setPinSetupFirst(next); setPinSetupStep("confirm"); setPinInput("");
       } else if (next === pinSetupFirst) {
         const newCfg = {...pinConfig};
         if (pinSetupMode === "set-owner") newCfg.owner = next;
         if (pinSetupMode === "set-guest") newCfg.guest = next;
-        savePinConfig(newCfg);
-        setPinSetupMode(null); setPinSetupStep("enter"); setPinSetupFirst(""); setPinInput("");
+        const previousCfg = pinConfig; // stash for revert on DB failure
+        try {
+          await savePinConfig(newCfg);
+          setPinSetupMode(null); setPinSetupStep("enter"); setPinSetupFirst(""); setPinInput("");
+        } catch (e) {
+          // Revert optimistic local state to pre-save value. Best-effort —
+          // if the revert DB write also fails (same underlying outage),
+          // loadUserData reconciles on next login from the DB's actual
+          // state. What matters is the user sees a toast + their UI
+          // returns to the pre-attempt PIN state.
+          savePinConfig(previousCfg).catch(() => {});
+          showToast(t(profile?.lang || "lo", "pinSaveFailed"), "error");
+          setPinSetupMode(null); setPinSetupStep("enter"); setPinSetupFirst(""); setPinInput("");
+        }
       } else {
         setPinShake(true);
         setTimeout(() => { setPinShake(false); setPinInput(""); setPinSetupStep("enter"); setPinSetupFirst(""); }, 600);
@@ -271,9 +302,29 @@ export default function App(){
   // skipPinRoleReset so loadUserData doesn't clobber that).
   const handlePinRecoveryComplete = (newPin) => {
     setPinRecoveryPending(false);
+    // savePinConfig is now async (R21-13 fix). Use .catch() instead
+    // of try/await so the SYNC state flips below (setPinRole,
+    // setRecoveryAccessToken, loadUserData) preserve their ordering —
+    // Phase 3C's SetNewPin unmount timing depends on pinRecoveryPending
+    // flipping in the same render batch as the follow-ups.
+    //
+    // IMPORTANT: do NOT surface errors to the user here. The worker's
+    // /recovery/complete-pin-reset endpoint already wrote pin_config
+    // to the DB authoritatively via service role before this handler
+    // runs. This savePinConfig call is for LOCAL state sync only
+    // (localStorage + React state); its DB echo write is redundant-
+    // and-idempotent (overwrites DB with same value the worker just
+    // wrote). A failure here means the echo lost a race — console.warn
+    // only; a user-facing "save failed" toast would be misleading
+    // because the DB state is already correct.
     savePinConfig({
       owner: newPin,
       guest: pinConfig?.guest ?? null,
+    }).catch(e => {
+      console.warn(
+        "post-recovery local sync DB echo failed (worker state is authoritative):",
+        e?.message
+      );
     });
     setPinRole("owner");
     setRecoveryAccessToken(null);
