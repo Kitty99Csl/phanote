@@ -10,7 +10,7 @@ import { T } from "../lib/theme";
 import { t } from "../lib/i18n";
 import { Logo } from "../components/Logo";
 
-export function PinLock({ pinConfig, pinInput, pinShake, onKey, isSetup, setupMode, setupStep, lang = "lo" }) {
+export function PinLock({ pinConfig, pinInput, pinShake, onKey, isSetup, setupMode, setupStep, lang = "lo", onForgotPin }) {
   const keys = ["1","2","3","4","5","6","7","8","9","","0","⌫"];
   const dots = pinInput.length;
   const title = isSetup
@@ -43,6 +43,24 @@ export function PinLock({ pinConfig, pinInput, pinShake, onKey, isSetup, setupMo
       </div>
       {!isSetup&&pinConfig?.guest&&(
         <div style={{marginTop:28,fontSize:12,color:T.muted,textAlign:"center",fontFamily:"'Noto Sans',sans-serif"}}>{t(lang, "pinBothAccepted")}</div>
+      )}
+      {!isSetup && onForgotPin && (
+        <button
+          type="button"
+          onClick={onForgotPin}
+          style={{
+            marginTop: pinConfig?.guest ? 14 : 28,
+            background: "none",
+            border: "none",
+            color: T.muted,
+            fontSize: 13,
+            cursor: "pointer",
+            fontFamily: "'Noto Sans','Noto Sans Lao',sans-serif",
+            WebkitTapHighlightColor: "transparent",
+          }}
+        >
+          {t(lang, "pinForgot")}
+        </button>
       )}
       <style>{`@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}`}</style>
     </div>

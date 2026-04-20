@@ -19,6 +19,8 @@ import { LoginScreen } from "./screens/LoginScreen";
 import { OnboardingScreen } from "./screens/OnboardingScreen";
 import { HomeScreen } from "./screens/HomeScreen";
 import MigrationScreen from "./screens/MigrationScreen";
+import { SetNewPin } from "./screens/SetNewPin";
+import { getRecoveryStatus, requestPinReset } from "./lib/recovery";
 
 // ═══ ROOT APP ════════════════════════════════════════════════
 export default function App(){
@@ -30,6 +32,22 @@ export default function App(){
   const [streakToast, setStreakToast]   = useState(null);
   const [pendingConfirm, setPendingConfirm] = useState(null); // null | {kind:'delete-tx', txId} | {kind:'reset'}
   const [migrationPrefill, setMigrationPrefill] = useState(""); // one-hop forward of typed password to MigrationScreen
+
+  // ── PIN recovery flow state (Session 21 Sprint I) ──────────
+  // pinRecoveryPending is set by handleLogin after /recovery/status
+  // returns pin_reset_required=true AND !expired. Gates rendering of
+  // <SetNewPin> BEFORE the PinLock conditional (R21-5: prevents any
+  // bypass via null pin_config paths).
+  const [pinRecoveryPending, setPinRecoveryPending] = useState(false);
+  const [recoveryAccessToken, setRecoveryAccessToken] = useState(null);
+  // Defensive cleanup for the auto-logout timer in performForgotPinRequest.
+  // App.jsx is the root component so this never actually fires in practice,
+  // but documents the intent + future-proofs any refactor that moves this
+  // handler into a child component.
+  const forgotPinLogoutTimeoutRef = useRef(null);
+  useEffect(() => () => {
+    if (forgotPinLogoutTimeoutRef.current) clearTimeout(forgotPinLogoutTimeoutRef.current);
+  }, []);
 
   // ── Migration guard ────────────────────────────────────────
   // Ref tracks whether the legacy migration gate is active, so the
@@ -128,7 +146,11 @@ export default function App(){
     return () => subscription.unsubscribe();
   },[]);
 
-  const loadUserData = async (uid) => {
+  // options.skipPinRoleReset — Session 21 Sprint I: suppresses the
+  //   `setPinRole(null)` call on line below so the user isn't re-
+  //   routed to PinLock immediately after completing a PIN recovery.
+  //   Default false preserves existing callers' behavior.
+  const loadUserData = async (uid, { skipPinRoleReset = false } = {}) => {
     setUserId(uid); setLoadingProfile(true);
     try {
       const { data: dbProfile } = await supabase.from("profiles").select("*").eq("id", uid).single();
@@ -174,10 +196,10 @@ export default function App(){
       setPinConfig(pinCfg);
       store.set(`phanote_pins_${uid}`, pinCfg); // per-user, authoritative
       store.set("phanote_pins", pinCfg);        // global, last-known-user cache
-      if (pinCfg?.owner) setPinRole(null);
+      if (!skipPinRoleReset && pinCfg?.owner) setPinRole(null);
     } catch {
       const pinCfg = store.get(`phanote_pins_${uid}`) || store.get("phanote_pins");
-      if (pinCfg?.owner) setPinRole(null);
+      if (!skipPinRoleReset && pinCfg?.owner) setPinRole(null);
     }
     setLoadingProfile(false);
   };
@@ -198,10 +220,109 @@ export default function App(){
       await supabase.from("profiles").upsert({ id: user.id, phone: phone || null, phone_country_code: countryCode || null, last_seen_at: new Date().toISOString() }, { onConflict: "id" });
       await dbTrackEvent(user.id, "login", { phone, countryCode, isNew });
     } catch (e) { console.error("Login profile update:", e); }
+
+    // ── Recovery check (Session 21 Sprint I) ────────────────
+    // Fail-closed (R21-7): any !ok result — 401 / 403 / 500 /
+    // timeout / missing_token / thrown exception — falls through
+    // identically to the normal loadUserData path below. The ONLY
+    // route to <SetNewPin> is a fully successful status read with
+    // pin_reset_required=true AND an unexpired expires_at. Single
+    // if(ok) block, no else branch — structurally prevents any
+    // error path from auto-allowing recovery flow.
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+      if (accessToken) {
+        const statusResult = await getRecoveryStatus(accessToken);
+        if (statusResult.ok) {
+          const status = statusResult.data;
+          const notExpired = (iso) => iso && new Date(iso).getTime() > Date.now();
+          if (status.pin_reset_required && notExpired(status.pin_reset_expires_at)) {
+            setRecoveryAccessToken(accessToken);
+            setPinRecoveryPending(true);
+            setLoadingProfile(false);
+            return; // Skip loadUserData — render chain → <SetNewPin>
+          }
+          if (status.password_reset_required && notExpired(status.password_reset_expires_at)) {
+            // Schema-ready but dormant (Session 22/23 adds user-side flow).
+            // Do NOT block login — user can still use the app. Admin
+            // must complete the reset manually until then.
+            console.warn("password reset required — user-side flow not yet live (Session 22/23)");
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("recovery status check failed, proceeding to normal login:", e?.message);
+    }
+
     // Always try to load — if profile exists go home, if not show onboarding
     await loadUserData(user.id);
     // loadUserData sets loadingProfile=false at the end
     // if profile is still null after load → new user → OnboardingScreen shows
+  };
+
+  // ── PIN recovery handlers (Session 21 Sprint I) ────────────
+  // Called by <SetNewPin> on successful completePinReset.
+  // State flip is SYNC-first so <SetNewPin> unmounts on next render
+  // tick (Phase 3C edge case #2). loadUserData fires without await
+  // so this handler returns immediately — the loading splash renders
+  // during the profile fetch, then HomeScreen mounts directly (we
+  // pre-set pinRole="owner" so PinLock is skipped, and pass
+  // skipPinRoleReset so loadUserData doesn't clobber that).
+  const handlePinRecoveryComplete = (newPin) => {
+    setPinRecoveryPending(false);
+    savePinConfig({
+      owner: newPin,
+      guest: pinConfig?.guest ?? null,
+    });
+    setPinRole("owner");
+    setRecoveryAccessToken(null);
+    loadUserData(userId, { skipPinRoleReset: true });
+  };
+
+  // Called by <SetNewPin> when user taps "Back to login" (terminal
+  // error path — 403 not_approved / 410 expired). Signs them out
+  // cleanly; on next login, /recovery/status will decide whether
+  // recovery is still available or they need support to re-approve.
+  const handlePinRecoveryCancel = async () => {
+    setPinRecoveryPending(false);
+    setRecoveryAccessToken(null);
+    setProfile(null);
+    setTransactions([]);
+    try { await supabase.auth.signOut(); } catch {}
+    setUserId(null);
+  };
+
+  // Called by ConfirmSheet for the "forgot-pin" kind after user
+  // confirms they want to submit a reset request. Fresh session
+  // fetch (no stale-token reliance). All three failure modes
+  // (no session / non-ok worker response / network-or-timeout)
+  // collapse to the same toast — request is idempotent worker-
+  // side, user can retry from the same PinLock screen.
+  const performForgotPinRequest = async () => {
+    const lang = profile?.lang || "lo";
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      showToast(t(lang, "pinForgotFailed"), "error");
+      return;
+    }
+    const result = await requestPinReset(session.access_token);
+    if (!result.ok) {
+      showToast(t(lang, "pinForgotFailed"), "error");
+      return;
+    }
+    showToast(t(lang, "pinForgotRequestSent"), "success");
+    // Auto-logout after 3s so user reads the toast on the
+    // authenticated render tree (ToastContainer isn't rendered on
+    // LoginScreen). Timer ref is tracked for defensive unmount
+    // cleanup (see effect above).
+    forgotPinLogoutTimeoutRef.current = setTimeout(async () => {
+      setProfile(null);
+      setTransactions([]);
+      try { await supabase.auth.signOut(); } catch {}
+      setUserId(null);
+      forgotPinLogoutTimeoutRef.current = null;
+    }, 3000);
   };
 
   // Migration flow handlers — called by MigrationScreen.
@@ -374,6 +495,19 @@ export default function App(){
     />
   );
 
+  // Session 21 Sprint I — recovery routing BEFORE PinLock render gate.
+  // R21-5: explicit early-return prevents any bypass via null
+  // pin_config paths; <SetNewPin> handles pin_config write + flag
+  // clear via worker, then handlePinRecoveryComplete takes over.
+  if (pinRecoveryPending) return (
+    <SetNewPin
+      lang={profile?.lang || "lo"}
+      accessToken={recoveryAccessToken}
+      onComplete={handlePinRecoveryComplete}
+      onCancel={handlePinRecoveryCancel}
+    />
+  );
+
   return (
     <>
       {((pinRole === null && pinConfig?.owner) || pinSetupMode) && (
@@ -386,6 +520,7 @@ export default function App(){
           setupMode={pinSetupMode}
           setupStep={pinSetupStep}
           lang={profile?.lang || "lo"}
+          onForgotPin={() => setPendingConfirm({ kind: "forgot-pin" })}
         />
       )}
       {pinSetupMode && (
@@ -434,6 +569,16 @@ export default function App(){
         confirmLabel={t(profile?.lang || "lo", "confirmDelete")}
         cancelLabel={t(profile?.lang || "lo", "confirmCancel")}
         destructive
+      />
+      {/* Session 21 Sprint I — Forgot PIN request confirmation */}
+      <ConfirmSheet
+        open={pendingConfirm?.kind === "forgot-pin"}
+        onClose={()=>setPendingConfirm(null)}
+        onConfirm={performForgotPinRequest}
+        title={t(profile?.lang || "lo", "pinForgotConfirmTitle")}
+        message={t(profile?.lang || "lo", "pinForgotConfirmMessage")}
+        confirmLabel={t(profile?.lang || "lo", "pinForgotConfirmSend")}
+        cancelLabel={t(profile?.lang || "lo", "confirmCancel")}
       />
     </>
   );
