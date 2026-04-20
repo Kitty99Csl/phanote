@@ -2,17 +2,17 @@
 
 > **Status:** Current source of truth (live roadmap, updated every session wrap-up)
 
-> Last updated: 2026-04-20 (Session 21 close — Sprint I Part 1 CLOSED; Session 21.5 hotfix inserted before Part 2)
+> Last updated: 2026-04-20 (Session 21.5 close — Sprint I.5 CLOSED; Sprint I.6 inserted for R21-14 + R21-15 bundle)
 
 ## Current State
-- **Active sprint:** I Part 1 CLOSED 2026-04-20 (Session 21 — DB + worker + main-app Forgot PIN flow). Session 21.5 hotfix next (R21-13 PIN persistence), then Sprint I Part 2 Tower Room 6 UI (Session 22).
-- **Session 21:** closed this commit · Session 21.5 next: R21-13 HIGH `savePinConfig` DB persistence audit + Commit 3 browser smoke verification (Scenarios B/D/E deferred from Session 21 close)
-- **Production hash (Phajot):** index-xMpsmdvy.js (CF Pages production post-Commit-3; local build was index-InDWwRPz.js — hash differs by design per Session 9 learning, CF Pages rebuilds in its own Node/npm env)
-- **Tower bundle:** 890.55KB raw / 256KB gzip — `index-DJwN4vkN.js` (unchanged this session — no Tower work). All 6 rooms on unified design system. Tower fully operational at tower.phajot.com (3-layer gate: CF Access + Supabase login + is_admin RLS).
-- **Worker version:** 4.8.1 (deployed_at 2026-04-20T10:57:56Z). 8 new endpoints added this session across `/recovery/*` + `/admin/users/*`.
-- **Latest commit:** `<this wrap>` (Session 21 wrap — docs atomic per Rule 20)
-- **Next action:** Session 21.5 opening per docs/session-ritual.md; R21-13 PIN persistence fix + browser smoke test scenarios B/D/E. Then Sprint I Part 2 (Tower Room 6 UI) in Session 22.
-- **Notable milestone:** Sprint I Part 1 CLOSED — Admin-Approved Recovery System shipped end-to-end across DB + worker + main app. 3 commits, 2 migrations (014 + 015), 8 worker endpoints, 9/9 smoke tests passed, 17 i18n keys × 3 languages. Migration 015 same-session hotfix for Migration 014 RLS self-reference recursion bug (42P17) caught via deliberate adversarial probe — introduced `public.is_admin()` SECURITY DEFINER helper. Fallback A pattern for PostgREST embedded-resource failure (Commit 2 Group D).
+- **Active sprint:** I.5 CLOSED 2026-04-20 (Session 21.5 — R21-13 `savePinConfig` PIN persistence HIGH fix). Sprint I.6 next (R21-14 + R21-15 account security settings cluster), then Sprint I Part 2 Tower Room 6 UI (Session 22).
+- **Session 21.5:** closed this commit · Session 21.6 next: R21-14 password change + R21-15 disable owner PIN (bundled as "account security settings gap" cluster, ~45-60 min target)
+- **Production hash (Phajot):** index-CQswCaAm.js (CF Pages production post-R21-13 fix; flipped from Session 21 close baseline index-xMpsmdvy.js). Rule 11 verified.
+- **Tower bundle:** 890.55KB raw / 256KB gzip — `index-DJwN4vkN.js` (unchanged — no Tower work across Session 21 or 21.5).
+- **Worker version:** 4.8.1 (unchanged since Session 21 Commit 2).
+- **Latest commit:** `<this wrap>` (Session 21.5 wrap — docs atomic per Rule 20)
+- **Next action:** Session 21.6 opening per docs/session-ritual.md; lock 5 design questions at Phase A; implement R21-14 (password change) + R21-15 (disable PIN) bundled; smoke + commit + wrap.
+- **Notable milestone:** Sprint I.5 CLOSED — R21-13 HIGH fix shipped and smoke-verified against production Supabase. Triple-defect stack in `savePinConfig` (fire-and-forget IIFE + catch {} + missing `{ error }` shape check) resolved. Unblocks public launch for PIN-related concerns. Organic Phase C discovery surfaced R21-14 + R21-15 (Session 21.6 scope).
 
 ## Sprint Progress
 
@@ -260,7 +260,8 @@ Rejected alternatives:
 | 18 (Sprint G close) | BJCgj50K (main app unchanged) | BJCgj50K — Tower only: 2zR7DkDi → C26VOd0d (Recharts) → Bz0clCZ1 (fallback) → MLdjSdAs (HUD) → Bn-XNeS- (endpoint fix) | Engine Room + Migration 011 drift reconciliation. Sprint G CLOSED. 7 commits: e76ff61, 374c820, 274ee14, fa1f216, 65a2086, 857a2ca, 82f7221. |
 | 19 (Sprint H-2 close) | BJCgj50K → post-02ec8d0 hash (Phase 2 translations init added to main app) | Tower: Bn-XNeS- → post-c7adb4a (Phase 3 + 3b, 884KB raw) → post-48324bf (Phase 3c, 884KB raw) | Language Strings shipped. Migrations 012+013. shared/i18n-data.js. Sprint H-2 CLOSED. 5 commits: da185fd, 9648feb, 02ec8d0, c7adb4a, 48324bf. |
 | 20 (Sprint H close — UX redesign) | BJCgj50K (main app unchanged) | Tower: post-48324bf (884KB) → D0mfT_w2 (Phase 1, 886KB) → U46bquEx (Phase 2, 886KB) → B-SBURXM (Phase 3, 890KB) → DJwN4vkN (Phase 4 wrap, 890KB) | Tower UX redesign. 10 shared primitives + new Shell + Sidebar + 5 monitoring rooms ported + Language Strings full editor-first redesign + orphan cleanup. Sprint H CLOSED. 6 commits: 85f0480, dec20c0, a7816be, 42de77e, + this wrap. |
-| 21 (Sprint I Part 1 close) | BJCgj50K → RVdx7aXp (CF rebuild on Session 20 docs-only commit) → xMpsmdvy (CF Pages production post-Commit-3) | Tower: DJwN4vkN (unchanged — no Tower work this session) | Admin-Approved Recovery System. 2 migrations (014 + 015 — M015 same-session hotfix for M014 RLS recursion bug). Worker v4.7.0 → v4.8.0 → v4.8.1 (v4.8.1 added Fallback A for PostgREST embed failure). 8 worker endpoints. Main-app Forgot PIN flow. 4 commits: 22c5e86, e4393b0, a9eda3c, `<this wrap>`. Speaker-built local bundle was index-InDWwRPz.js; CF Pages serves index-xMpsmdvy.js (different by design per Session 9 lesson). |
+| 21 (Sprint I Part 1 close) | BJCgj50K → RVdx7aXp (CF rebuild on Session 20 docs-only commit) → xMpsmdvy (CF Pages production post-Commit-3) | Tower: DJwN4vkN (unchanged — no Tower work this session) | Admin-Approved Recovery System. 2 migrations (014 + 015 — M015 same-session hotfix for M014 RLS recursion bug). Worker v4.7.0 → v4.8.0 → v4.8.1 (v4.8.1 added Fallback A for PostgREST embed failure). 8 worker endpoints. Main-app Forgot PIN flow. 4 commits: 22c5e86, e4393b0, a9eda3c, 84646a1 (wrap). Speaker-built local bundle was index-InDWwRPz.js; CF Pages serves index-xMpsmdvy.js (different by design per Session 9 lesson). |
+| 21.5 (Sprint I.5 hotfix) | xMpsmdvy → CQswCaAm | Tower: DJwN4vkN (unchanged) | R21-13 HIGH `savePinConfig` DB persistence fix. Triple-defect stack resolved (fire-and-forget IIFE + catch {} + missing `{ error }` shape check). 3 call sites updated with await + try/catch + revert + toast patterns; recovery handler uses `.catch()` warn-only (worker is authoritative). New i18n key `pinSaveFailed` × 3 langs. 3/3 smoke tests PASS against production Supabase. R21-14 + R21-15 opened organically during Phase C smoke → Session 21.6 bundle. 2 commits: 98f758d (fix), `<this wrap>` (docs). |
 
 ## The Tower Team
 | Name | Role |

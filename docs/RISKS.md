@@ -9,21 +9,11 @@ Living document. Updated at the end of each session.
 - **MEDIUM** — quality issue, user-visible but recoverable, or latent failure mode
 - **LOW** — tech debt, nice-to-have, or documentation gap
 
-**Last updated:** 2026-04-20 (post Session 21 close)
+**Last updated:** 2026-04-20 (post Session 21.5 close)
 
 ---
 
 ## HIGH
-
-### [HIGH] Settings PIN change doesn't persist to `profiles.pin_config` — R21-13
-**Discovered:** Session 21 Speaker manual testing
-**Status:** Open — blocker for Session 21.5 hotfix
-
-`savePinConfig` in App.jsx:57-67 updates localStorage but the DB write is fire-and-forget inside an IIFE that doesn't await and may silently fail. Symptom: user changes PIN in Settings → works on current device → clears localStorage or logs in from new device → DB `profiles.pin_config` still has old PIN → user locked out. Also blocks clean test of recovery-completion persistence (Commit 3 Scenario D).
-
-**Mitigation:** Session 21.5 hotfix scope. Audit error handling, verify DB write succeeds synchronously, add test harness for PIN persistence across sessions.
-
-See `docs/session-21/RISKS.md` R21-13 for full context.
 
 ### [HIGH] Silent CF Pages deploy failures
 **Discovered:** Session 9
@@ -51,6 +41,28 @@ Session 9 verified RLS **manually** with an adversarial SQL test in the Supabase
 ---
 
 ## MEDIUM
+
+### [MEDIUM] R21-14 — No password change flow in Settings
+**Discovered:** Session 21.5 Phase C smoke (organic)
+**Status:** Open — scheduled Session 21.6
+
+Password can only be changed via the one-time legacy-auth Migration flow (Sprint C) or admin intervention. No Settings button for "Change password" exists. User who wants to rotate password (compromise suspected, periodic hygiene) has no self-service path.
+
+**Mitigation:** Session 21.6 bundled scope with R21-15. ~45-60 min. Design questions locked at 21.6 Phase A. Likely reuses MigrationScreen UI for new-password entry pattern.
+
+See `docs/session-21-5/RISKS.md` R21-14 for full context.
+
+### [MEDIUM] R21-15 — No disable-owner-PIN option in Settings
+**Discovered:** Session 21.5 Phase C smoke (organic)
+**Status:** Open — scheduled Session 21.6
+
+Once owner PIN is set, user cannot remove it without admin intervention (SQL or Forgot PIN flow + admin approval). Guest PIN has explicit Remove; Owner does not. "Lock app now" re-locks but doesn't disable.
+
+Reasonable user scenario: sets PIN on shared device, later gets private device, wants no-PIN experience → currently impossible self-service.
+
+**Mitigation:** Session 21.6 bundled with R21-14. Design questions: require current PIN entry before disable, force-remove guest PIN on owner disable (probably yes), effect on recovery-flow Forgot PIN button (probably hide when no owner PIN).
+
+See `docs/session-21-5/RISKS.md` R21-15 for full context.
 
 ### [MEDIUM] Thai translations missing for 4 statementError* keys
 **Discovered:** Session 8 Sprint A Ext fetchWithTimeout sweep
@@ -207,6 +219,11 @@ Pre-existing gap from `src/lib/i18n.js`: 38 keys have Lao but no Thai. Visible i
 ---
 
 ## Resolved (historical record)
+
+### ~~[HIGH] R21-13 — Settings PIN change doesn't persist to `profiles.pin_config`~~
+**Resolved:** Session 21.5 commit `98f758d` · 2026-04-20
+
+`savePinConfig` had a triple defect stack: fire-and-forget IIFE + `catch {}` + no `{ error }` response shape check. Supabase JS does not throw on RLS / constraint / permission errors — those land in `error` on the returned object. Any user who changed their PIN in Settings experienced silent DB failures; localStorage reflected the change but DB did not. On logout / new device, `loadUserData` loaded the stale DB PIN, effectively ignoring any Settings change. Resolved by making `savePinConfig` async, inspecting `{ error }` shape explicitly, throwing on failure, and updating all 3 call sites (handleSetupKey, handlePinRecoveryComplete, SettingsScreen Guest Remove) to propagate errors appropriately. 3/3 Phase C smoke tests passed against production Supabase with SQL-level DB verification. See `docs/session-21-5/RISKS.md` R21-13 for full context.
 
 ### ~~[HIGH] Leaked Gemini API key in git history~~
 **Resolved:** Session 8 Sprint A commit `5fc5e84`

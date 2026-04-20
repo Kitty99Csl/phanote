@@ -116,6 +116,20 @@ For current session, sprint progress, commit hashes, and live infrastructure sta
 
 ## Recent key learnings
 
+### Session 21.5 learnings (Sprint I.5 hotfix — savePinConfig DB persistence)
+
+- **Supabase JS does NOT throw on data-layer errors.** RLS denials, constraint violations, permission errors — none of them throw. They land in the `{ error }` field of the returned object. Any code that relies solely on `try/catch` for Supabase DB error detection has a latent silent-failure bug. **Always destructure `const { error } = await supabase.from(...)` and check explicitly.** This is the root cause of the R21-13 triple-defect stack.
+
+- **Fire-and-forget IIFE + empty catch + missing response-shape check = invisible failures compound.** Each defect alone is minor; together they create a silent state-corruption bug class. A DB write that appears to succeed (React state + localStorage updated) but actually failed at the DB layer is the worst-case UX: user trusts the app, app betrays them on next session. Audit any `(async () => {...})()` pattern in DB-adjacent code for this triple-defect stack.
+
+- **Optimistic-local-first write ordering with async-DB-second + caller-revert-on-throw is a clean pattern.** User sees instant UI response, DB write awaited separately, caller responsible for reverting local state on failure + showing toast. Best-effort revert via `saveFn(previousValue).catch(() => {})` is acceptable — if revert also fails, `loadUserData` reconciles on next login from the DB's actual state. R21-13 fix applied this pattern across 3 call sites.
+
+- **Trust-mode paste-back catches non-drift concerns quickly.** Speaker flagged a mismatch-path behavior as possible drift during B2 paste-back review. CC traced it to pre-existing Session 7 code — confirmed no drift, avoided false scope creep. Takeaway: when a paste-back reviewer raises a behavioral question, answer with evidence (Read + diff trace) rather than either defending-by-default or over-correcting.
+
+- **Manual smoke testing surfaces product gaps that code review cannot.** R21-14 (password change) and R21-15 (disable owner PIN) both surfaced organically during Phase C when Speaker tried to exercise account-security settings. Code review + paste-back can verify "does my code do what I wrote", but "what features am I missing?" needs user-exercising. Schedule a product-smoke pass per sprint, not just a code-smoke pass.
+
+- **Recovery-handler writes via the same mutation function as Settings, but must not surface DB errors to user.** When two code paths converge on a shared write helper (like `savePinConfig`), they may have different error-surfacing requirements. The Session 21 recovery handler writes locally to sync state, but the worker already wrote the authoritative DB record via service role. A user-facing "save failed" toast in this context would be actively misleading (DB state is correct). Use `.catch(e => console.warn(...))` warn-only pattern. Document the invariant inline.
+
 ### Session 21 learnings (Sprint I Part 1 close — Admin-Approved Recovery System)
 
 - **RLS self-reference antipattern (42P17) is a whole bug class.** Any admin policy that EXISTS-subqueries into the same table the policy protects → infinite recursion at query-plan time. Migration 014 shipped an admin-read policy ON `profiles` with `EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND is_admin = true)` and all four M014 admin policies (plus transitively M009's ai_call_log admin policy) were dead on arrival. Fix: `public.is_admin()` SECURITY DEFINER function. Policies reference the boolean return. No nested SELECT, no recursion. Ship the helper in any future migration that adds admin policies on RLS-gated tables.

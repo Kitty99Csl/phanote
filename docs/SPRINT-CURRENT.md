@@ -59,27 +59,57 @@
 
 ---
 
-## Sprint I.5 — INSERTED 2026-04-20 — Hotfix session
+## Sprint I.5 — CLOSED 2026-04-20
 
-**Session:** 21.5
-**Theme:** R21-13 HIGH — PIN persistence bug in `savePinConfig`
+**Session:** 21.5 (same-day hotfix after Session 21 close)
+**Theme:** R21-13 HIGH — `savePinConfig` DB persistence bug fix
+
+### Items shipped
+
+| # | Item | Status | Commits |
+|---|------|--------|---------|
+| I.5-1 | `savePinConfig` async + throws on `{ error }` shape + callers updated (3 sites) | ✅ | 98f758d |
+| I.5-2 | Browser smoke: Tests 1/2/3 + implicit Session 21 Scenarios B/D | ✅ | — |
+| I.5-3 | Rule 11 production hash verification (`index-xMpsmdvy.js` → `index-CQswCaAm.js`) | ✅ | — |
+| I.5-4 | Session 21.5 wrap docs atomic Rule 20 update | ✅ | `<this wrap>` |
+
+### Sprint I.5 final state
+
+- R21-13 HIGH **CLOSED** — `savePinConfig` now async + properly propagates Supabase `{ error }` responses. 3 call sites updated with try/catch + best-effort revert + user toast. Recovery-flow call site uses `.catch()` with `console.warn` only (worker write is authoritative — user-facing error would mislead).
+- Main app bundle (CF Pages production): `index-CQswCaAm.js` (post-fix)
+- New i18n key `pinSaveFailed` × en/lo/th
+
+**Unexpected discoveries (→ Session 21.6 bundle):**
+- R21-14 MEDIUM opened — no password change flow in Settings
+- R21-15 MEDIUM opened — no disable-owner-PIN option
+
+**Status: COMPLETE ✅ — Closed Session 21.5, 2026-04-20**
+
+---
+
+## Sprint I.6 — INSERTED 2026-04-20 — Account security settings cluster
+
+**Session:** 21.6
+**Theme:** R21-14 (password change) + R21-15 (disable owner PIN) bundled scope
 
 ### Items
 
 | # | Item | Status | Notes |
 |---|------|--------|-------|
-| I.5-1 | Audit `savePinConfig` in App.jsx:57-67 — DB write is fire-and-forget IIFE that may silently fail | ⏭️ next session | R21-13 HIGH |
-| I.5-2 | Walk browser smoke Scenarios B/D/E from Session 21 Phase 3G | ⏭️ next session | Deferred from Session 21 close |
-| I.5-3 | Rule 11 production hash verification post-fix | ⏭️ next session | |
+| I.6-1 | Design questions locked at Phase A (confirm-before-disable, guest cascade, password change pattern, MigrationScreen reuse, shared destructive-confirmation pattern) | ⏭️ next session | |
+| I.6-2 | Password change flow in Settings (R21-14) | ⏭️ next session | Likely reuses MigrationScreen UI |
+| I.6-3 | Disable PIN flow in Settings (R21-15) | ⏭️ next session | With guest-cascade + Forgot PIN button hide |
+| I.6-4 | Shared destructive-change confirmation pattern | ⏭️ next session | ConfirmSheet extension or new component |
 
-### I.5 pre-conditions
+### I.6 pre-conditions
 
 - [ ] Reality check per `docs/session-ritual.md`
-- [ ] Confirm Session 21 commits in main: `22c5e86`, `e4393b0`, `a9eda3c`, `<wrap commit>`
-- [ ] Confirm current production hash is from `a9eda3c` build (post-wrap)
-- [ ] Scope locked to R21-13 + Scenarios B/D/E only — no scope creep
+- [ ] Confirm HEAD includes Session 21.5 wrap
+- [ ] Scope locked to R21-14 + R21-15 only — no Tower work (that's Session 22)
+- [ ] 5 design questions locked at Phase A before any code
 
-**Status: NOT STARTED — next Session 21.5**
+**Target duration:** 45-60 min
+**Status: NOT STARTED — next Session 21.6**
 
 ---
 
@@ -117,3 +147,4 @@
 | H-3 | 2026-04-20 | 20 | docs/session-20/SUMMARY.md |
 | H | 2026-04-20 | 20 | (sprint closed end of Session 20) |
 | I Part 1 | 2026-04-20 | 21 | docs/session-21/SUMMARY.md |
+| I.5 | 2026-04-20 | 21.5 | docs/session-21-5/SUMMARY.md |
