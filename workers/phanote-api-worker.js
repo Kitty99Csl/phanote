@@ -20,15 +20,16 @@
 
 import * as Sentry from '@sentry/cloudflare';
 import { computeCostUsd, PRICING_VERSION } from './lib/ai-costs.js';
+import { handleSupportConsoleRoute } from './lib/support-console.js';
 
 // Worker version
-const WORKER_VERSION = '4.7.0';
+const WORKER_VERSION = '4.8.1';
 
 // Build-time constant. Updated on every deploy.
 // Future (Sprint E-ext): a deploy hook will replace the
 // __DEPLOYED_AT__ placeholder pattern with the real timestamp.
 // For now, manually bump to the commit's deploy time.
-const DEPLOYED_AT = '2026-04-17T05:55:56Z';
+const DEPLOYED_AT = '2026-04-20T10:57:56Z';
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -751,6 +752,15 @@ const handler = {
           'POST /parse-statement',
           'POST /monthly-report',
           'GET /health',
+          // Support Console (Session 21 Sprint I, workers/lib/support-console.js):
+          'POST /recovery/request-pin-reset',
+          'GET /recovery/status',
+          'POST /recovery/complete-pin-reset',
+          'POST /admin/users/search',
+          'GET /admin/users/:id/summary',
+          'POST /admin/users/:id/view-transactions',
+          'POST /admin/users/:id/approve-pin-reset',
+          'POST /admin/users/:id/approve-password-reset',
         ],
       };
 
@@ -758,6 +768,15 @@ const handler = {
         headers: { 'Content-Type': 'application/json', ...CORS },
       });
     }
+
+    // Support Console routes dispatched in workers/lib/support-console.js
+    // (Session 21 Sprint I). Handles /recovery/* and /admin/users/* paths.
+    // Called BEFORE the POST-only gate below because some routes (e.g.
+    // GET /admin/users/:id/summary) are legitimate GETs and would be
+    // 405-ed by the gate. Returns null for non-matching paths so the
+    // rest of the dispatcher continues.
+    const supportResponse = await handleSupportConsoleRoute(url, request, env, ctx);
+    if (supportResponse) return supportResponse;
 
     if (request.method !== "POST") return new Response("Method not allowed", { status: 405, headers: CORS });
 
