@@ -24,6 +24,7 @@ const NAV = [
     group: 'ADMIN',
     items: [
       { path: '/admin/language-strings', label: 'Language Strings', sub: 'Translations', code: 'C-01' },
+      { path: '/admin/support',          label: 'Support Console',  sub: 'Recovery',     code: 'C-02' },
     ],
   },
 ];
