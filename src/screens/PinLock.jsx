@@ -13,12 +13,21 @@ import { Logo } from "../components/Logo";
 export function PinLock({ pinConfig, pinInput, pinShake, onKey, isSetup, setupMode, setupStep, lang = "lo", onForgotPin }) {
   const keys = ["1","2","3","4","5","6","7","8","9","","0","⌫"];
   const dots = pinInput.length;
+  // Session 21.6: "disable-confirm" is a single-entry verify mode (not
+  // enter→confirm). Recognized before the set-owner/set-guest branches
+  // so it bypasses the setupStep-dependent subtitle logic. Forgot PIN
+  // button hides via the existing `!isSetup` gate below (isSetup=true
+  // in disable-confirm too) — desired behavior.
   const title = isSetup
-    ? (setupMode === "set-owner" ? t(lang, "pinSetupOwnerTitle") : t(lang, "pinSetupGuestTitle"))
+    ? (setupMode === "disable-confirm" ? t(lang, "pinDisableVerifyTitle")
+      : setupMode === "set-owner" ? t(lang, "pinSetupOwnerTitle")
+      : t(lang, "pinSetupGuestTitle"))
     : t(lang, "pinWelcomeBack");
   const subtitle = isSetup
-    ? (setupStep === "confirm" ? t(lang, "pinConfirm") : setupMode === "set-owner"
-        ? t(lang, "pinSetupOwnerSub") : t(lang, "pinSetupGuestSub"))
+    ? (setupMode === "disable-confirm" ? t(lang, "pinDisableVerifySub")
+      : setupStep === "confirm" ? t(lang, "pinConfirm")
+      : setupMode === "set-owner" ? t(lang, "pinSetupOwnerSub")
+      : t(lang, "pinSetupGuestSub"))
     : t(lang, "pinEnterSub");
   return (
     <div style={{position:"fixed",inset:0,zIndex:9999,background:T.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:28}}>

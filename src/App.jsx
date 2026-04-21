@@ -21,6 +21,7 @@ import { HomeScreen } from "./screens/HomeScreen";
 import MigrationScreen from "./screens/MigrationScreen";
 import { SetNewPin } from "./screens/SetNewPin";
 import { getRecoveryStatus, requestPinReset } from "./lib/recovery";
+import ChangePasswordModal from "./screens/ChangePasswordModal";
 
 // ═══ ROOT APP ════════════════════════════════════════════════
 export default function App(){
@@ -40,6 +41,8 @@ export default function App(){
   // bypass via null pin_config paths).
   const [pinRecoveryPending, setPinRecoveryPending] = useState(false);
   const [recoveryAccessToken, setRecoveryAccessToken] = useState(null);
+  // Session 21.6 — account security settings
+  const [showChangePassword, setShowChangePassword] = useState(false);
   // Defensive cleanup for the auto-logout timer in performForgotPinRequest.
   // App.jsx is the root component so this never actually fires in practice,
   // but documents the intent + future-proofs any refactor that moves this
@@ -114,6 +117,38 @@ export default function App(){
     if (key === "⌫") { setPinInput(p => p.slice(0,-1)); return; }
     const next = pinInput + key; setPinInput(next);
     if (next.length < 4) return;
+
+    // Session 21.6 R21-15 — disable-confirm verify branch. MUST come
+    // FIRST and early-return, otherwise the existing setup-step logic
+    // below would (incorrectly) capture typed PIN as a new "first".
+    // Verifies against pinConfig.owner specifically (guest PIN is NOT
+    // accepted — disable is owner-only action). On match: clear both
+    // owner + guest (D21.6-Q2 guest cascade). On mismatch: shake +
+    // clear, stay in disable-confirm mode.
+    if (pinSetupMode === "disable-confirm") {
+      setTimeout(async () => {
+        if (next === pinConfig.owner) {
+          const previousCfg = pinConfig;
+          try {
+            await savePinConfig({ owner: null, guest: null });
+            setPinSetupMode(null);
+            setPinInput("");
+            showToast(t(profile?.lang || "lo", "pinDisabled"), "success");
+          } catch (e) {
+            // Revert + toast, same pattern as Session 21.5 B2
+            savePinConfig(previousCfg).catch(() => {});
+            showToast(t(profile?.lang || "lo", "pinSaveFailed"), "error");
+            setPinSetupMode(null);
+            setPinInput("");
+          }
+        } else {
+          setPinShake(true);
+          setTimeout(() => { setPinShake(false); setPinInput(""); }, 600);
+        }
+      }, 80);
+      return; // Do NOT fall through to existing setup-step logic
+    }
+
     // setTimeout callback is now async so we can await savePinConfig
     // and handle DB errors properly (R21-13 fix).
     setTimeout(async () => {
@@ -499,6 +534,18 @@ export default function App(){
     await supabase.auth.signOut(); setUserId(null);
   };
 
+  // Session 21.6 R21-15 — initiate owner-PIN disable flow.
+  // ConfirmSheet confirm handler: closes the sheet, sets
+  // pinSetupMode="disable-confirm" which triggers PinLock render
+  // (existing gate: pinSetupMode truthy). User then enters current
+  // owner PIN; handleSetupKey's leading disable-confirm branch
+  // verifies + calls savePinConfig({owner:null, guest:null}) +
+  // toasts. See handleSetupKey for verify + mismatch + error paths.
+  const performDisableOwnerPin = () => {
+    setPendingConfirm(null);
+    setPinSetupMode("disable-confirm");
+  };
+
   // ── Loading splash ──
   if (booting) return (
     <div style={{ minHeight:"100dvh", display:"flex", alignItems:"center", justifyContent:"center",
@@ -592,6 +639,8 @@ export default function App(){
           onUpdateCategory={handleUpdateCategory}
           onDeleteTx={handleDeleteTransaction}
           onDeleteBatch={handleDeleteBatch}
+          onShowChangePassword={() => setShowChangePassword(true)}
+          onDisableOwnerPin={() => setPendingConfirm({ kind: "disable-pin" })}
           streakToast={streakToast}
           onStreakToastDone={()=>setStreakToast(null)}
           pinRole={pinRole}
@@ -631,6 +680,24 @@ export default function App(){
         confirmLabel={t(profile?.lang || "lo", "pinForgotConfirmSend")}
         cancelLabel={t(profile?.lang || "lo", "confirmCancel")}
       />
+      {/* Session 21.6 R21-15 — Disable owner PIN confirmation */}
+      <ConfirmSheet
+        open={pendingConfirm?.kind === "disable-pin"}
+        onClose={()=>setPendingConfirm(null)}
+        onConfirm={performDisableOwnerPin}
+        title={t(profile?.lang || "lo", "pinDisableTitle")}
+        message={t(profile?.lang || "lo", "pinDisableMessage")}
+        confirmLabel={t(profile?.lang || "lo", "pinDisableConfirmBtn")}
+        cancelLabel={t(profile?.lang || "lo", "pinDisableCancelBtn")}
+        destructive
+      />
+      {/* Session 21.6 R21-14 — Change password modal */}
+      {showChangePassword && (
+        <ChangePasswordModal
+          lang={profile?.lang || "lo"}
+          onClose={() => setShowChangePassword(false)}
+        />
+      )}
     </>
   );
 }

@@ -42,7 +42,7 @@ import { BudgetScreen } from "./BudgetScreen";
 import { GoalsScreen } from "./GoalsScreen";
 import { SettingsScreen } from "./SettingsScreen";
 
-export function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdateNote,onUpdateCategory,onDeleteTx,streakToast,onStreakToastDone,pinRole="owner",pinConfig={},savePinConfig,setPinRole,setPinSetupMode,onDeleteBatch}){
+export function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,onUpdateNote,onUpdateCategory,onDeleteTx,streakToast,onStreakToastDone,pinRole="owner",pinConfig={},savePinConfig,setPinRole,setPinSetupMode,onDeleteBatch,onShowChangePassword,onDisableOwnerPin}){
   const[tab,setTab]=useState("home");
   const[toast,setToast]=useState(null);
   const[editTx,setEditTx]=useState(null);
@@ -139,7 +139,7 @@ export function HomeScreen({profile,transactions,onAdd,onReset,onUpdateProfile,o
         {tab==="budget"&&<BudgetScreen profile={profile} transactions={transactions}/>}
         {tab==="goals"&&<GoalsScreen profile={profile} transactions={transactions}/>}
         {tab==="settings" && (pinRole === "owner"
-          ? <SettingsScreen profile={profile} transactions={transactions} onUpdateProfile={onUpdateProfile} onReset={onReset} pinConfig={pinConfig} savePinConfig={savePinConfig} setPinRole={setPinRole} setPinSetupMode={setPinSetupMode} onShowGuide={()=>setShowGuide(true)} onShowUpgrade={()=>setShowUpgrade(true)} onShowStatementScan={()=>setShowStatementScan(true)}/>
+          ? <SettingsScreen profile={profile} transactions={transactions} onUpdateProfile={onUpdateProfile} onReset={onReset} pinConfig={pinConfig} savePinConfig={savePinConfig} setPinRole={setPinRole} setPinSetupMode={setPinSetupMode} onShowGuide={()=>setShowGuide(true)} onShowUpgrade={()=>setShowUpgrade(true)} onShowStatementScan={()=>setShowStatementScan(true)} onShowChangePassword={onShowChangePassword} onDisableOwnerPin={onDisableOwnerPin}/>
           : <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"80px 24px",textAlign:"center"}}>
               <div style={{fontSize:44,marginBottom:16}}>🔒</div>
               <div style={{fontSize:18,fontWeight:700,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>Settings unavailable</div>

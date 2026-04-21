@@ -71,7 +71,7 @@ function CategoryManager({lang,customCategories,onAdd,onRemove}){
   );
 }
 
-export function SettingsScreen({profile,transactions,onUpdateProfile,onReset,pinConfig={owner:null,guest:null},savePinConfig=()=>{},setPinRole=()=>{},setPinSetupMode=()=>{},onShowGuide=()=>{},onShowUpgrade=()=>{},onShowStatementScan=()=>{}}){
+export function SettingsScreen({profile,transactions,onUpdateProfile,onReset,pinConfig={owner:null,guest:null},savePinConfig=()=>{},setPinRole=()=>{},setPinSetupMode=()=>{},onShowGuide=()=>{},onShowUpgrade=()=>{},onShowStatementScan=()=>{},onShowChangePassword=()=>{},onDisableOwnerPin=()=>{}}){
   const{lang,baseCurrency,name,avatar,customCategories=[]}=profile;
   const isPro = profile?.isPro || false;
   const[showLang,setShowLang]=useState(false);
@@ -175,9 +175,14 @@ export function SettingsScreen({profile,transactions,onUpdateProfile,onReset,pin
             <div style={{fontSize:14,fontWeight:600,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"settingsOwnerPin")}</div>
             <div style={{fontSize:12,color:T.muted}}>{pinConfig.owner ? t(lang,"settingsPinSet") : t(lang,"settingsPinNotSet")}</div>
           </div>
-          <button onClick={()=>setPinSetupMode("set-owner")} style={{fontSize:12,fontWeight:700,color:"#2A7A40",background:"rgba(172,225,175,0.2)",border:"none",borderRadius:9999,padding:"6px 14px",cursor:"pointer",fontFamily:"'Noto Sans',sans-serif",whiteSpace:"nowrap"}}>
-            {pinConfig.owner ? t(lang,"settingsPinChange") : t(lang,"settingsPinSetup")}
-          </button>
+          <div style={{display:"flex",gap:6,flexShrink:0}}>
+            {pinConfig.owner && (
+              <button onClick={onDisableOwnerPin} style={{fontSize:12,fontWeight:700,color:"#C0392B",background:"rgba(255,179,167,0.2)",border:"none",borderRadius:9999,padding:"6px 12px",cursor:"pointer",fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"settingsPinRemove")}</button>
+            )}
+            <button onClick={()=>setPinSetupMode("set-owner")} style={{fontSize:12,fontWeight:700,color:"#2A7A40",background:"rgba(172,225,175,0.2)",border:"none",borderRadius:9999,padding:"6px 14px",cursor:"pointer",fontFamily:"'Noto Sans',sans-serif",whiteSpace:"nowrap"}}>
+              {pinConfig.owner ? t(lang,"settingsPinChange") : t(lang,"settingsPinSetup")}
+            </button>
+          </div>
         </div>
         <div style={{height:1,background:"rgba(45,45,58,0.05)"}}/>
         <div style={{display:"flex",alignItems:"center",gap:12,padding:"16px 18px"}}>
@@ -219,6 +224,16 @@ export function SettingsScreen({profile,transactions,onUpdateProfile,onReset,pin
       </div>
       {/* ─── Help & Account ─── */}
       <div style={{fontSize:10,fontWeight:700,letterSpacing:1.4,color:T.muted,textTransform:"uppercase",marginBottom:10,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"settingsHelpAccount")}</div>
+      {/* Session 21.6 R21-14 — Change password row */}
+      <div style={{background:T.surface,backdropFilter:"blur(20px)",borderRadius:20,boxShadow:T.shadow,marginBottom:12,overflow:"hidden"}}>
+        <button onClick={onShowChangePassword} style={{width:"100%",padding:"16px 18px",border:"none",cursor:"pointer",background:"transparent",display:"flex",alignItems:"center",gap:12,textAlign:"left"}}>
+          <div style={{width:40,height:40,borderRadius:12,background:"rgba(172,225,175,0.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>🔒</div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:14,fontWeight:600,color:T.dark,fontFamily:"'Noto Sans',sans-serif"}}>{t(lang,"changePassword")}</div>
+          </div>
+          <div style={{fontSize:12,color:T.muted}}>›</div>
+        </button>
+      </div>
       <div style={{background:T.surface,backdropFilter:"blur(20px)",borderRadius:20,boxShadow:T.shadow,marginBottom:20,overflow:"hidden"}}>
         <button onClick={()=>onShowGuide&&onShowGuide()} style={{width:"100%",padding:"16px 18px",border:"none",cursor:"pointer",background:"transparent",display:"flex",alignItems:"center",gap:12,textAlign:"left"}}>
           <div style={{width:40,height:40,borderRadius:12,background:"rgba(26,64,32,0.1)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><Logo size={36} /></div>
