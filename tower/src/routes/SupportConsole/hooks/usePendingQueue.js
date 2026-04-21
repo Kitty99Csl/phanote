@@ -1,51 +1,24 @@
-// usePendingQueue — direct Supabase read of user_recovery_state
-// + profile enrichment via .in('id', userIds).
+// usePendingQueue — fetches the admin "pending-requests" queue via
+// the worker endpoint, which returns rows already filtered,
+// classified, and enriched with profile data.
 //
-// Session 22 · Room 6. Uses admin-read RLS (Migration 014+015)
-// for both tables. No worker endpoint exists for this list yet
-// (R22-1 tracks for Session 23).
+// Session 23 Batch 5 (I-14 consumer) — closes R22-1. Session 22's
+// original direct-Supabase implementation used admin-read RLS on
+// user_recovery_state + profiles with a client-side isPending()
+// filter and classify() helper. Those are no longer needed: the
+// worker's GET /admin/pending-requests is the single source of
+// truth for the queue state, and it audit-logs each read uniformly
+// with the rest of Tower Room 6.
 //
-// Returns rows matching ANY pending state:
-//   - pin_reset_requested && !pin_reset_approved (awaiting admin)
-//   - password_reset_requested && !password_reset_approved
-//   - pin_reset_required && !expired (approved, awaiting user)
-//   - password_reset_required && !expired (approved, awaiting user)
-//
-// In-memory filter chosen over complex PostgREST .or() clauses —
-// user_recovery_state is small for family-beta (few rows max at
-// any time). Revisit if row count grows past ~50.
+// Contract unchanged: { rows, loading, error, lastFetchAt, refresh }.
+// Each row shape now carries server-embedded _classification
+// ({ flow, stage, requested_at | expires_at }) and _profile
+// ({ id, display_name, phone, avatar } | null). PendingQueue.jsx
+// already consumes those fields by the same names — no consumer
+// changes required in this batch.
 
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "../../../lib/supabase";
-
-function isPending(row) {
-  const now = Date.now();
-  const notExpired = (iso) => iso && new Date(iso).getTime() > now;
-  const pinAwaitingAdmin = !!row.pin_reset_requested_at && !row.pin_reset_approved_at;
-  const pwAwaitingAdmin = !!row.password_reset_requested_at && !row.password_reset_approved_at;
-  const pinAwaitingUser = row.pin_reset_required && notExpired(row.pin_reset_expires_at);
-  const pwAwaitingUser = row.password_reset_required && notExpired(row.password_reset_expires_at);
-  return pinAwaitingAdmin || pwAwaitingAdmin || pinAwaitingUser || pwAwaitingUser;
-}
-
-function classify(row) {
-  const now = Date.now();
-  const notExpired = (iso) => iso && new Date(iso).getTime() > now;
-  // Which flow + which stage. UI uses this for badges.
-  if (row.pin_reset_required && notExpired(row.pin_reset_expires_at)) {
-    return { flow: "pin", stage: "approved", expires_at: row.pin_reset_expires_at };
-  }
-  if (row.password_reset_required && notExpired(row.password_reset_expires_at)) {
-    return { flow: "password", stage: "approved", expires_at: row.password_reset_expires_at };
-  }
-  if (row.pin_reset_requested_at && !row.pin_reset_approved_at) {
-    return { flow: "pin", stage: "awaiting_admin", requested_at: row.pin_reset_requested_at };
-  }
-  if (row.password_reset_requested_at && !row.password_reset_approved_at) {
-    return { flow: "password", stage: "awaiting_admin", requested_at: row.password_reset_requested_at };
-  }
-  return null;
-}
+import { useFetchAdmin } from "./useFetchAdmin";
 
 export function usePendingQueue() {
   const [rows, setRows] = useState([]);
@@ -53,50 +26,25 @@ export function usePendingQueue() {
   const [error, setError] = useState(null);
   const [lastFetchAt, setLastFetchAt] = useState(null);
 
-  const fetch = useCallback(async () => {
+  const fetchAdmin = useFetchAdmin();
+
+  const refresh = useCallback(async () => {
     setLoading(true);
     setError(null);
-    try {
-      const { data: recoveryRows, error: recoveryErr } = await supabase
-        .from("user_recovery_state")
-        .select("*")
-        .order("updated_at", { ascending: false });
-      if (recoveryErr) throw recoveryErr;
-
-      const pending = (recoveryRows || []).filter(isPending);
-      if (pending.length === 0) {
-        setRows([]);
-        setLastFetchAt(new Date());
-        setLoading(false);
-        return;
-      }
-
-      const userIds = [...new Set(pending.map((r) => r.user_id))];
-      const { data: profiles, error: profErr } = await supabase
-        .from("profiles")
-        .select("id, display_name, phone, avatar")
-        .in("id", userIds);
-      if (profErr) throw profErr;
-
-      const profileMap = new Map((profiles || []).map((p) => [p.id, p]));
-
-      const enriched = pending.map((row) => ({
-        ...row,
-        _classification: classify(row),
-        _profile: profileMap.get(row.user_id) || null,
-      }));
-      setRows(enriched);
-      setLastFetchAt(new Date());
-    } catch (e) {
-      setError(e?.message || "Failed to load pending queue");
-    } finally {
+    const res = await fetchAdmin("/admin/pending-requests", { method: "GET" });
+    if (!res.ok) {
+      setError(res.error || "Failed to load pending queue");
       setLoading(false);
+      return;
     }
-  }, []);
+    setRows(Array.isArray(res.data?.rows) ? res.data.rows : []);
+    setLastFetchAt(new Date());
+    setLoading(false);
+  }, [fetchAdmin]);
 
   useEffect(() => {
-    fetch();
-  }, [fetch]);
+    refresh();
+  }, [refresh]);
 
-  return { rows, loading, error, lastFetchAt, refresh: fetch };
+  return { rows, loading, error, lastFetchAt, refresh };
 }

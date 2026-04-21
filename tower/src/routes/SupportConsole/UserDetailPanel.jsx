@@ -5,10 +5,11 @@
 // Session 22 · Room 6. Data from useUserSummary (worker-mediated,
 // audited to tower_admin_reads).
 //
-// R21-12 note: when issue_counts.app_errors_last_7d is null (current
-// state — app_events has no `level` column), we omit that row entirely
-// rather than render "— errors". Session 23 worker query tweak will
-// rename the field; UI will adapt then.
+// Session 23 Batch 1 (I-13): worker query dropped the stale
+// level=eq.error filter (app_events has no such column) and
+// renamed the response field app_errors_last_7d → events_last_7d.
+// Rendered always with "—" fallback, mirroring AI errors pattern.
+// Closes R21-12.
 
 import { Module, StatusPill, Stat, Btn } from "../../components/shared";
 import { TransactionsAccordion } from "./TransactionsAccordion";
@@ -161,9 +162,7 @@ export function UserDetailPanel({ userId, summary, loading, error, onRefresh, on
         )}
       </div>
 
-      {/* Issue counts — R21-12 placeholder: app_errors_last_7d omitted
-          from render when null (app_events.level column absent; hidden
-          until Session 23 worker query tweak) */}
+      {/* Issue counts — 7d window (app events + AI errors) */}
       <div className="px-4 py-4 border-b border-slate-800/60">
         <div className="hud-label text-slate-500 mb-2">Issues · 7d</div>
         <div className="flex gap-6">
@@ -171,12 +170,10 @@ export function UserDetailPanel({ userId, summary, loading, error, onRefresh, on
             <div className="text-[10px] text-slate-500">AI errors</div>
             <div className="text-[16px] font-mono text-slate-100">{issue_counts?.ai_errors_last_7d ?? "—"}</div>
           </div>
-          {issue_counts?.app_errors_last_7d != null && (
-            <div>
-              <div className="text-[10px] text-slate-500">App errors</div>
-              <div className="text-[16px] font-mono text-slate-100">{issue_counts.app_errors_last_7d}</div>
-            </div>
-          )}
+          <div>
+            <div className="text-[10px] text-slate-500">App events</div>
+            <div className="text-[16px] font-mono text-slate-100">{issue_counts?.events_last_7d ?? "—"}</div>
+          </div>
         </div>
       </div>
 

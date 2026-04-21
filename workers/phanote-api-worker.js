@@ -20,10 +20,10 @@
 
 import * as Sentry from '@sentry/cloudflare';
 import { computeCostUsd, PRICING_VERSION } from './lib/ai-costs.js';
-import { handleSupportConsoleRoute } from './lib/support-console.js';
+import { handleSupportConsoleRoute } from './lib/support-console/index.js';
 
 // Worker version
-const WORKER_VERSION = '4.8.1';
+const WORKER_VERSION = '4.8.2';
 
 // Build-time constant. Updated on every deploy.
 // Future (Sprint E-ext): a deploy hook will replace the
