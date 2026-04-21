@@ -116,6 +116,22 @@ For current session, sprint progress, commit hashes, and live infrastructure sta
 
 ## Recent key learnings
 
+### Session 21.6 learnings (Sprint I.6 — account security settings cluster)
+
+- **supabase-js `currentPassword` param eliminates reauthenticate plumbing.** Since supabase-js v2.102.0, `supabase.auth.updateUser({password, currentPassword})` verifies the current password server-side as part of the update call. Before this API existed, the standard pattern was "signInWithPassword to verify, then updateUser to change" — two round-trips + race conditions between them. Now: one call. Server returns `{ error }` on wrong current password (mapping to user-facing toast). Always check the Supabase SDK changelog before implementing reauthenticate-then-update flows — the built-in API is cleaner.
+
+- **Early-return branch in multi-mode state machine.** When adding a new mode value to an existing mode-dispatching handler (like `setPinSetupMode="disable-confirm"` alongside `"set-owner"`/`"set-guest"` in `handleSetupKey`), place the new branch FIRST with an explicit `return` after it. Otherwise the existing enter-confirm logic below would incorrectly capture the verify-step PIN as a new "first". Discipline matters: every mode value should have unambiguous control flow, and early return is the simplest way to express "this mode has completely different semantics than the others below".
+
+- **Existing render gates give free wins when new modes reuse truthy-setup-mode pattern.** The Session 21.6 disable-confirm mode inherited two zero-code behaviors:
+  - Top-right Cancel button automatically works (renders when `pinSetupMode` is truthy, resets all setup state)
+  - Forgot PIN button auto-hides (existing `!isSetup && onForgotPin` gate, where `isSetup = !!pinSetupMode`)
+  
+  When extending a mode enum, audit what existing gates/guards reference the boolean form — you may get intended behavior for free without adding code.
+
+- **Destructive-action verification: require current credential.** Both sensitive account changes in Session 21.6 (password change + disable PIN) require the user to enter their current credential before the change proceeds. This matches standard security UX and is layered defense-in-depth: destructive ConfirmSheet catches accidental taps, credential verify catches "someone else has the unlocked phone" scenarios. Any future account-settings flow that removes a security layer or changes a credential should follow the same pattern.
+
+- **Cluster-bundled sessions close self-service surface cleanly.** Session 21.6 bundled R21-14 + R21-15 as one atomic commit because both were "account security self-service" gaps discovered together in Session 21.5 Phase C smoke. ~2 hour session, one commit, both risks closed. Cluster bundling keeps related changes tied together in git history (easier to diff-archaeology later) and lets design decisions (like "shared destructive-confirmation pattern" at D21.6-Q1) apply to multiple flows consistently. Downsides surface when clusters grow past 2-3 items — split then.
+
 ### Session 21.5 learnings (Sprint I.5 hotfix — savePinConfig DB persistence)
 
 - **Supabase JS does NOT throw on data-layer errors.** RLS denials, constraint violations, permission errors — none of them throw. They land in the `{ error }` field of the returned object. Any code that relies solely on `try/catch` for Supabase DB error detection has a latent silent-failure bug. **Always destructure `const { error } = await supabase.from(...)` and check explicitly.** This is the root cause of the R21-13 triple-defect stack.

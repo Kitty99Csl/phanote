@@ -87,29 +87,51 @@
 
 ---
 
-## Sprint I.6 — INSERTED 2026-04-20 — Account security settings cluster
+## Sprint I.6 — CLOSED 2026-04-21
 
 **Session:** 21.6
-**Theme:** R21-14 (password change) + R21-15 (disable owner PIN) bundled scope
+**Theme:** Account security settings cluster — R21-14 (password change) + R21-15 (disable owner PIN)
+
+### Items shipped
+
+| # | Item | Status | Commits |
+|---|------|--------|---------|
+| I.6-1 | 6 design questions locked at Phase A (Q1-Q6 + Obs1/Obs2 polishes) | ✅ | — |
+| I.6-2 | Password change flow in Settings (R21-14): NEW ChangePasswordModal, supabase-js bumped 2.101.1 → 2.104.0 for currentPassword API | ✅ | 03b39e2 |
+| I.6-3 | Disable PIN flow in Settings (R21-15): Remove button + destructive ConfirmSheet + PIN-verify step via new setPinSetupMode="disable-confirm" + guest cascade | ✅ | 03b39e2 |
+| I.6-4 | Session 21.6 wrap docs atomic Rule 20 update | ✅ | `<this wrap>` |
+
+### Sprint I.6 final state
+
+- R21-14 MEDIUM **CLOSED** — password change self-service via Settings, supabase-js `currentPassword` API integration
+- R21-15 MEDIUM **CLOSED** — owner PIN disable self-service, guest-cascade, structural Forgot-PIN-button auto-hide
+- Main app bundle (CF Pages production): `index-CJY85dLV.js` (post-fix), flipped from `index-CQswCaAm.js` (21.5 close)
+- 15 new i18n keys × 3 languages
+- Account-security cluster COMPLETE — no open self-service gaps for family-beta users
+
+**Deferred:** D21.6-Q4 (ConfirmSheet array refactor at 5 instances — defer to 6-8 threshold) · D21.6-Q6 (80ms cancel-race ship-as-drafted per INFO decision)
+
+**Status: COMPLETE ✅ — Closed Session 21.6, 2026-04-21**
+
+---
+
+## Sprint I Part 2 — Tower Room 6 UI — NEXT
+
+**Session:** 22
+**Theme:** Admin Support Console UI (C-02 room in Tower)
 
 ### Items
 
 | # | Item | Status | Notes |
 |---|------|--------|-------|
-| I.6-1 | Design questions locked at Phase A (confirm-before-disable, guest cascade, password change pattern, MigrationScreen reuse, shared destructive-confirmation pattern) | ⏭️ next session | |
-| I.6-2 | Password change flow in Settings (R21-14) | ⏭️ next session | Likely reuses MigrationScreen UI |
-| I.6-3 | Disable PIN flow in Settings (R21-15) | ⏭️ next session | With guest-cascade + Forgot PIN button hide |
-| I.6-4 | Shared destructive-change confirmation pattern | ⏭️ next session | ConfirmSheet extension or new component |
+| I-4 | Tower Room 6 Admin Support Console UI | ⏭️ Session 22 | Consumes worker endpoints built in Sprint I Part 1 Commit 2 |
+| I-5 | R21-11 PostgREST embedded resource investigation | ⏭️ Session 22 | If resolvable, migrate Fallback A back to embeds |
+| I-6 | R21-6 unauthorized admin attempt audit (Migration 016) | ⏭️ Session 22 | |
+| I-7 | R21-8 atomic complete_pin_reset RPC (bundle with R21-6 Migration 016) | ⏭️ Session 22 | |
+| I-8 | R21-10 support-console.js split (Option 2b) | ⏭️ Session 22 | |
+| I-9 | R21-12 app_events schema audit | ⏭️ Session 22 | |
 
-### I.6 pre-conditions
-
-- [ ] Reality check per `docs/session-ritual.md`
-- [ ] Confirm HEAD includes Session 21.5 wrap
-- [ ] Scope locked to R21-14 + R21-15 only — no Tower work (that's Session 22)
-- [ ] 5 design questions locked at Phase A before any code
-
-**Target duration:** 45-60 min
-**Status: NOT STARTED — next Session 21.6**
+**Status:** NOT STARTED — Session 22
 
 ---
 
@@ -148,3 +170,4 @@
 | H | 2026-04-20 | 20 | (sprint closed end of Session 20) |
 | I Part 1 | 2026-04-20 | 21 | docs/session-21/SUMMARY.md |
 | I.5 | 2026-04-20 | 21.5 | docs/session-21-5/SUMMARY.md |
+| I.6 | 2026-04-21 | 21.6 | docs/session-21-6/SUMMARY.md |
