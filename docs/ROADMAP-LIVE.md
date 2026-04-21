@@ -2,18 +2,18 @@
 
 > **Status:** Current source of truth (live roadmap, updated every session wrap-up)
 
-> Last updated: 2026-04-21 (Session 21.6 close — Sprint I.6 CLOSED; account-security cluster complete; Sprint I Part 2 Tower Room 6 UI next)
+> Last updated: 2026-04-21 (Session 22 close — Sprint I Part 2 CLOSED; Tower Room 6 Admin Support Console UI live; Session 23 backend hygiene batch next)
 
 ## Current State
-- **Active sprint:** I.6 CLOSED 2026-04-21 (Session 21.6 — R21-14 + R21-15 account security settings cluster). Sprint I Part 2 Tower Room 6 UI next (Session 22).
-- **Session 21.6:** closed this commit · Session 22 next: Tower Room 6 Admin Support Console UI + R21-11 PostgREST embed investigation + Migration 016 (R21-6 unauthorized-admin audit + R21-8 atomic complete_pin_reset RPC) + R21-10 worker split + R21-12 app_events schema audit
-- **Production hash (Phajot):** index-CJY85dLV.js (CF Pages production post-Sprint-I.6 fix; flipped from Session 21.5 close baseline index-CQswCaAm.js). Rule 11 verified.
-- **Tower bundle:** 890.55KB raw / 256KB gzip — `index-DJwN4vkN.js` (unchanged — no Tower work across Session 21, 21.5, or 21.6).
-- **Worker version:** 4.8.1 (unchanged since Session 21 Commit 2).
-- **Supabase-js version:** 2.104.0 (bumped from 2.101.1 in Session 21.6 for `currentPassword` API).
-- **Latest commit:** `<this wrap>` (Session 21.6 wrap — docs atomic per Rule 20)
-- **Next action:** Session 22 opening per docs/session-ritual.md; Tower Room 6 UI scope lock; Migration 016 bundled (R21-6 + R21-8).
-- **Notable milestone:** Sprint I.6 CLOSED — account-security cluster (R21-14 password change + R21-15 disable owner PIN) complete. Self-service account-security surface fully functional for family-beta users. Sprint I main-app work DONE; Sprint I Part 2 is Tower UI only.
+- **Active sprint:** I Part 2 CLOSED 2026-04-21 (Session 22 — Tower Room 6 Admin Support Console UI). Session 23 backend hygiene batch next (R21-10/11/12, R21-6/8 Migration 016, R22-1 pending-queue endpoint).
+- **Session 22:** closed this commit · Session 23 next: consolidated backend cleanup — single worker deploy (v4.8.2 or v4.9.0) + Migration 016
+- **Production hash (Phajot main app):** index-CJY85dLV.js (unchanged — no main-app work Session 22).
+- **Tower bundle:** post-Session-22 hash TBD (Speaker verifies via CF Access DevTools); flipped from Session 20 baseline `index-DJwN4vkN.js`. Local build was `index-DcC1f2x6.js` (920KB raw / 265KB gzip).
+- **Worker version:** 4.8.1 (unchanged — I-6/I-7 deferred to Session 23).
+- **Supabase-js version:** 2.104.0 (unchanged since Session 21.6).
+- **Latest commit:** `<this wrap>` (Session 22 wrap — docs atomic per Rule 20). Preceded by `e1b3239` (Tower Room 6 UI).
+- **Next action:** Session 23 opening per docs/session-ritual.md; single backend hygiene batch; scope pre-locked in Sprint I.III table in SPRINT-CURRENT.md.
+- **Notable milestone:** Sprint I Part 2 CLOSED — Tower Room 6 Admin Support Console live at tower.phajot.com/admin/support (C-02). 10 new files + 2 edits, 1049 lines added to Tower. Consumes all 8 worker endpoints from Session 21 Part 1 Commit 2. 7 design decisions locked (D22-Q1..Q7). 1 LOW risk opened (R22-1 — pending-queue unaudited reads, Session 23 scope). I-9 `app_events.level` schema gap handled via UI conditional render (Path C); worker-side tweak consolidates with Session 23 backend batch.
 
 ## Sprint Progress
 
@@ -263,7 +263,8 @@ Rejected alternatives:
 | 20 (Sprint H close — UX redesign) | BJCgj50K (main app unchanged) | Tower: post-48324bf (884KB) → D0mfT_w2 (Phase 1, 886KB) → U46bquEx (Phase 2, 886KB) → B-SBURXM (Phase 3, 890KB) → DJwN4vkN (Phase 4 wrap, 890KB) | Tower UX redesign. 10 shared primitives + new Shell + Sidebar + 5 monitoring rooms ported + Language Strings full editor-first redesign + orphan cleanup. Sprint H CLOSED. 6 commits: 85f0480, dec20c0, a7816be, 42de77e, + this wrap. |
 | 21 (Sprint I Part 1 close) | BJCgj50K → RVdx7aXp (CF rebuild on Session 20 docs-only commit) → xMpsmdvy (CF Pages production post-Commit-3) | Tower: DJwN4vkN (unchanged — no Tower work this session) | Admin-Approved Recovery System. 2 migrations (014 + 015 — M015 same-session hotfix for M014 RLS recursion bug). Worker v4.7.0 → v4.8.0 → v4.8.1 (v4.8.1 added Fallback A for PostgREST embed failure). 8 worker endpoints. Main-app Forgot PIN flow. 4 commits: 22c5e86, e4393b0, a9eda3c, 84646a1 (wrap). Speaker-built local bundle was index-InDWwRPz.js; CF Pages serves index-xMpsmdvy.js (different by design per Session 9 lesson). |
 | 21.5 (Sprint I.5 hotfix) | xMpsmdvy → CQswCaAm | Tower: DJwN4vkN (unchanged) | R21-13 HIGH `savePinConfig` DB persistence fix. Triple-defect stack resolved (fire-and-forget IIFE + catch {} + missing `{ error }` shape check). 3 call sites updated with await + try/catch + revert + toast patterns; recovery handler uses `.catch()` warn-only (worker is authoritative). New i18n key `pinSaveFailed` × 3 langs. 3/3 smoke tests PASS against production Supabase. R21-14 + R21-15 opened organically during Phase C smoke → Session 21.6 bundle. 2 commits: 98f758d (fix), 617d270 (docs). |
-| 21.6 (Sprint I.6 cluster close) | CQswCaAm → CJY85dLV | Tower: DJwN4vkN (unchanged) | Account security settings cluster — R21-14 (password change) + R21-15 (disable owner PIN). NEW ChangePasswordModal.jsx using supabase-js `currentPassword` API (bump 2.101.1 → 2.104.0). Disable-PIN via Option C' (setPinSetupMode="disable-confirm" extension, PinLock title/subtitle ternary 2→3-way, LEADING handleSetupKey branch + early return, guest PIN cascade per D21.6-Q2). 15 new i18n keys × 3 langs. 2/2 critical smoke + bonus re-enable PASS. 2 commits: 03b39e2 (fix), `<this wrap>` (docs). |
+| 21.6 (Sprint I.6 cluster close) | CQswCaAm → CJY85dLV | Tower: DJwN4vkN (unchanged) | Account security settings cluster — R21-14 (password change) + R21-15 (disable owner PIN). NEW ChangePasswordModal.jsx using supabase-js `currentPassword` API (bump 2.101.1 → 2.104.0). Disable-PIN via Option C' (setPinSetupMode="disable-confirm" extension, PinLock title/subtitle ternary 2→3-way, LEADING handleSetupKey branch + early return, guest PIN cascade per D21.6-Q2). 15 new i18n keys × 3 langs. 2/2 critical smoke + bonus re-enable PASS. 2 commits: 03b39e2 (fix), 35efbc4 (docs). |
+| 22 (Sprint I Part 2 close) | CJY85dLV (main unchanged) | Tower: DJwN4vkN → `<post-CF-build hash>` (Speaker DevTools verifies; local build was DcC1f2x6, 920KB raw / 265KB gzip) | Tower Room 6 Admin Support Console UI live at `/admin/support` (C-02). 10 new files: SupportConsole.jsx orchestrator + 4 sub-components (PendingQueue, UserSearch, UserDetailPanel, TransactionsAccordion) + ApproveButton (credential-adjacent, ref-guard + busy + confirm overlay) + 3 room-scoped hooks (useFetchAdmin with lazy-token + 401-retry, usePendingQueue direct Supabase, useUserSummary worker-mediated) + global useTicker. 2 file edits (Sidebar C-02 entry, App.jsx route). 7 design decisions D22-Q1..Q7 locked. R22-1 LOW opened (pending-queue unaudited). I-9 handled via Path C (UI conditional render on null; backend tweak → Session 23). 2 commits: e1b3239 (fix), `<this wrap>` (docs). |
 
 ## The Tower Team
 | Name | Role |

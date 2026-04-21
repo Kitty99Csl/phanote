@@ -9,7 +9,7 @@ Living document. Updated at the end of each session.
 - **MEDIUM** — quality issue, user-visible but recoverable, or latent failure mode
 - **LOW** — tech debt, nice-to-have, or documentation gap
 
-**Last updated:** 2026-04-21 (post Session 21.6 close)
+**Last updated:** 2026-04-21 (post Session 22 close)
 
 ---
 
@@ -53,6 +53,20 @@ Session 9 verified RLS **manually** with an adversarial SQL test in the Supabase
 ---
 
 ## LOW
+
+### [LOW] R22-1 — Pending-queue + profile-enrichment reads unaudited in Tower Room 6
+**Discovered:** Session 22 Phase A architecture audit
+**Status:** Open — scheduled Session 23
+
+Tower Room 6's pending queue reads `user_recovery_state` + enriches via batched `.in('id', userIds)` profile fetch. Both direct-Supabase via admin-read RLS (Migrations 014+015). These reads do NOT log to `tower_admin_reads` because that table is service-role-INSERT-only by design (Rule 17).
+
+Asymmetry is intentional for v1 — list reads are lowest-stakes audit tier (aggregate signal, not detail). Detail reads (`/admin/users/:id/summary`) and actions (`/admin/users/:id/view-transactions`, approve endpoints) remain worker-mediated and audited. Matches D21-Q4 summary-read pattern.
+
+**Mitigation (Session 23):** Add `GET /admin/pending-requests` worker endpoint with `requireAdmin` + `tower_admin_reads` log. Tower `usePendingQueue.js` migrates from direct Supabase to worker-mediated via `useFetchAdmin`. Profile enrichment either bundled into same endpoint's response or switched to worker.
+
+**Priority:** Low for family-beta (2 admins, bounded audit gap). Should close before public launch.
+
+See `docs/session-22/RISKS.md` R22-1 for full context.
 
 ### [LOW] Session 21 admin-read paths shipped — admin-gated additive policies now live on profiles/transactions/app_events
 **Discovered/Shipped:** Session 21 Migrations 014 + 015

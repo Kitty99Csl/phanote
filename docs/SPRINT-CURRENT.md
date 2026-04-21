@@ -115,23 +115,63 @@
 
 ---
 
-## Sprint I Part 2 — Tower Room 6 UI — NEXT
+## Sprint I Part 2 — CLOSED 2026-04-21
 
 **Session:** 22
-**Theme:** Admin Support Console UI (C-02 room in Tower)
+**Theme:** Tower Room 6 Admin Support Console UI (C-02)
+
+### Items shipped
+
+| # | Item | Status | Commits |
+|---|------|--------|---------|
+| I-4 | Tower Room 6 Admin Support Console UI — 10 new files (5 components + 4 hooks + orchestrator), 2 file edits (App.jsx route + Sidebar nav) | ✅ | e1b3239 |
+| I-9 | `app_events.level` schema audit (Path C — UI conditional render on null; backend tweak deferred to Session 23) | ✅ | e1b3239 |
+| — | Session 22 wrap docs atomic Rule 20 update | ✅ | `<this wrap>` |
+
+### Sprint I Part 2 final state
+
+- Room 6 live at `tower.phajot.com/admin/support` (C-02)
+- Consumes worker endpoints from Session 21 Sprint I Part 1 Commit 2 (search / summary / view-transactions / approve-pin / approve-password)
+- Pending queue uses direct Supabase admin-read RLS (R22-1 tracks worker endpoint for Session 23)
+- 7 design decisions locked (D22-Q1..Q7) + I-9 Path C + concurrency acceptance
+- 1 new risk opened (R22-1 LOW — pending queue unaudited reads)
+- Tower bundle flipped from `index-DJwN4vkN.js` (Session 20) to `<new CF hash>` (Speaker verifies via DevTools)
+
+**Scope explicitly deferred to Session 23:**
+- I-5: R21-11 PostgREST embedded resource investigation
+- I-6 + I-7: Migration 016 (R21-6 unauthorized-admin audit + R21-8 atomic complete_pin_reset RPC)
+- I-8: R21-10 workers/lib/support-console.js split
+- I-9 worker tweak sibling: drop level filter + rename field
+- R22-1: `GET /admin/pending-requests` worker endpoint
+
+**Status: COMPLETE ✅ — Closed Session 22, 2026-04-21**
+
+---
+
+## Sprint I Part 3 — INSERTED — Backend hygiene batch
+
+**Session:** 23 (next)
+**Theme:** Consolidated backend cleanup across R21-6/8/10/11/12 + R22-1 + Migration 016
 
 ### Items
 
-| # | Item | Status | Notes |
-|---|------|--------|-------|
-| I-4 | Tower Room 6 Admin Support Console UI | ⏭️ Session 22 | Consumes worker endpoints built in Sprint I Part 1 Commit 2 |
-| I-5 | R21-11 PostgREST embedded resource investigation | ⏭️ Session 22 | If resolvable, migrate Fallback A back to embeds |
-| I-6 | R21-6 unauthorized admin attempt audit (Migration 016) | ⏭️ Session 22 | |
-| I-7 | R21-8 atomic complete_pin_reset RPC (bundle with R21-6 Migration 016) | ⏭️ Session 22 | |
-| I-8 | R21-10 support-console.js split (Option 2b) | ⏭️ Session 22 | |
-| I-9 | R21-12 app_events schema audit | ⏭️ Session 22 | |
+| # | Item | Status | Source |
+|---|------|--------|--------|
+| I-10 | R21-10 Split workers/lib/support-console.js (Option 2b — helpers / user-recovery / admin-approve / admin-summary) | ⏭️ Session 23 | Session 21 |
+| I-11 | R21-11 PostgREST embed investigation; if resolvable, migrate Fallback A back to embed syntax | ⏭️ Session 23 | Session 21 |
+| I-12 | R21-6 + R21-8 Migration 016 bundle: `unauthorized_admin_attempt` action_type + `complete_pin_reset()` defensive RPC with internal re-verification | ⏭️ Session 23 | Session 21 + Gemini S22 review |
+| I-13 | R21-12 worker query tweak: drop `level=eq.error` filter, rename `app_errors_last_7d` → `events_last_7d`, Tower UI follow-up | ⏭️ Session 23 | Session 22 I-9 Path C sibling |
+| I-14 | R22-1 `GET /admin/pending-requests` worker endpoint with tower_admin_reads logging; `usePendingQueue` migrates to worker | ⏭️ Session 23 | Session 22 R22-1 |
 
-**Status:** NOT STARTED — Session 22
+### I.III pre-conditions
+
+- [ ] Reality check per `docs/session-ritual.md`
+- [ ] Confirm HEAD includes Session 22 wrap
+- [ ] Scope locked to backend hygiene only — no main-app or Tower UI work (I-14 touches Tower `usePendingQueue.js` minimally as part of R22-1 migration, no UI changes)
+- [ ] 7 design questions pre-locked in Session 22 + Gemini review (Migration 016 defensive RPC pattern, worker split ordering, embed-vs-fallback policy)
+
+**Target duration:** 2-2.5 hours, single worker deploy (v4.8.2 or v4.9.0)
+**Status: NOT STARTED — next Session 23**
 
 ---
 
@@ -171,3 +211,4 @@
 | I Part 1 | 2026-04-20 | 21 | docs/session-21/SUMMARY.md |
 | I.5 | 2026-04-20 | 21.5 | docs/session-21-5/SUMMARY.md |
 | I.6 | 2026-04-21 | 21.6 | docs/session-21-6/SUMMARY.md |
+| I Part 2 | 2026-04-21 | 22 | docs/session-22/SUMMARY.md |
