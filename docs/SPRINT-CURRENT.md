@@ -148,50 +148,69 @@
 
 ---
 
-## Sprint I Part 3 — INSERTED — Backend hygiene batch
+## Sprint I Part 3 — CLOSED 2026-04-22
 
-**Session:** 23 (next)
-**Theme:** Consolidated backend cleanup across R21-6/8/10/11/12 + R22-1 + Migration 016
+**Session:** 23
+**Theme:** Backend hygiene batch — Migration 016 atomic RPC + R21-6/8/10/12 + R22-1 + I-11 won't-fix
 
-### Items
+### Items shipped
 
-| # | Item | Status | Source |
-|---|------|--------|--------|
-| I-10 | R21-10 Split workers/lib/support-console.js (Option 2b — helpers / user-recovery / admin-approve / admin-summary) | ⏭️ Session 23 | Session 21 |
-| I-11 | R21-11 PostgREST embed investigation; if resolvable, migrate Fallback A back to embed syntax | ⏭️ Session 23 | Session 21 |
-| I-12 | R21-6 + R21-8 Migration 016 bundle: `unauthorized_admin_attempt` action_type + `complete_pin_reset()` defensive RPC with internal re-verification | ⏭️ Session 23 | Session 21 + Gemini S22 review |
-| I-13 | R21-12 worker query tweak: drop `level=eq.error` filter, rename `app_errors_last_7d` → `events_last_7d`, Tower UI follow-up | ⏭️ Session 23 | Session 22 I-9 Path C sibling |
-| I-14 | R22-1 `GET /admin/pending-requests` worker endpoint with tower_admin_reads logging; `usePendingQueue` migrates to worker | ⏭️ Session 23 | Session 22 R22-1 |
+| # | Item | Status | Commits |
+|---|------|--------|---------|
+| I-10 | R21-10 Split `workers/lib/support-console.js` (1498 → 5 files under `workers/lib/support-console/`) | ✅ | 048b408 |
+| I-11 | R21-11 PostgREST FK-hint embed investigation | ⏹️ WON'T-FIX (Option C) | — |
+| I-12 | R21-6 + R21-8 Migration 016 bundle: `unauthorized_admin_attempt` CHECK + `complete_pin_reset()` atomic SECURITY DEFINER RPC | ✅ | 048b408 |
+| I-13 | R21-12 worker query tweak: drop `level=eq.error`, rename field, Tower consumer update | ✅ | 048b408 |
+| I-14 | R22-1 `GET /admin/pending-requests` worker endpoint + Tower `usePendingQueue` migration | ✅ | 048b408 |
+| — | Latent Session 21 dispatcher bug fix (`return handlerX(...)` → `return await handlerX(...)`) exposed during Phase C Step 2 sanity check | ✅ | 048b408 |
+| — | Session 23 wrap docs atomic Rule 20 update | ✅ | `<this wrap>` |
 
-### I.III pre-conditions
+### Sprint I Part 3 final state
 
-- [ ] Reality check per `docs/session-ritual.md`
-- [ ] Confirm HEAD includes Session 22 wrap
-- [ ] Scope locked to backend hygiene only — no main-app or Tower UI work (I-14 touches Tower `usePendingQueue.js` minimally as part of R22-1 migration, no UI changes)
-- [ ] 7 design questions pre-locked in Session 22 + Gemini review (Migration 016 defensive RPC pattern, worker split ordering, embed-vs-fallback policy)
+- Migration 016 applied to production Supabase; `complete_pin_reset(uuid, jsonb) RETURNS jsonb` SECURITY DEFINER + `tower_admin_actions.action_type` CHECK extended (includes `'unauthorized_admin_attempt'`)
+- Worker v4.8.1 → v4.8.2 live at `api.phajot.com`; 1 new endpoint (`GET /admin/pending-requests`), atomic RPC replaces 2-step PATCH pattern
+- `workers/lib/support-console.js` (1498 lines, Rule 7 violation) → 5 files under `workers/lib/support-console/` (largest admin-summary.js at 567, all under Rule 7 hard line 800)
+- Tower bundle: `index-DcC1f2x6.js` (Session 22) → new CF Pages-built hash post-Session-23 (Speaker DevTools-verifies post-cache-clear); local build was `index-DX3GSv9O.js` (918 KB raw / 264 KB gzip)
+- Main app bundle: `index-CJY85dLV.js` unchanged (no `src/` code changed Session 23)
+- 6 of 6 Sprint I open risks formally resolved: R21-6 structurally ready, R21-8/R21-10/R21-12/R22-1 CLOSED, R21-11 WON'T-FIX
+- Phase C smoke full pass (C1-C6) including atomic RPC end-to-end + Gate 3 idempotency + audit row verification
 
-**Target duration:** 2-2.5 hours, single worker deploy (v4.8.2 or v4.9.0)
-**Status: NOT STARTED — next Session 23**
+**Latent bug surfaced this session:**
+- Session 21 dispatcher's `return handlerX(...)` without `await` — async throws (AuthError from `requireAuth`/`requireAdmin`) escaped try/catch. Invisible in Sessions 21/22 (all smoke authenticated). Exposed in Phase C Step 2 unauth curl → CF 1101. Fixed by changing all 8 handler calls to `return await`, redeployed v4.8.2. Post-fix 401s confirmed.
+
+**Operational note from Phase C:**
+- Tower browser served stale Session 22 bundle for 13+ minutes post-deploy despite CF Pages "Active" status on commit 048b408 (verified via `npx wrangler pages deployment list --project-name tower-phajot`). Root cause: client-side cache (likely service worker from prior session). Resolved via incognito + cache clear. Diagnostic signal: zero `user_recovery_state` rows in audit query despite successful Tower interaction.
+
+**Status: COMPLETE ✅ — Closed Session 23, 2026-04-22**
 
 ---
 
-## Sprint I — Part 2 — Tower UI (Session 22)
+## Sprint I — OVERALL STATUS: CLOSED 2026-04-22
 
-**Session:** 22
-**Theme:** Tower Room 6 (Admin Support Console UI) — consumes worker endpoints built in Sprint I Part 1
+Sprint I shipped across 5 sessions:
 
-### Items
+| Session | Part | Theme | Status |
+|---------|------|-------|--------|
+| 21 | Part 1 | DB + worker + main-app UI | CLOSED 2026-04-20 |
+| 21.5 | Hotfix | savePinConfig persistence bug | CLOSED 2026-04-20 |
+| 21.6 | I.6 | Account security cluster (R21-14 password + R21-15 disable PIN) | CLOSED 2026-04-21 |
+| 22 | Part 2 | Tower Room 6 Admin Support Console UI | CLOSED 2026-04-21 |
+| 23 | Part 3 | Backend hygiene batch | CLOSED 2026-04-22 |
 
-| # | Item | Status | Notes |
-|---|------|--------|-------|
-| I-4 | Tower Room 6 Admin Support Console UI (C-02) | ⏭️ Session 22 | Pending requests queue (manual refresh), search + summary side panel, approve buttons, confirm dialogs, view recent transactions accordion |
-| I-5 | R21-11 PostgREST embedded resource investigation | ⏭️ Session 22 | If resolvable, migrate Fallback A back to embeds for perf |
-| I-6 | R21-6 unauthorized admin attempt audit (Migration 016) | ⏭️ Session 22 | Extends tower_admin_actions.action_type CHECK |
-| I-7 | R21-8 atomic `complete_pin_reset` RPC (bundle with R21-6 Migration 016) | ⏭️ Session 22 | |
-| I-8 | R21-10 support-console.js split (Option 2b) | ⏭️ Session 22 | Natural post-Tower-UI split |
-| I-9 | R21-12 app_events schema audit | ⏭️ Session 22 | |
+Admin-approved recovery system production-ready for family-beta. Zero open Sprint I risks.
 
-**Status: NOT STARTED — Session 22**
+---
+
+## Next sprint
+
+**Sprint TBD** — open with fresh Speaker decision post-Session-23.
+
+Candidate directions (not locked):
+- Sprint J — Tower Workshop + Archive (per `docs/tower/ROADMAP.md`)
+- Sprint L — OCR Pipeline Hardening (pre-public-launch data work)
+- Sprint K+ — Public launch prep (landing rewrite + LINE OTP + payment)
+
+Speaker selects next-sprint theme at next session opening.
 
 ---
 
@@ -212,3 +231,5 @@
 | I.5 | 2026-04-20 | 21.5 | docs/session-21-5/SUMMARY.md |
 | I.6 | 2026-04-21 | 21.6 | docs/session-21-6/SUMMARY.md |
 | I Part 2 | 2026-04-21 | 22 | docs/session-22/SUMMARY.md |
+| I Part 3 | 2026-04-22 | 23 | docs/session-23/SUMMARY.md |
+| I (full) | 2026-04-22 | 23 | Sprint I CLOSED end of Session 23 — 5 sessions total |

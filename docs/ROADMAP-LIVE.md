@@ -2,18 +2,19 @@
 
 > **Status:** Current source of truth (live roadmap, updated every session wrap-up)
 
-> Last updated: 2026-04-21 (Session 22 close — Sprint I Part 2 CLOSED; Tower Room 6 Admin Support Console UI live; Session 23 backend hygiene batch next)
+> Last updated: 2026-04-22 (Session 23 close — Sprint I FORMALLY CLOSED; backend hygiene batch shipped; Migration 016 + worker v4.8.2 + support-console split)
 
 ## Current State
-- **Active sprint:** I Part 2 CLOSED 2026-04-21 (Session 22 — Tower Room 6 Admin Support Console UI). Session 23 backend hygiene batch next (R21-10/11/12, R21-6/8 Migration 016, R22-1 pending-queue endpoint).
-- **Session 22:** closed this commit · Session 23 next: consolidated backend cleanup — single worker deploy (v4.8.2 or v4.9.0) + Migration 016
-- **Production hash (Phajot main app):** index-CJY85dLV.js (unchanged — no main-app work Session 22).
-- **Tower bundle:** post-Session-22 hash TBD (Speaker verifies via CF Access DevTools); flipped from Session 20 baseline `index-DJwN4vkN.js`. Local build was `index-DcC1f2x6.js` (920KB raw / 265KB gzip).
-- **Worker version:** 4.8.1 (unchanged — I-6/I-7 deferred to Session 23).
+- **Active sprint:** NONE — Sprint I CLOSED 2026-04-22 after 5 sessions (21 + 21.5 + 21.6 + 22 + 23). Admin-approved recovery system production-ready for family-beta.
+- **Session 23:** closed this commit · Next sprint TBD — Speaker selects theme at next session opening (candidates: Sprint J Tower Workshop+Archive, Sprint L OCR hardening, Sprint K+ public launch prep).
+- **Production hash (Phajot main app):** index-CJY85dLV.js (unchanged since Session 21.6 — no main-app `src/` changes Session 22 or Session 23).
+- **Tower bundle:** post-Session-23 CF Pages-built hash (Speaker DevTools-verifies post-cache-clear); Session 22 was `index-DcC1f2x6.js`; local Session 23 build was `index-DX3GSv9O.js` (918KB raw / 264KB gzip).
+- **Worker version:** 4.8.2 — deployed `api.phajot.com` 2026-04-21 (v4.8.1 → v4.8.2 bundles Batches 1, 3, 4, 6 + dispatcher await fix). 1 new endpoint (`GET /admin/pending-requests`).
 - **Supabase-js version:** 2.104.0 (unchanged since Session 21.6).
-- **Latest commit:** `<this wrap>` (Session 22 wrap — docs atomic per Rule 20). Preceded by `e1b3239` (Tower Room 6 UI).
-- **Next action:** Session 23 opening per docs/session-ritual.md; single backend hygiene batch; scope pre-locked in Sprint I.III table in SPRINT-CURRENT.md.
-- **Notable milestone:** Sprint I Part 2 CLOSED — Tower Room 6 Admin Support Console live at tower.phajot.com/admin/support (C-02). 10 new files + 2 edits, 1049 lines added to Tower. Consumes all 8 worker endpoints from Session 21 Part 1 Commit 2. 7 design decisions locked (D22-Q1..Q7). 1 LOW risk opened (R22-1 — pending-queue unaudited reads, Session 23 scope). I-9 `app_events.level` schema gap handled via UI conditional render (Path C); worker-side tweak consolidates with Session 23 backend batch.
+- **Migrations applied:** 16 (015 → 016 this session — `complete_pin_reset` SECURITY DEFINER RPC + `tower_admin_actions.action_type` CHECK extension).
+- **Latest commit:** `<this wrap>` (Session 23 wrap — docs atomic per Rule 20). Preceded by `048b408` (feat: backend hygiene batch).
+- **Next action:** New sprint opening — Speaker to select theme.
+- **Notable milestone:** Sprint I FORMALLY CLOSED end of Session 23. 16 risks across 5 sessions: all closed or structurally ready (R21-6 no code path yet — Session 24+ scope). 11 commits total across Sprint I. R21-11 won't-fix per Option C (Fallback A production-stable). Latent Session 21 dispatcher bug (`return handlerX(...)` without `await`) surfaced during Phase C unauth curl, fixed in redeploy — bonus correctness improvement on top of I-10 refactor.
 
 ## Sprint Progress
 
@@ -181,16 +182,21 @@ Original H-1 Admin Panel item re-classified as Sprint I work — Session 20 clos
 
 Single scope: `savePinConfig` PIN persistence bug + browser smoke scenarios B/D/E deferred from Session 21.
 
-**Part 2 — Tower Room 6 Admin Support Console UI (Session 22)**
+**Part 2 — Tower Room 6 Admin Support Console UI (Session 22, CLOSED 2026-04-21)**
 
-- Room 6: pending requests queue (manual refresh), search + summary side panel, approve buttons wired to Commit 2 endpoints, view recent transactions accordion
-- Every read logs to `tower_admin_reads` + `tower_admin_actions` per privacy-sensitive contract (already worker-side; Tower UI just triggers)
-- Additional Migration 016 bundle: R21-6 unauthorized admin attempt audit + R21-8 atomic `complete_pin_reset` RPC
-- R21-10 support-console.js split (Option 2b)
-- R21-11 PostgREST embed investigation
-- R21-12 app_events schema audit
+| # | Commit | What | Status |
+|---|--------|------|--------|
+| 1 | e1b3239 | Tower Room 6 Admin Support Console UI — 10 new files + 2 edits (1049 lines in Tower) | ✅ |
+| 2 | 488f17e | Session 22 wrap docs | ✅ |
 
-**Status:** Part 2 NOT STARTED — Session 22
+**Part 3 — Backend hygiene batch (Session 23, CLOSED 2026-04-22)**
+
+| # | Commit | What | Status |
+|---|--------|------|--------|
+| 1 | 048b408 | Backend hygiene batch — Migration 016 + worker v4.8.2 + support-console split (5 files) + Tower usePendingQueue migration + latent dispatcher bug fix | ✅ |
+| 2 | `<this wrap>` | Session 23 wrap docs | ✅ |
+
+**Sprint I — FORMALLY CLOSED 2026-04-22** — 5 sessions, 11 commits total, 16 risks resolved (14 CLOSED + 1 STRUCTURALLY READY + 1 WON'T-FIX). Admin-approved recovery system production-ready for family-beta.
 
 ### Sprints I–J — Tower Rooms (Sessions 21–22)
 - I: Command Center (Sentinel chat) + **OCR Reliability Room** — attempts/failures/success rates per bank, average review corrections, confidence distribution, cost per 100 scans, most common row errors. Feeds Sprint L hardening decisions with real data.
@@ -264,7 +270,8 @@ Rejected alternatives:
 | 21 (Sprint I Part 1 close) | BJCgj50K → RVdx7aXp (CF rebuild on Session 20 docs-only commit) → xMpsmdvy (CF Pages production post-Commit-3) | Tower: DJwN4vkN (unchanged — no Tower work this session) | Admin-Approved Recovery System. 2 migrations (014 + 015 — M015 same-session hotfix for M014 RLS recursion bug). Worker v4.7.0 → v4.8.0 → v4.8.1 (v4.8.1 added Fallback A for PostgREST embed failure). 8 worker endpoints. Main-app Forgot PIN flow. 4 commits: 22c5e86, e4393b0, a9eda3c, 84646a1 (wrap). Speaker-built local bundle was index-InDWwRPz.js; CF Pages serves index-xMpsmdvy.js (different by design per Session 9 lesson). |
 | 21.5 (Sprint I.5 hotfix) | xMpsmdvy → CQswCaAm | Tower: DJwN4vkN (unchanged) | R21-13 HIGH `savePinConfig` DB persistence fix. Triple-defect stack resolved (fire-and-forget IIFE + catch {} + missing `{ error }` shape check). 3 call sites updated with await + try/catch + revert + toast patterns; recovery handler uses `.catch()` warn-only (worker is authoritative). New i18n key `pinSaveFailed` × 3 langs. 3/3 smoke tests PASS against production Supabase. R21-14 + R21-15 opened organically during Phase C smoke → Session 21.6 bundle. 2 commits: 98f758d (fix), 617d270 (docs). |
 | 21.6 (Sprint I.6 cluster close) | CQswCaAm → CJY85dLV | Tower: DJwN4vkN (unchanged) | Account security settings cluster — R21-14 (password change) + R21-15 (disable owner PIN). NEW ChangePasswordModal.jsx using supabase-js `currentPassword` API (bump 2.101.1 → 2.104.0). Disable-PIN via Option C' (setPinSetupMode="disable-confirm" extension, PinLock title/subtitle ternary 2→3-way, LEADING handleSetupKey branch + early return, guest PIN cascade per D21.6-Q2). 15 new i18n keys × 3 langs. 2/2 critical smoke + bonus re-enable PASS. 2 commits: 03b39e2 (fix), 35efbc4 (docs). |
-| 22 (Sprint I Part 2 close) | CJY85dLV (main unchanged) | Tower: DJwN4vkN → `<post-CF-build hash>` (Speaker DevTools verifies; local build was DcC1f2x6, 920KB raw / 265KB gzip) | Tower Room 6 Admin Support Console UI live at `/admin/support` (C-02). 10 new files: SupportConsole.jsx orchestrator + 4 sub-components (PendingQueue, UserSearch, UserDetailPanel, TransactionsAccordion) + ApproveButton (credential-adjacent, ref-guard + busy + confirm overlay) + 3 room-scoped hooks (useFetchAdmin with lazy-token + 401-retry, usePendingQueue direct Supabase, useUserSummary worker-mediated) + global useTicker. 2 file edits (Sidebar C-02 entry, App.jsx route). 7 design decisions D22-Q1..Q7 locked. R22-1 LOW opened (pending-queue unaudited). I-9 handled via Path C (UI conditional render on null; backend tweak → Session 23). 2 commits: e1b3239 (fix), `<this wrap>` (docs). |
+| 22 (Sprint I Part 2 close) | CJY85dLV (main unchanged) | Tower: DJwN4vkN → DcC1f2x6 (local); CF production hash verified post-cache-clear | Tower Room 6 Admin Support Console UI live at `/admin/support` (C-02). 10 new files: SupportConsole.jsx orchestrator + 4 sub-components (PendingQueue, UserSearch, UserDetailPanel, TransactionsAccordion) + ApproveButton (credential-adjacent, ref-guard + busy + confirm overlay) + 3 room-scoped hooks (useFetchAdmin with lazy-token + 401-retry, usePendingQueue direct Supabase, useUserSummary worker-mediated) + global useTicker. 2 file edits (Sidebar C-02 entry, App.jsx route). 7 design decisions D22-Q1..Q7 locked. R22-1 LOW opened (pending-queue unaudited). I-9 handled via Path C (UI conditional render on null; backend tweak → Session 23). 2 commits: e1b3239 (fix), 488f17e (docs). |
+| 23 (Sprint I Part 3 close — Sprint I FORMALLY CLOSED) | CJY85dLV (main unchanged — no src/ work) | Tower: DcC1f2x6 → post-048b408 CF build (local: DX3GSv9O, 918KB raw / 264KB gzip) | Backend hygiene batch. Migration 016 (complete_pin_reset SECURITY DEFINER RPC + tower_admin_actions CHECK extension). Worker v4.8.1 → v4.8.2 — atomic RPC replaces 2-step PATCH pattern, new GET /admin/pending-requests endpoint (I-14), app_events level-filter dropped + field renamed events_last_7d (I-13), workers/lib/support-console.js (1498 lines) split into 5 files under workers/lib/support-console/ package (I-10), latent Session 21 dispatcher return-await bug fixed (exposed during Phase C Step 2 unauth probe). Tower usePendingQueue migrated from direct-Supabase to worker endpoint (103 → 50 lines, R22-1 closed). R21-6 structurally ready, R21-8/10/12/R22-1 CLOSED, R21-11 WON'T-FIX per Option C. 2 commits: 048b408 (feat), `<this wrap>` (docs). |
 
 ## The Tower Team
 | Name | Role |

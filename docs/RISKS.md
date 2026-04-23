@@ -9,7 +9,7 @@ Living document. Updated at the end of each session.
 - **MEDIUM** — quality issue, user-visible but recoverable, or latent failure mode
 - **LOW** — tech debt, nice-to-have, or documentation gap
 
-**Last updated:** 2026-04-21 (post Session 22 close)
+**Last updated:** 2026-04-22 (post Session 23 close — Sprint I FORMALLY CLOSED)
 
 ---
 
@@ -54,20 +54,6 @@ Session 9 verified RLS **manually** with an adversarial SQL test in the Supabase
 
 ## LOW
 
-### [LOW] R22-1 — Pending-queue + profile-enrichment reads unaudited in Tower Room 6
-**Discovered:** Session 22 Phase A architecture audit
-**Status:** Open — scheduled Session 23
-
-Tower Room 6's pending queue reads `user_recovery_state` + enriches via batched `.in('id', userIds)` profile fetch. Both direct-Supabase via admin-read RLS (Migrations 014+015). These reads do NOT log to `tower_admin_reads` because that table is service-role-INSERT-only by design (Rule 17).
-
-Asymmetry is intentional for v1 — list reads are lowest-stakes audit tier (aggregate signal, not detail). Detail reads (`/admin/users/:id/summary`) and actions (`/admin/users/:id/view-transactions`, approve endpoints) remain worker-mediated and audited. Matches D21-Q4 summary-read pattern.
-
-**Mitigation (Session 23):** Add `GET /admin/pending-requests` worker endpoint with `requireAdmin` + `tower_admin_reads` log. Tower `usePendingQueue.js` migrates from direct Supabase to worker-mediated via `useFetchAdmin`. Profile enrichment either bundled into same endpoint's response or switched to worker.
-
-**Priority:** Low for family-beta (2 admins, bounded audit gap). Should close before public launch.
-
-See `docs/session-22/RISKS.md` R22-1 for full context.
-
 ### [LOW] Session 21 admin-read paths shipped — admin-gated additive policies now live on profiles/transactions/app_events
 **Discovered/Shipped:** Session 21 Migrations 014 + 015
 **Status:** Shipped + adversarially verified
@@ -78,13 +64,17 @@ Migration 014 added additive FOR SELECT admin-read policies on `profiles`, `tran
 
 See `docs/session-21/RISKS.md` R21-3 + R21-11 for context.
 
-### [LOW] `workers/lib/support-console.js` at 1300 lines — Rule 7 deferred split (R21-10)
-**Discovered:** Session 21
-**Status:** Deferred to Session 22
+### [LOW] R21-6 — Unauthorized admin attempt audit (worker write path deferred)
+**Discovered:** Session 21 Phase A
+**Status:** STRUCTURALLY READY — Session 23 Migration 016 extended `tower_admin_actions.action_type` CHECK to include `'unauthorized_admin_attempt'`; worker write path deferred to Session 24+
 
-Worker subsystem module grew past Rule 7 threshold (800 lines) during Sprint I Part 1. Natural split boundaries identified: helpers / user-recovery / admin-approve / admin-summary (Option 2b). Session 22 Tower Room 6 UI doesn't grow this file, so post-Session-22 is the natural split moment.
+`requireAdmin` in `workers/lib/support-console/helpers.js` already emits `console.warn('unauthorized admin attempt:', user=X, path=Y)` on 403 — observability signal exists, just not persistent. Adding `logAdminAction` write path inside the 403-throw branch is scope creep for a backend-hygiene themed session. CHECK constraint slot exists ahead of the write path so Session 24+ can add it with no migration coordination.
 
-Main worker `phanote-api-worker.js` also in violation at 1263 lines (pre-existing, separate backlog).
+**Priority:** Low. Observability-only; actual unauthorized access is already blocked at RLS + `requireAdmin` layer. Small diff when it lands.
+
+**Mitigation (Session 24+ candidate):** Add `logAdminAction(env, ctx, { admin_user_id, target_user_id: null, action_type: 'unauthorized_admin_attempt', result: 'failed', error_message: path, metadata: {...} })` inside `requireAdmin` 403-throw branch in `helpers.js`.
+
+Main worker `phanote-api-worker.js` also in Rule 7 violation at ~1260 lines (pre-existing, separate backlog).
 
 ### [LOW] `wrangler.toml` dashboard drift
 **Discovered:** Session 9 investigation
@@ -211,6 +201,33 @@ Pre-existing gap from `src/lib/i18n.js`: 38 keys have Lao but no Thai. Visible i
 ---
 
 ## Resolved (historical record)
+
+### ~~[LOW] R22-1 — Pending-queue + profile-enrichment reads unaudited in Tower Room 6~~
+**Resolved:** Session 23 commit `048b408` · 2026-04-22
+
+New `GET /admin/pending-requests` worker endpoint: reads `user_recovery_state` via service-role, filters + classifies via new `classifyPendingRequest` helper, enriches via single `.in()` profile call, logs to `tower_admin_reads` with `table_name='user_recovery_state'`. Tower `usePendingQueue.js` migrated from direct-Supabase to worker endpoint (103 → 50 lines). Client-side `isPending()` + `classify()` deleted — server authoritative via `_classification` + `_profile` embed. Dispatcher prefix gate widened from `/admin/users/` to `/admin/` to accept new non-`/users/`-scoped route. Phase C C3/C4 smoke verified: Network tab shows call firing with 200, audit row present in `tower_admin_reads`. See `docs/session-23/RISKS.md`.
+
+### ~~[LOW] R21-10 — `workers/lib/support-console.js` 1498-line Rule 7 violation~~
+**Resolved:** Session 23 commit `048b408` · 2026-04-22
+
+Split into 5 files under `workers/lib/support-console/` package: `index.js` (131 dispatcher + re-exports), `helpers.js` (381 auth + REST + audit loggers + utilities), `user-recovery.js` (323, 3 handlers), `admin-approve.js` (167, 2 approvers + factory), `admin-summary.js` (567, 4 handlers). Largest file 567 lines — under Rule 7 hard line 800 (aspirational 500-line target accepted as overshot per D23-C2). No circular imports (hub-and-spoke via helpers.js). Zero behavior changes (handler bodies transplanted verbatim). Main worker import updated single-site. See `docs/session-23/RISKS.md`.
+
+### ~~[LOW] R21-8 — Non-atomic `complete_pin_reset` 2-step PATCH~~
+**Resolved:** Session 23 commit `048b408` · 2026-04-22
+
+Migration 016 added `public.complete_pin_reset(p_user_id uuid, p_new_pin_config jsonb)` SECURITY DEFINER RPC. Atomic UPDATE of profiles + user_recovery_state inside PostgREST's implicit transaction. Defensive re-verification of all 3 gates inside RPC (belt-and-braces vs worker's first-line gates). Gate 3 (`pin_reset_required` still true) serves as idempotency guard — second call returns `{ ok: false, error: 'already_completed' }` → HTTP 409. Worker Batch 3 migrated from 2-step PATCH to single RPC call. Mode 2 partial-failure path + `state_cleanup_pending` warning removed (architecturally impossible post-atomic). Phase C C5 smoke PASS end-to-end including Gate 3 idempotency verification. See `docs/session-23/RISKS.md`.
+
+### ~~[LOW] R21-12 — `app_events.level` column missing; query + field rename pending~~
+**Resolved:** Session 23 commit `048b408` · 2026-04-22
+
+Session 22 Path C inherited: UI conditional-omit when `issue_counts.app_errors_last_7d` is null. Session 23 Batch 1 closes both sides: worker `/admin/users/:id/summary` query dropped `level=eq.error` filter (column doesn't exist), response field renamed `app_errors_last_7d → events_last_7d` with internal variable cleanup; Tower UserDetailPanel always-render-with-`?? "—"` fallback mirroring AI errors pattern, label renamed "App errors" → "App events" (honest — query is no longer error-filtered). Header + inline placeholder comments updated to Session 23 closure notes. See `docs/session-23/RISKS.md`.
+
+### ~~[LOW] R21-11 — PostgREST embedded resources 500 on `user_recovery_state`~~ (WON'T-FIX)
+**Status:** WON'T-FIX per Session 23 Option C · 2026-04-22
+
+Fallback A (parallel `fetchRecoveryForUser` + explicit per-row calls) production-stable. `/admin/users/search` uses 50 profiles × 2 subrequests = 100 CF subrequests per call, well under CF 1000 paid-plan limit. Embed-syntax migration would save round-trips but is performance optimization, not correctness. 30-min investigation budget not justified at family-beta scale. Session 24+ may revisit if admin search volume grows significantly. See `docs/session-23/DECISIONS.md` D23-C1.
+
+---
 
 ### ~~[MEDIUM] R21-14 — No password change flow in Settings~~
 **Resolved:** Session 21.6 commit `03b39e2` · 2026-04-21
