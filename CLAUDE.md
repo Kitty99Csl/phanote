@@ -314,3 +314,65 @@ Thresholds and design decisions:
 ---
 
 *Last updated: 2026-04-22 (post Session 23 close — Sprint I FORMALLY CLOSED) · Maintained by Speaker + Chat Claude · Used by Claude Code · For live state see docs/ROADMAP-LIVE.md*
+
+---
+
+## Session 23.5 learnings (post-Sprint-I external review pivot)
+
+**Added:** 2026-04-24 during roadmap pivot session
+
+### External review >> internal review
+
+When three independent reviewers converge on the same theme, that's signal, not noise.
+
+GPT Codex 5.4 (LLM static analysis) + human peer (AI consultant at Speaker's company) + Speaker's own daily-use testimony all pointed at the SAME three themes:
+1. Supabase writes don't surface failures truthfully
+2. Mobile modal geometry is fragile (keyboard + small screens)
+3. Tower/admin looks more live than it is
+
+Pattern learning: LLM code review is CHEAP and often catches real things — especially pattern-level bugs (fire-and-forget writes, silent catches, duplicate keys). Weight LLM code review higher than LLM strategic review. LLM sees "this write lacks error handling" better than it sees "you should rewrite the architecture."
+
+Pattern learning 2: When LLM review + human review converge, act. When they disagree, weight the human for product judgment and the LLM for code-level rigor.
+
+Pattern learning 3: The review caught the SAME class of bug as Session 21.5's R21-13 (savePinConfig silent failure). Session 21.5 fixed one instance of that class. The review showed the class pattern existed in 5+ other places that Session 21.5 missed. Lesson: when you fix a class of bug, AUDIT the whole codebase for siblings. Don't just fix the reported instance.
+
+### The "two buttons cover all signals" rule
+
+When Speaker AND wife both report the same UX friction, that outweighs any amount of code review. They're the only users. Their friction is the ground truth.
+
+Applied 2026-04-24: review flagged Sheet.jsx geometry issues as P1. Speaker + wife independently confirmed "buttons go off screen, input covered." That moved Sprint N from "should do" to "must do."
+
+Pattern learning: code-level review catches what CAN break; live use catches what DOES break. Both matter.
+
+### Roadmap pivots should be atomic
+
+When a review or external input materially changes priorities, the roadmap update should be:
+1. A separate session (or half-session) from any code work
+2. Atomic — all affected docs updated in one commit per Rule 20
+3. Include: ROADMAP-LIVE.md, SPRINT-CURRENT.md, review artifacts preserved, per-sprint scope docs drafted
+4. Backed by CTO triage that's in the repo (not just in chat history)
+
+Applied 2026-04-24: Sprint I → Sprint M + N pivot committed as docs-only atomic commit with 8 files, zero code changes.
+
+Pattern learning: don't mix "decide what to build" with "build it." Two separate cognitive modes.
+
+### Browser cache as silent Sprint-close hazard
+
+From Session 23: Tower browser served stale bundle for 13+ minutes post-deploy despite CF Pages "Active" status. Root cause: client-side cache (likely service worker from prior session). Resolved via incognito + cache clear.
+
+Pattern learning: Rule 11 post-deploy hash verification MUST be done in incognito OR after explicit cache clear, not in the dev's normal browser tab. Normal tabs lie about what's actually deployed.
+
+Added to post-deploy ritual: always verify bundle hash in incognito after CF Pages cycle.
+
+### Sprint-close commit discipline
+
+Sprint I closed across 5 sessions with 11 commits total, zero rollbacks. Pattern that worked:
+- 1 feat commit per session (focused scope)
+- 1 wrap-docs commit per session (atomic Rule 20)
+- Paste-back review on auth-critical / write-critical code
+- Phase A design lock BEFORE code
+- Smoke test as Phase C, before Phase D wrap
+
+This is now the proven model for Sprint M and beyond.
+
+Pattern learning: the investment in Phase A design locking prevents 80% of mid-session rework. Never skip it.
