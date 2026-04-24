@@ -13,19 +13,21 @@ export const dbSaveMemory = async (userId, pattern, categoryName, type, confiden
     .eq("input_pattern", key)
     .maybeSingle();
   if (existing) {
-    await supabase.from("ai_memory")
+    const { error } = await supabase.from("ai_memory")
       .update({ usage_count: existing.usage_count + 1, updated_at: new Date().toISOString() })
       .eq("id", existing.id);
+    if (error) throw error;
   } else {
-    await supabase.from("ai_memory").insert({
+    const { error } = await supabase.from("ai_memory").insert({
       user_id: userId, input_pattern: key, category_name: categoryName,
       type, confidence, usage_count: 1,
     });
+    if (error) throw error;
   }
 };
 
 export const dbUpsertProfile = async (userId, p) => {
-  await supabase.from("profiles").upsert({
+  const { error } = await supabase.from("profiles").upsert({
     id: userId, display_name: p.name, language: p.lang || "lo",
     base_currency: p.baseCurrency || "LAK", onboarding_complete: true,
     phone: p.phone || null, phone_country_code: p.countryCode || null,
@@ -33,6 +35,7 @@ export const dbUpsertProfile = async (userId, p) => {
     exp_cats: p.expCats || [], inc_cats: p.incCats || [],
     last_seen_at: new Date().toISOString(), app_version: "1.0.0",
   }, { onConflict: "id" });
+  if (error) throw error;
 };
 
 export const dbTrackEvent = async (userId, eventType, eventData = {}) => {
@@ -41,9 +44,10 @@ export const dbTrackEvent = async (userId, eventType, eventData = {}) => {
       user_id: userId, event_type: eventType, event_data: eventData,
       app_version: "1.0.0", platform: "web",
     });
-  } catch {}
+  } catch (e) { console.warn("dbTrackEvent failed:", e); }
 };
 
+// Template pattern for this file: destructure { error }, throw on error.
 export const dbInsertTransaction = async (userId, tx) => {
   const { data, error } = await supabase.from("transactions").insert({
     user_id: userId, amount: tx.amount, currency: tx.currency, type: tx.type,
@@ -58,5 +62,6 @@ export const dbInsertTransaction = async (userId, tx) => {
 };
 
 export const dbUpdateTransaction = async (txId, updates) => {
-  await supabase.from("transactions").update(updates).eq("id", txId);
+  const { error } = await supabase.from("transactions").update(updates).eq("id", txId);
+  if (error) throw error;
 };

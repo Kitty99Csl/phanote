@@ -30,6 +30,7 @@ export default function App(){
   const [booting, setBooting]           = useState(true);
   const [userId, setUserId]             = useState(null);
   const [loadingProfile, setLoadingProfile] = useState(false);
+  const [loadError, setLoadError] = useState(null);
   const [streakToast, setStreakToast]   = useState(null);
   const [pendingConfirm, setPendingConfirm] = useState(null); // null | {kind:'delete-tx', txId} | {kind:'reset'}
   const [migrationPrefill, setMigrationPrefill] = useState(""); // one-hop forward of typed password to MigrationScreen
@@ -218,6 +219,7 @@ export default function App(){
   //   Default false preserves existing callers' behavior.
   const loadUserData = async (uid, { skipPinRoleReset = false } = {}) => {
     setUserId(uid); setLoadingProfile(true);
+    setLoadError(null); // Clear any stale error from previous attempt
     try {
       const { data: dbProfile } = await supabase.from("profiles").select("*").eq("id", uid).single();
       if (dbProfile?.onboarding_complete) {
@@ -253,7 +255,10 @@ export default function App(){
           batch_id: tx.batch_id || null,
         })));
       }
-    } catch (e) { console.error("Load error:", e); }
+    } catch (e) {
+      console.error("Load error:", e);
+      setLoadError(e); // Surface to retry UI (Batch 3 — Review-P1-1 fix)
+    }
     // ── Load PIN from Supabase (survives private browsing) ──
     try {
       const { data: pinRow } = await supabase.from("profiles")
@@ -436,8 +441,20 @@ export default function App(){
     setProfile(p);
     try {
       await dbUpsertProfile(userId, p);
-      await dbTrackEvent(userId, "onboarding_complete", { lang: p.lang, baseCurrency: p.baseCurrency });
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error("Onboarding save failed:", e);
+      // Revert: user falls back to OnboardingScreen to retry.
+      // No throw: callers are fire-and-forget event handlers
+      // (OnboardingScreen.onComplete). Revert + toast is the
+      // complete user signal. See OT-M-8 for contract rules.
+      setProfile(null);
+      showToast(t(p.lang || "en", "toastSaveError"), "error");
+      return;
+    }
+    // dbTrackEvent outside try: helper handles its own errors
+    // internally (Batch 1 console.warn). Only logged on success
+    // via the early return above.
+    await dbTrackEvent(userId, "onboarding_complete", { lang: p.lang, baseCurrency: p.baseCurrency });
   };
 
   const handleAddTransaction = async (tx) => {
@@ -449,7 +466,14 @@ export default function App(){
         const cat = findCat(tx.categoryId, profile?.customCategories || []);
         const updates = { category_name: cat.en, category_emoji: cat.emoji };
         if (tx.confidence != null) updates.ai_confidence = tx.confidence;
-        try { await dbUpdateTransaction(tx.id, updates); } catch {}
+        try {
+          await dbUpdateTransaction(tx.id, updates);
+        } catch (e) {
+          console.warn("AI correction DB sync failed:", e);
+          // Background AI re-classification — no toast, no revert.
+          // Local state reconciles on next loadUserData.
+          // Telemetry pattern matching dbTrackEvent.
+        }
       }
       return;
     }
@@ -475,18 +499,35 @@ export default function App(){
   };
 
   const handleUpdateProfile = async (changes) => {
+    // Capture for revert before optimistic update
+    const previousProfile = profile;
     const updated = { ...profile, ...changes };
     setProfile(updated);
     try {
       await dbUpsertProfile(userId, updated);
       store.set(`phanote_extra_${userId}`, { avatar: updated.avatar, customCategories: updated.customCategories || [], expCats: updated.expCats, incCats: updated.incCats });
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error("Profile update failed:", e);
+      // Revert: return to previous profile state. No throw.
+      // Callers are fire-and-forget from SettingsScreen (6 sites).
+      // See OT-M-8 for handler contract rules.
+      setProfile(previousProfile);
+      showToast(t(profile?.lang || "en", "toastSaveError"), "error");
+    }
   };
 
   const handleUpdateNote = async (txId, note) => {
+    // Capture for revert before optimistic update
+    const previousNote = transactions.find(tx => tx.id === txId)?.note ?? null;
     setTransactions(prev => prev.map(tx => tx.id === txId ? { ...tx, note } : tx));
     if (txId.startsWith("tx_")) return;
-    try { await dbUpdateTransaction(txId, { note, edited_at: new Date().toISOString() }); } catch (e) { console.error(e); }
+    try {
+      await dbUpdateTransaction(txId, { note, edited_at: new Date().toISOString() });
+    } catch (e) {
+      console.error("Note update failed:", e);
+      setTransactions(prev => prev.map(tx => tx.id === txId ? { ...tx, note: previousNote } : tx));
+      showToast(t(profile?.lang || "en", "toastSaveError"), "error");
+    }
   };
 
   const handleUpdateCategory = async (txId, newCatId, newAmount=null, newDesc=null, newCurrency=null, newType=null) => {
@@ -515,11 +556,17 @@ export default function App(){
   const performDeleteTransaction = async () => {
     const txId = pendingConfirm?.txId;
     if (!txId) return;
+    // Capture full list for simple revert on failure
+    const previousList = transactions;
     setTransactions(prev => prev.filter(tx => tx.id !== txId));
     try {
       await dbUpdateTransaction(txId, { is_deleted: true, deleted_at: new Date().toISOString() });
       await dbTrackEvent(userId, "transaction_deleted", { txId });
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error("Delete transaction failed:", e);
+      setTransactions(previousList);
+      showToast(t(profile?.lang || "en", "toastSaveError"), "error");
+    }
   };
 
   const handleDeleteBatch = (batchId) => {
@@ -575,6 +622,52 @@ export default function App(){
       <div style={{ fontSize:14, color:"#9B9BAD", fontFamily:"'Noto Sans',sans-serif" }}>Loading your data…</div>
     </div>
   );
+
+  if (loadError && userId) {
+    // Authenticated user, but profile/data fetch failed.
+    // Show retry UI instead of falling through to onboarding.
+    // (Review-P1-1 fix — was silently routing to OnboardingScreen)
+    const lang = "en"; // Profile not loaded; safe default.
+    return (
+      <div style={{
+        position: "fixed", inset: 0,
+        display: "flex", flexDirection: "column",
+        alignItems: "center", justifyContent: "center",
+        padding: 24, gap: 20,
+        background: "linear-gradient(180deg, #F7FCF5 0%, #FFFFFF 100%)"
+      }}>
+        <Logo size={120} />
+        <div style={{
+          fontSize: 22, fontWeight: 600,
+          color: "#2D4A3E", textAlign: "center",
+          maxWidth: 320
+        }}>
+          {t(lang, "profileLoadErrorTitle")}
+        </div>
+        <div style={{
+          fontSize: 15, color: "#5A7A6C",
+          textAlign: "center", maxWidth: 320,
+          lineHeight: 1.5
+        }}>
+          {t(lang, "profileLoadErrorBody")}
+        </div>
+        <button
+          onClick={() => loadUserData(userId)}
+          style={{
+            marginTop: 12,
+            padding: "14px 36px",
+            fontSize: 16, fontWeight: 600,
+            background: "#ACE1AF", color: "#1A3328",
+            border: "none", borderRadius: 12,
+            cursor: "pointer",
+            minWidth: 160
+          }}
+        >
+          {t(lang, "profileLoadRetry")}
+        </button>
+      </div>
+    );
+  }
 
   if (!profile) return (
     <OnboardingScreen
