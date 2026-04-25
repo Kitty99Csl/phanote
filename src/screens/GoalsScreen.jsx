@@ -69,13 +69,27 @@ export function GoalsScreen({ profile, transactions }) {
     if (!goal) return;
     const newSaved = goal.saved_amount + amount;
     const isComplete = newSaved >= goal.target_amount;
-    await supabase.from("goals").update({ saved_amount: newSaved, is_completed: isComplete }).eq("id", goalId);
+    const previousGoals = goals;
+
+    // Optimistic update
     if (isComplete) {
       setGoals(prev => prev.filter(g => g.id !== goalId));
     } else {
       setGoals(prev => prev.map(g => g.id === goalId ? { ...g, saved_amount: newSaved } : g));
     }
-    setAddToGoal(null);
+
+    try {
+      const { error } = await supabase
+        .from("goals")
+        .update({ saved_amount: newSaved, is_completed: isComplete })
+        .eq("id", goalId);
+      if (error) throw error;
+      setAddToGoal(null);
+    } catch (e) {
+      console.error("Goal addSavings error:", e);
+      setGoals(previousGoals);
+      showToast(t(lang, "toastGoalError"), "error");
+    }
   };
 
   const deleteGoal = (id) => setPendingDeleteGoalId(id);
@@ -83,8 +97,17 @@ export function GoalsScreen({ profile, transactions }) {
   const performDeleteGoal = async () => {
     const id = pendingDeleteGoalId;
     if (!id) return;
-    await supabase.from("goals").delete().eq("id", id);
+    const previousGoals = goals;
     setGoals(prev => prev.filter(g => g.id !== id));
+    try {
+      const { error } = await supabase.from("goals").delete().eq("id", id);
+      if (error) throw error;
+      setPendingDeleteGoalId(null);
+    } catch (e) {
+      console.error("Goal delete error:", e);
+      setGoals(previousGoals);
+      showToast(t(lang, "toastGoalError"), "error");
+    }
   };
 
   // Smart suggestion: which expense category to cut
