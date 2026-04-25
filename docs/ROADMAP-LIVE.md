@@ -2,17 +2,17 @@
 
 > **Status:** Current source of truth (live roadmap, updated every session wrap-up)
 
-> Last updated: 2026-04-24 (Session 24 — Sprint M.1 CLOSED; Sprint M.2 next)
+> Last updated: 2026-04-25 (Session 25 — Sprint M.2a CLOSED; Sprint M.2b next)
 
 ## Current State
-- **Active sprint:** Sprint M (Truthfulness Hardening) — **Part 1 CLOSED 2026-04-24**, Part 2 pending
-- **Production hash (Phajot main app):** **index-DhdWacHa.js** (Sprint M.1 deploy 2026-04-24, flipped from index-CJY85dLV.js held since Session 21.6)
+- **Active sprint:** Sprint M (Truthfulness Hardening) — **Part 1 + 2a CLOSED**, Part 2b pending
+- **Production hash (Phajot main app):** **index-DekFTcxm.js** (Sprint M.2a deploy 2026-04-25, flipped from index-DhdWacHa.js)
 - **Tower bundle:** index-DX3GSv9O.js (Session 23 deploy, unchanged)
 - **Worker version:** 4.8.2 (unchanged since Sprint I)
 - **Supabase-js version:** 2.104.0
 - **Migrations applied:** 16 (latest: 016 — `complete_pin_reset` SECURITY DEFINER RPC)
-- **Latest commit:** `<this wrap>` (Session 24 wrap docs)
-- **Next action:** Sprint M.2 — screen-level rollback patterns (estimated 2.5 hrs)
+- **Latest commit:** `<this wrap>` (Session 25 wrap)
+- **Next action:** Sprint M.2b — BudgetScreen + StatementScanFlow + streak.js + data-quality (estimated ~2 hrs)
 
 ---
 
@@ -32,7 +32,7 @@ Full artifacts: `docs/review/2026-04-24/`:
 - `FULL-REVIEW-SUMMARY.md` — GPT Codex's consolidated summary (as-received, preserved verbatim)
 - `REVIEW-LOG.md` — GPT Codex's per-batch review log (as-received)
 - `TRIAGE.md` — CTO analysis: which findings are legit, which are partial, which to reject
-- `SPRINT-M-SCOPE.md` — Sprint M definition of done + scope lock (Session M.2 targets still active)
+- `SPRINT-M-SCOPE.md` — Sprint M definition of done + scope lock (Session M.2b targets still active)
 - `SPRINT-N-PREVIEW.md` — Sprint N shape (pending Phase A live device data)
 
 ---
@@ -43,7 +43,8 @@ Full artifacts: `docs/review/2026-04-24/`:
 
 | Priority | Sprint | Theme | Est. sessions | Status | Rationale |
 |----------|--------|-------|---------------|--------|-----------|
-| 🔥 **ACTIVE** | **Sprint M.2 — Truthfulness Hardening Part 2** | Screen-level rollback patterns + data-quality fixes | 1 session (~2.5 hrs) | **NEXT** | Sprint M.1 closed first 4 P1 findings; M.2 closes remaining screen-level writes |
+| 🔥 **ACTIVE** | **Sprint M.2b — Truthfulness Hardening Part 2 remainder** | BudgetScreen + StatementScanFlow + streak.js + data-quality | 1 session (~2 hrs) | **NEXT** | Sprint M.2a closed GoalsScreen; M.2b closes remaining screen-level writes |
+| ✅ DONE | **Sprint M.2a — Truthfulness Hardening Part 2 (Section A)** | GoalsScreen rollback patterns | 1 session | **CLOSED 2026-04-25** | Commits c5bd19d + wrap |
 | ✅ DONE | **Sprint M.1 — Truthfulness Hardening Part 1** | Backend helpers + loadUserData retry UI | 1 session | **CLOSED 2026-04-24** | Commits 3d0eba7 + wrap |
 | 🔥 NEXT | **Sprint N — UX Hardening (Mobile)** | Modal audit, keyboard-offset fixes, Sheet geometry rework | 2-3 sessions (~6-8 hrs) | Pending M close | Speaker + wife confirm active daily friction |
 | 📋 Then | **Sprint O — OCR Instrumentation** | Migration 017 + worker `/parse-statement` instrumentation | 1 session (~2 hrs) | Pending | Prerequisite for Sprint I-real and Sprint L |
@@ -95,11 +96,22 @@ Roadmap restructured after external review (GPT Codex 5.4 + peer). Sprints M and
 | # | Commit | What | Status |
 |---|--------|------|--------|
 | 1 | 3d0eba7 | Backend helpers + loadUserData retry UI | ✅ |
-| 2 | `<this wrap>` | Session 24 wrap docs | ✅ |
+| 2 | e26a509 | Session 24 wrap docs | ✅ |
 
 **Bundle flip:** index-CJY85dLV.js → index-DhdWacHa.js  
 **Risks closed:** Review-P1-1, Review-P1-2, Discovery-M1-1a, Discovery-M1-1b  
 **Open threads captured:** OT-M-5, OT-M-6, OT-M-7, OT-M-8
+
+### Sprint M.2a — GoalsScreen Truthfulness (Session 25) — CLOSED 2026-04-25
+
+| # | Commit | What | Status |
+|---|--------|------|--------|
+| 1 | c5bd19d | GoalsScreen performDeleteGoal + addSavings hardening | ✅ |
+| 2 | `<this wrap>` | Session 25 wrap docs | ✅ |
+
+**Bundle flip:** index-DhdWacHa.js → index-DekFTcxm.js  
+**Risks closed:** Review-P1-5 partial (DELETE + ADD halves; UPDATE half = updateGoal legacy out of scope)  
+**Open threads carried:** OT-M.2-1 through OT-M.2-6
 
 ---
 
@@ -112,31 +124,35 @@ Roadmap restructured after external review (GPT Codex 5.4 + peer). Sprints M and
 | Session 22 | index-CJY85dLV.js | index-DcC1f2x6.js | 4.8.0 | Tower Room 6 |
 | Session 23 | index-CJY85dLV.js | **index-DX3GSv9O.js** | **4.8.2** | Backend hygiene |
 | Session 23.5 | index-CJY85dLV.js | index-DX3GSv9O.js | 4.8.2 | Docs-only pivot |
-| **Session 24** | **index-DhdWacHa.js** | index-DX3GSv9O.js | 4.8.2 | Sprint M.1 ← current |
+| Session 24 | **index-DhdWacHa.js** | index-DX3GSv9O.js | 4.8.2 | Sprint M.1 |
+| **Session 25** | **index-DekFTcxm.js** | index-DX3GSv9O.js | 4.8.2 | Sprint M.2a (GoalsScreen) ← current |
 
 ---
 
 ## Cross-sprint risk register (open items)
 
-See `docs/RISKS.md` for full open/closed risk tracking. Open post-Session-24:
+See `docs/RISKS.md` for full open/closed risk tracking. Open post-Session-25:
 
-- **Review-P1-3** — StatementScanFlow reports success before saves land (Sprint M.2 target)
-- **Review-P1-5** — GoalsScreen silent save/delete (Sprint M.2 target)
+- **Review-P1-3** — StatementScanFlow reports success before saves land (Sprint M.2b target)
+- **Review-P1-5 partial** — GoalsScreen save/delete (DELETE + ADD CLOSED Sprint M.2a; updateGoal legacy throw audit deferred to Sprint N)
 - **Review-P1-6** — ProUpgradeScreen inert CTA (DEFERRED — by-design pre-launch, Sprint K)
 - **Review-P1-4** — Sheet.jsx + modal keyboard geometry (Sprint N)
-- **Review-P2-7/8/10/11/12/13** — Multiple P2 findings (Sprint M.2 + Sprint N + Sprint P)
+- **Review-P2-7/8/10/11/12/13** — Multiple P2 findings (Sprint M.2b + Sprint N + Sprint P)
 - **OT-M-5, OT-M-6, OT-M-7, OT-M-8** — Sprint M.1 open threads (see Session 24 RISKS.md)
+- **OT-M.2-1 through OT-M.2-6** — Sprint M.2a open threads (see Session 25 DECISIONS.md)
 
 ---
 
 ## Notes for next CTO / next Claude
 
-1. **Sprint M.2 must smoke-test in Codespaces.** Sprint M.1 Phase C was deferred due to local Windows environment issues. Don't repeat — stay in Codespaces.
+1. **Sprint M.2b can ship from local Windows** — Session 25 fixed the env (Node 24.13.1 + .env.local + lockfile-verified `npm ci`). Codespaces still works as fallback.
 
-2. **Handler contract rule (OT-M-8) needs documentation in CLAUDE.md at Sprint M.2 wrap.** Rule: modal-called handlers throw; event-called handlers revert + toast.
+2. **Handler contract rule (OT-M-8) needs documentation in CLAUDE.md at Sprint M.2b wrap.** Rule: modal-called handlers throw; event-called handlers revert + toast.
 
-3. **OT-M-7 may merge into Sprint M.2 if trivial.** `handleUpdateCategory` Session 10 throw — verify `EditTransactionModal` and `QuickEditToast` callers have try/catch. If missing, add them (minor scope creep acceptable).
+3. **OT-M-7 may merge into Sprint M.2b or N if trivial.** `handleUpdateCategory` Session 10 throw — verify `EditTransactionModal` and `QuickEditToast` callers have try/catch. Same applies to `updateGoal` in GoalsScreen (OT-M.2-6).
 
-4. **Sprint N starts with live device audit (Phase A) — NON-NEGOTIABLE.** Speaker + wife spend 30-45 min testing every modal before coding begins.
+4. **Sprint M.2b Batch 3 (StatementScanFlow) is the highest blast radius batch in Sprint M.** Real money math, multi-currency, multi-row import. Run it FRESH, not tired.
 
-5. **Review artifacts live in `docs/review/2026-04-24/`** — preserve as historical record.
+5. **Sprint N starts with live device audit (Phase A) — NON-NEGOTIABLE.** Speaker + wife spend 30-45 min testing every modal before coding begins.
+
+6. **Review artifacts live in `docs/review/2026-04-24/`** — preserve as historical record.

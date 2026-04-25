@@ -1,144 +1,124 @@
-# Current sprint — Sprint M.2 (Truthfulness Hardening — Part 2)
+# Current sprint — Sprint M.2b (Truthfulness Hardening — Part 2 remainder)
 
-> **Status:** Scope-locked, not yet started. Sprint M.1 CLOSED 2026-04-24.  
-> **Last updated:** 2026-04-24  
-> **Sprint M part 1:** CLOSED (Session 24, commits `3d0eba7` + `<this wrap>`)
-
----
-
-## Sprint M.1 summary (CLOSED)
-
-**Theme:** Backend helpers + loadUserData retry UI  
-**Duration:** Session 24 (~2h 15min)  
-**Commits:** 2 (feat `3d0eba7` + wrap `<this>`)  
-**Files touched:** 3 — `src/lib/db.js`, `src/App.jsx`, `shared/i18n-data.js`  
-**LoC delta:** +119 / -12  
-**Bundle hash:** flipped `CJY85dLV` → `DhdWacHa`  
-
-**Risks closed:** 4 P1 findings (Review-P1-1, Review-P1-2, Discovery-M1-1a, Discovery-M1-1b)
-
-**Full context:** `docs/session-24/SUMMARY.md`
+> **Status:** Scope-locked, not yet started. Sprint M.2a CLOSED 2026-04-25.  
+> **Last updated:** 2026-04-25  
+> **Sprint M.1:** CLOSED Session 24
+> **Sprint M.2a:** CLOSED Session 25 (commit c5bd19d + wrap)
 
 ---
 
-## Sprint M.2 — Truthfulness Hardening (Part 2)
+## Sprint M.2a summary (CLOSED)
 
-**Theme:** Screen-level rollback patterns + data-quality fixes in `src/lib/`
+**Theme:** GoalsScreen truthfulness hardening
+**Duration:** Session 25 (~3 hours including ~45min env setup)
+**Commits:** 2 (feat c5bd19d + wrap)
+**Files touched:** 1 — src/screens/GoalsScreen.jsx
+**LoC delta:** +23/-5
+**Bundle hash:** flipped DhdWacHa → DekFTcxm
+**Risks closed:** Review-P1-5 partial (DELETE + ADD halves)
 
-**Sessions:** 1 (planned ~2.5 hrs)
-
-**Driver:** 2026-04-24 external review remaining P1 + P2 findings + OT captures from Sprint M.1.
+**Full context:** docs/session-25/SUMMARY.md
 
 ---
 
-### Sprint M.2 definition of done
+## Sprint M.2b — Truthfulness Hardening (remainder)
+
+**Theme:** BudgetScreen + StatementScanFlow + streak.js + supporting data-quality fixes
+
+**Sessions:** 1 (planned ~2 hours, fresh energy required)
+
+**Driver:** Continue from Sprint M.2a — remaining Sprint M scope.
+
+---
+
+### Sprint M.2b definition of done
 
 Must meet ALL:
-- [ ] `GoalsScreen performDeleteGoal` + `addSavings` handle error honestly (pattern from Session 10 `updateGoal`)
 - [ ] `BudgetScreen saveBudget` optimistic update rolls back on failed write
-- [ ] `StatementScanFlow handleImport` truthful: `onAdd` returns `{ ok }`, loop tracks failures, honest count on done
+- [ ] `StatementScanFlow handleImport` truthful: `onAdd` returns `{ ok }`, loop tracks failures, honest "Imported N of M" UX
 - [ ] `streak.js` updates local state only AFTER persistence confirms (revert on failure)
 - [ ] `constants.js txDedupKey` includes currency + type
 - [ ] `categories.js normalizeCategory` unknown → "other" (not food/salary)
-- [ ] `StatementScanFlow deleteBatch` same pattern as Batch 1
-- [ ] Offline-mode smoke test passes (requires working Codespaces env this time)
+- [ ] `StatementScanFlow deleteBatch` same pattern as Batch 1 helpers
+- [ ] Per-batch smoke test in browser (same as M.2a)
 - [ ] Single atomic feat + wrap per Rule 20
-- [ ] All remaining Review-P1-* risks marked CLOSED
-- [ ] Sprint M formally closes at M.2 wrap
+- [ ] Sprint M formally closes at M.2b wrap
 
 ---
 
-### Session M.2 phase structure
+### Session M.2b phase structure
 
-Per Sprint I / Sprint M.1 rhythm:
+Per M.2a rhythm (proven this session):
 
-**Phase A (~10 min):** Design questions
-- D-M2-Q1: StatementScanFlow import failure UX — N-of-M count OR retry-failed flow?
-- D-M2-Q2: addSavings rollback — revert optimistic savings on failure?
-- D-M2-Q3: streak.js rollback — full revert OR accept eventual consistency?
+**Phase A (~5 min):** Pre-locked design questions confirmed (D-M2-Q1, Q3 still apply)
 
-**Phase B (~90 min):** Build in 4 batches, paste-back per site
+**Phase B (~75 min):** Build in 4 batches with paste-back per batch
 
-Batch 1 — `GoalsScreen.jsx`:
-- `performDeleteGoal` — check `{ error }`, show toast, keep goal on failure
-- `addSavings` — check `{ error }`, revert saved_amount on failure, toast
+Batch 2 — BudgetScreen.jsx (~15 min):
+- saveBudget — capture previous map, revert on throw, toast
 
-Batch 2 — `BudgetScreen.jsx`:
-- `saveBudget` — capture previous state, revert on throw, toast
-
-Batch 3 — `StatementScanFlow.jsx`:
-- `handleImport` — `onAdd` returns `{ ok }`, loop tracks failures
+Batch 3 — StatementScanFlow.jsx (~30 min, the BIG one):
+- handleImport — onAdd returns `{ ok }`, loop tracks failures
 - Step "done" shows honest "Imported N of M, K failed" UX
-- `deleteBatch` — same pattern as Batch 1 helpers
+- deleteBatch — same pattern as Batch 1 helpers
+- HIGHEST blast radius: real money math, multi-currency
 
-Batch 4 — `src/lib/streak.js`:
+Batch 4 — src/lib/streak.js (~15 min):
 - Save previous state → optimistic → await → revert on failure → toast
 
-Plus data-quality:
-- `src/lib/constants.js` — `txDedupKey` includes currency + type
-- `src/lib/categories.js` — unknown fallback to "other" both directions
+Plus data-quality (~15 min):
+- src/lib/constants.js — txDedupKey includes currency + type
+- src/lib/categories.js — unknown fallback to "other" both directions
 
-**Phase C (~30 min):** Smoke test — THIS TIME IN CODESPACES
-- Online regression
-- Offline goal delete/add-savings
-- Offline budget save
-- Statement import simulated partial failure
-- Streak drift test
+**Phase C (~15-20 min):** Per-batch smoke test in browser (Sprint M.2a pattern)
 
 **Phase D (~15 min):** Atomic Rule 20 wrap commit
 - Sprint M formally closes here
-- Sentinel re-sync for Session 25 (M.2)
+- Sentinel re-sync standalone
 
 ---
 
-## What NOT to do in Sprint M.2
+## What NOT to do in Sprint M.2b
 
-Scope discipline — these wait for their own sprint:
-- ❌ NO `src/components/Sheet.jsx` — Sprint N
-- ❌ NO `src/modals/*` — Sprint N  
+Scope discipline:
+- ❌ NO src/components/Sheet.jsx — Sprint N
+- ❌ NO src/modals/* — Sprint N
 - ❌ NO Tower changes — Sprint P
-- ❌ NO OCR instrumentation — Sprint O
-- ❌ NO ProUpgradeScreen wiring — Sprint K
-- ❌ NO OT-M-7 `handleUpdateCategory` caller audit — Sprint N or add-on
-- ❌ NO OT-M-5, OT-M-6 dbSaveMemory/dbTrackEvent consistency — Sprint P
+- ❌ NO updateGoal legacy throw audit — Sprint N
+- ❌ NO new features
 
 ---
 
-## Open threads from Sprint M.1 (not M.2 scope)
+## Open threads from Sprint M.1 (carried)
 
-Captured in `docs/session-24/RISKS.md`:
-- **OT-M-5** — dbSaveMemory SELECT error handling (Sprint P)
-- **OT-M-6** — dbTrackEvent internal `{ error }` check (Sprint P)
-- **OT-M-7** — handleUpdateCategory caller try/catch audit (Sprint N)
-- **OT-M-8** — Handler contract rule (documented in DECISIONS.md, to merge into CLAUDE.md at M.2 wrap)
+- OT-M-5 — dbSaveMemory SELECT error handling (Sprint P)
+- OT-M-6 — dbTrackEvent internal `{ error }` check (Sprint P)
+- OT-M-7 — handleUpdateCategory caller try/catch audit (Sprint N)
+- OT-M-8 — Handler contract rule (modal throw / event no-throw — documented in Session 24 DECISIONS.md, to merge into CLAUDE.md at Sprint M.2b wrap)
+
+## Open threads from Sprint M.2a (carried)
+
+- OT-M.2-1 through OT-M.2-5 — captured in Session 25 DECISIONS.md (= Sprint M.2b scope)
+- OT-M.2-6 — updateGoal Session 10 legacy throw — Sprint N
 
 ---
 
-## Smoke test environment for M.2
+## Smoke test environment for M.2b
 
-**Per Session 24 learning:** Stay in Codespaces for runtime verification. Local Windows lacks required Node 24 + `.env.local`. Do NOT switch mid-sprint.
+**Local Windows is now production-fidelity** post Session 25 env setup:
+- Node 24.13.1 ✅
+- npm 11.8.0 ✅
+- .env.local present ✅
+- Lockfile verified compatible ✅
 
-**M.2 smoke prerequisites:**
-- Codespaces session open and healthy
-- Node 24.13.1 active (per `.nvmrc`)
-- `.env.local` present with Supabase credentials
-- `npm run dev` succeeds before batches begin
+Speaker can ship M.2b from local OR Codespaces — both work. Prefer local for continuity.
 
 ---
 
 ## Full context
 
-- `docs/session-24/SUMMARY.md` — M.1 session recap
-- `docs/session-24/DECISIONS.md` — D-M1-Q1 through Q5 + Discovery-M1-1
-- `docs/session-24/RISKS.md` — closed + open risks
-- `docs/review/2026-04-24/SPRINT-M-SCOPE.md` — original Sprint M scope (Session M.2 targets still accurate)
-- `docs/ROADMAP-LIVE.md` — post-M.1 current state
-
----
-
-## Archive — previous sprints
-
-Sprint I (Admin-Approved Recovery System) — CLOSED 2026-04-22. 5 sessions, 11 commits, 16 risks closed.  
-Sprint M.1 (Truthfulness Hardening Part 1) — CLOSED 2026-04-24. 1 session, 2 commits, 4 risks closed.
-
-Complete sprint history: `docs/ROADMAP-LIVE.md#sprint-archive`.
+- docs/session-25/SUMMARY.md — M.2a session recap
+- docs/session-25/DECISIONS.md — D-M2-Q1..Q3 + D-Batch1-Q1..Q3 + D-Sprint-Split
+- docs/session-24/SUMMARY.md — M.1 session recap
+- docs/review/2026-04-24/SPRINT-M-SCOPE.md — original Sprint M scope (M.2b targets still accurate)
+- docs/ROADMAP-LIVE.md — post-M.2a current state
