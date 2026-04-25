@@ -2,6 +2,20 @@
 
 > **Status:** Current source of truth (operating rules + sprint context)
 
+> **Naming rule (MUST FOLLOW):** Product name is **Phajot** (ພາຈົດ).
+> Use "Phajot" in ALL user-facing docs, conversations, code comments,
+> and new content. "Phanote" is the legacy name retained ONLY in:
+> - Repo name: `Kitty99Csl/phanote`
+> - Auth domain: `@phanote.app`
+> - Worker filename: `phanote-api-worker.js`
+> - localStorage keys: `phanote-*`
+> - Derived-password prefix: `Ph4n0te`
+> - Historical docs in `docs/session-1/` through `docs/session-5/` (don't rewrite)
+>
+> When in doubt: use Phajot. The rename happened April 2026 due to AIDC
+> Laos trademark conflict. Both names appear in this codebase by design,
+> but only Phajot is current.
+
 ## Project
 Phajot (ພາຈົດ) — multi-currency personal finance PWA for Laos (LAK, THB, USD). Solo developer: Kitty. For personal + family use first, public launch later.
 
