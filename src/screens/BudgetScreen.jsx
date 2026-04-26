@@ -37,22 +37,23 @@ export function BudgetScreen({ profile, transactions }) {
 
   const saveBudget = async (catId, currency, amount) => {
     const key = `${catId}_${currency}`;
+    const previousBudgets = budgets;
     setBudgets(prev => amount > 0
       ? { ...prev, [key]: amount }
       : Object.fromEntries(Object.entries(prev).filter(([k]) => k !== key))
     );
     try {
-      const res = amount > 0
+      const { error } = amount > 0
         ? await supabase.from("budgets").upsert({
             user_id: userId, category_id: catId, currency, monthly_limit: amount,
             updated_at: new Date().toISOString(),
           }, { onConflict: "user_id,category_id,currency" })
         : await supabase.from("budgets").delete().eq("user_id", userId).eq("category_id", catId).eq("currency", currency);
-      if (res.error) throw res.error;
+      if (error) throw error;
     } catch (e) {
       console.error("Budget save error:", e);
+      setBudgets(previousBudgets);
       showToast(t(lang, "toastBudgetError"), "error");
-      throw e;
     }
   };
 
