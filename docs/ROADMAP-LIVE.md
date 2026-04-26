@@ -2,17 +2,17 @@
 
 > **Status:** Current source of truth (live roadmap, updated every session wrap-up)
 
-> Last updated: 2026-04-25 (Session 25 — Sprint M.2a CLOSED; Sprint M.2b next)
+> Last updated: 2026-04-26 (Session 26 — Sprint M.2b1 + M.2b2 CLOSED; Sprint M.2b3 next)
 
 ## Current State
-- **Active sprint:** Sprint M (Truthfulness Hardening) — **Part 1 + 2a CLOSED**, Part 2b pending
-- **Production hash (Phajot main app):** **index-DekFTcxm.js** (Sprint M.2a deploy 2026-04-25, flipped from index-DhdWacHa.js)
+- **Active sprint:** Sprint M (Truthfulness Hardening) — **Part 1 + 2a + 2b1 + 2b2 CLOSED**, Part 2b3 pending (final batch)
+- **Production hash (Phajot main app):** **index-6cXL-RDb.js** (Sprint M.2b2 deploy 2026-04-26, flipped from index-DekFTcxm.js → index-C3dtQtFg.js → index-6cXL-RDb.js)
 - **Tower bundle:** index-DX3GSv9O.js (Session 23 deploy, unchanged)
 - **Worker version:** 4.8.2 (unchanged since Sprint I)
 - **Supabase-js version:** 2.104.0
 - **Migrations applied:** 16 (latest: 016 — `complete_pin_reset` SECURITY DEFINER RPC)
-- **Latest commit:** `<this wrap>` (Session 25 wrap)
-- **Next action:** Sprint M.2b — BudgetScreen + StatementScanFlow + streak.js + data-quality (estimated ~2 hrs)
+- **Latest commit:** `<this wrap>` (Session 26 wrap — M.2b1 + M.2b2 closed)
+- **Next action:** Sprint M.2b3 — StatementScanFlow handleImport + deleteBatch + App.jsx return shape (~75-90 min, fresh energy required)
 
 ---
 
@@ -107,11 +107,31 @@ Roadmap restructured after external review (GPT Codex 5.4 + peer). Sprints M and
 | # | Commit | What | Status |
 |---|--------|------|--------|
 | 1 | c5bd19d | GoalsScreen performDeleteGoal + addSavings hardening | ✅ |
-| 2 | `<this wrap>` | Session 25 wrap docs | ✅ |
+| 2 | 0aac92b | Session 25 wrap docs | ✅ |
 
 **Bundle flip:** index-DhdWacHa.js → index-DekFTcxm.js  
 **Risks closed:** Review-P1-5 partial (DELETE + ADD halves; UPDATE half = updateGoal legacy out of scope)  
 **Open threads carried:** OT-M.2-1 through OT-M.2-6
+
+### Sprint M.2b1 — BudgetScreen Truthfulness (Session 26) — CLOSED 2026-04-26
+
+| # | Commit | What | Status |
+|---|--------|------|--------|
+| 1 | b539310 | BudgetScreen saveBudget revert + OT-M-8 | ✅ |
+
+**Bundle:** index-DekFTcxm.js → index-C3dtQtFg.js
+**Risks closed:** Review-P2-10
+
+### Sprint M.2b2 — streak/dedup/categories Truthfulness (Session 26) — CLOSED 2026-04-26
+
+| # | Commit | What | Status |
+|---|--------|------|--------|
+| 1 | f663579 | streak.js + constants.js + categories.js | ✅ |
+| 2 | `<this wrap>` | Session 26 wrap docs | ✅ |
+
+**Bundle:** index-C3dtQtFg.js → index-6cXL-RDb.js
+**Risks closed:** Review-P2-7, P2-8, P2-11
+**Open threads carried:** OT-M.2b3-1 through OT-M.2b3-7
 
 ---
 
@@ -125,21 +145,24 @@ Roadmap restructured after external review (GPT Codex 5.4 + peer). Sprints M and
 | Session 23 | index-CJY85dLV.js | **index-DX3GSv9O.js** | **4.8.2** | Backend hygiene |
 | Session 23.5 | index-CJY85dLV.js | index-DX3GSv9O.js | 4.8.2 | Docs-only pivot |
 | Session 24 | **index-DhdWacHa.js** | index-DX3GSv9O.js | 4.8.2 | Sprint M.1 |
-| **Session 25** | **index-DekFTcxm.js** | index-DX3GSv9O.js | 4.8.2 | Sprint M.2a (GoalsScreen) ← current |
+| Session 25 | index-DekFTcxm.js | index-DX3GSv9O.js | 4.8.2 | Sprint M.2a (GoalsScreen) |
+| Session 26 (M.2b1) | **index-C3dtQtFg.js** | index-DX3GSv9O.js | 4.8.2 | Sprint M.2b1 BudgetScreen |
+| **Session 26 (M.2b2)** | **index-6cXL-RDb.js** | index-DX3GSv9O.js | 4.8.2 | Sprint M.2b2 streak + supporting ← current |
 
 ---
 
 ## Cross-sprint risk register (open items)
 
-See `docs/RISKS.md` for full open/closed risk tracking. Open post-Session-25:
+See `docs/RISKS.md` for full open/closed risk tracking. Open post-Session-26:
 
-- **Review-P1-3** — StatementScanFlow reports success before saves land (Sprint M.2b target)
+- **Review-P1-3** — StatementScanFlow reports success before saves land (Sprint M.2b3 target)
 - **Review-P1-5 partial** — GoalsScreen save/delete (DELETE + ADD CLOSED Sprint M.2a; updateGoal legacy throw audit deferred to Sprint N)
 - **Review-P1-6** — ProUpgradeScreen inert CTA (DEFERRED — by-design pre-launch, Sprint K)
 - **Review-P1-4** — Sheet.jsx + modal keyboard geometry (Sprint N)
-- **Review-P2-7/8/10/11/12/13** — Multiple P2 findings (Sprint M.2b + Sprint N + Sprint P)
+- **Review-P2-12, P2-13** — P2 findings remaining (Sprint M.2b3 + Sprint N + Sprint P) — P2-7, P2-8, P2-10, P2-11 CLOSED Session 26
 - **OT-M-5, OT-M-6, OT-M-7, OT-M-8** — Sprint M.1 open threads (see Session 24 RISKS.md)
 - **OT-M.2-1 through OT-M.2-6** — Sprint M.2a open threads (see Session 25 DECISIONS.md)
+- **OT-M.2b3-1 through OT-M.2b3-7** — Sprint M.2b3 open threads (see Session 26 DECISIONS.md)
 
 ---
 
