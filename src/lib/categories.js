@@ -153,5 +153,5 @@ export const normalizeCategory=(cat,type)=>{
     income:type==="income"?"salary":"other",
     other:type==="income"?"other_inc":"other",
   };
-  return m[cat?.toLowerCase()]||(type==="income"?"salary":"food");
+  return m[cat?.toLowerCase()]||(type==="income"?"other_inc":"other");
 };

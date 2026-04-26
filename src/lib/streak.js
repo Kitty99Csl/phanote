@@ -36,6 +36,7 @@ export const getLevelProgress = (xp=0) => {
 };
 
 export const updateStreak = async (userId, currentProfile, setProfile) => {
+  const previousProfile = currentProfile;
   try {
     const todayStr = new Date().toISOString().split("T")[0];
     const lastStr  = currentProfile.streakLastDate || "";
@@ -58,9 +59,14 @@ export const updateStreak = async (userId, currentProfile, setProfile) => {
 
     const updated = {...currentProfile, streakCount, streakLastDate: todayStr, xp};
     setProfile(updated);
-    await supabase.from("profiles").update({
+    const { error } = await supabase.from("profiles").update({
       streak_count: streakCount, streak_last_date: todayStr, xp,
     }).eq("id", userId);
+    if (error) throw error;
     return bonusToast;
-  } catch(e) { console.error("Streak error:", e); return null; }
+  } catch(e) {
+    console.warn("Streak update failed, reverting:", e);
+    setProfile(previousProfile);
+    return null;
+  }
 };
