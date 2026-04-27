@@ -35,7 +35,7 @@ const DEPLOYED_AT = '2026-04-20T10:57:56Z';
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Plan-Tier",
 };
 
 // ─── /health caches (worker-global, persist across warm instances) ───
