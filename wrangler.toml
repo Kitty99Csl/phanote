@@ -8,6 +8,9 @@ routes = [
   { pattern = "api.phanote.com/*", zone_name = "phanote.com" }
 ]
 
+[placement]
+mode = "smart"
+
 [vars]
 AI_ENABLED = "true"
 ADVISOR_ENABLED = "true"
