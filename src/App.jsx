@@ -492,9 +492,12 @@ export default function App(){
         for (const [k, v] of Object.entries(bonusToast.params)) msg = msg.replace(`{${k}}`, v);
         setStreakToast(msg);
       }
+      return { ok: true, id: saved.id };
     } catch (e) {
       console.error("Save tx error:", e);
-      showToast(t(profile?.lang || "en", "toastSaveError"), "error");
+      // Batch imports surface their own end-of-run summary; suppress per-row toast.
+      if (!tx.isBatch) showToast(t(profile?.lang || "en", "toastSaveError"), "error");
+      return { ok: false };
     }
   };
 

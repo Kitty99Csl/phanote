@@ -31,6 +31,7 @@ import {
 } from "../lib/categories";
 import { txDedupKey } from "../lib/constants";
 import { supabase } from "../lib/supabase";
+import { showToast } from "../lib/toast";
 import { Flag } from "../components/Flag";
 import { ConfirmSheet } from "../components/ConfirmSheet";
 
@@ -49,6 +50,8 @@ export function StatementScanFlow({ profile, lang, onClose, onAdd, customCategor
   const [batchHistory, setBatchHistory] = useState([]);
   const [viewBatchId, setViewBatchId] = useState(null);
   const [pendingDeleteBatch, setPendingDeleteBatch] = useState(null);
+  // Shape: { ok: number, fail: number, total: number }
+  const [importResult, setImportResult] = useState(null);
   const fileRef = useRef();
   const imagesRef = useRef(images);
   const { busy: importing, run: runImport } = useClickGuard();
@@ -72,12 +75,30 @@ export function StatementScanFlow({ profile, lang, onClose, onAdd, customCategor
   }, [profile?.userId, step === "done"]);
 
   const deleteBatch = async (batchId) => {
+    // Capture before mutation
+    const previousBatchHistory = batchHistory;
+    const previousViewBatchId = viewBatchId;
+
+    // Optimistic mutation
+    setBatchHistory(prev => prev.filter(b => b.batch_id !== batchId));
+    setViewBatchId(null);
+    onDeleteBatch(batchId);
+
+    // Persist + check
     try {
-      await supabase.from("transactions").update({ is_deleted: true }).eq("batch_id", batchId).eq("user_id", profile?.userId);
-      setBatchHistory(prev => prev.filter(b => b.batch_id !== batchId));
-      onDeleteBatch(batchId);
-      setViewBatchId(null);
-    } catch (e) { console.error("Delete batch error:", e); }
+      const { error } = await supabase.from("transactions")
+        .update({ is_deleted: true })
+        .eq("batch_id", batchId)
+        .eq("user_id", profile?.userId);
+
+      if (error) throw error;
+    } catch (e) {
+      console.warn("deleteBatch failed:", e);
+      setBatchHistory(previousBatchHistory);
+      setViewBatchId(previousViewBatchId);
+      showToast(t(lang, "deleteBatchFailed"), "error");
+      // No throw — event-handler caller (per OT-M-8 contract)
+    }
   };
 
   const fmtRelative = (dateStr) => {
@@ -227,6 +248,8 @@ export function StatementScanFlow({ profile, lang, onClose, onAdd, customCategor
     const batchId = crypto.randomUUID();
     setStep("saving");
     setSaveProgress(0);
+    let successCount = 0;
+    let failCount = 0;
     for (let i = 0; i < toSave.length; i++) {
       const tx = toSave[i];
       const cat = findCat(tx.categoryId, customCategories);
@@ -243,14 +266,22 @@ export function StatementScanFlow({ profile, lang, onClose, onAdd, customCategor
         createdAt: new Date().toISOString(),
         rawInput: "statement-scan",
         batchId,
+        isBatch: true,
       };
-      onAdd(txObj);
+      const result = await onAdd(txObj);
+      if (result?.ok) successCount++; else failCount++;
       setSaveProgress(i + 1);
       // Small delay to avoid UI freeze
       if (i % 5 === 4) await new Promise(r => setTimeout(r, 50));
     }
+    setImportResult({ ok: successCount, fail: failCount, total: toSave.length });
     setStep("done");
   });
+
+  const handleRetry = () => {
+    setImportResult(null);
+    setStep("review");
+  };
 
   // ── Shared styles ──
   const headerStyle = { display:"flex", alignItems:"center", gap:12, padding:"calc(env(safe-area-inset-top,8px) + 12px) 20px 12px" };
@@ -259,6 +290,9 @@ export function StatementScanFlow({ profile, lang, onClose, onAdd, customCategor
   );
   const primaryBtn = (label, onClick, disabled=false) => (
     <button onClick={onClick} disabled={disabled} style={{ width:"100%", padding:"16px", borderRadius:18, border:"none", background:disabled?"rgba(45,45,58,0.1)":"#1A4020", color:disabled?T.muted:"#fff", fontSize:15, fontWeight:800, cursor:disabled?"default":"pointer", fontFamily:"'Noto Sans',sans-serif", opacity:disabled?0.5:1 }}>{label}</button>
+  );
+  const secondaryBtn = (label, onClick) => (
+    <button onClick={onClick} style={{ width:"100%", padding:"16px", borderRadius:18, border:"none", background:"transparent", color:T.dark, fontSize:15, fontWeight:800, cursor:"pointer", fontFamily:"'Noto Sans',sans-serif" }}>{label}</button>
   );
 
   return (
@@ -555,18 +589,50 @@ export function StatementScanFlow({ profile, lang, onClose, onAdd, customCategor
       )}
 
       {/* ── STEP 6: Done ── */}
-      {step === "done" && (
-        <div style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:40, gap:16 }}>
-          <div style={{ fontSize:48 }}>✅</div>
-          <div style={{ fontSize:18, fontWeight:800, color:T.dark, fontFamily:"'Noto Sans',sans-serif" }}>
-            {tpl("statementSuccess", { n: saveProgress })}
+      {step === "done" && (() => {
+        const r = importResult;
+        const okCount = r?.ok ?? saveProgress;
+        // Defensive: if importResult is null (shouldn't happen — Step 2 always sets it),
+        // fall through to all-success treating saveProgress as the count.
+        const isPartial   = r && r.ok > 0 && r.fail > 0;
+        const isAllFailed = r && r.ok === 0 && r.fail > 0;
+        const isAllSuccess = !isPartial && !isAllFailed;
+        return (
+          <div style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:40, gap:16 }}>
+            {isAllSuccess && (<>
+              <div style={{ fontSize:48 }}>✅</div>
+              <div style={{ fontSize:18, fontWeight:800, color:T.dark, fontFamily:"'Noto Sans',sans-serif", textAlign:"center" }}>
+                {tpl("statementSuccess", { n: okCount })}
+              </div>
+              <div style={{ fontSize:13, color:T.muted }}>{bank ? `${bank} · ` : ""}{currency}</div>
+              <div style={{ marginTop:12, width:"100%" }}>
+                {primaryBtn(t(lang, "statementDone"), () => onImportDone(okCount))}
+              </div>
+            </>)}
+            {isPartial && (<>
+              <div style={{ fontSize:48 }}>⚠️</div>
+              <div style={{ fontSize:18, fontWeight:800, color:"#D97706", fontFamily:"'Noto Sans',sans-serif", textAlign:"center" }}>
+                {tpl("statementImportPartial", { ok: r.ok, total: r.total, fail: r.fail })}
+              </div>
+              <div style={{ fontSize:13, color:T.muted }}>{bank ? `${bank} · ` : ""}{currency}</div>
+              <div style={{ marginTop:12, width:"100%", display:"flex", flexDirection:"column", gap:10 }}>
+                {primaryBtn(t(lang, "statementDone"), () => onImportDone(r.ok))}
+                {secondaryBtn(t(lang, "statementRetry"), handleRetry)}
+              </div>
+            </>)}
+            {isAllFailed && (<>
+              <div style={{ fontSize:48 }}>❌</div>
+              <div style={{ fontSize:18, fontWeight:800, color:"#C0392B", fontFamily:"'Noto Sans',sans-serif", textAlign:"center" }}>
+                {tpl("statementImportAllFailed")}
+              </div>
+              <div style={{ marginTop:12, width:"100%", display:"flex", flexDirection:"column", gap:10 }}>
+                {primaryBtn(t(lang, "statementRetry"), handleRetry)}
+                {secondaryBtn(t(lang, "statementCancel"), () => onImportDone(0))}
+              </div>
+            </>)}
           </div>
-          <div style={{ fontSize:13, color:T.muted }}>{bank ? `${bank} · ` : ""}{currency}</div>
-          <div style={{ marginTop:12 }}>
-            {primaryBtn(t(lang, "statementDone"), () => onImportDone(saveProgress))}
-          </div>
-        </div>
-      )}
+        );
+      })()}
       <ConfirmSheet
         open={!!pendingDeleteBatch}
         onClose={()=>setPendingDeleteBatch(null)}
