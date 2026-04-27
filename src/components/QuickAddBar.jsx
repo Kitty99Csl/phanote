@@ -24,6 +24,7 @@ import { t } from "../lib/i18n";
 import { findCat, normalizeCategory } from "../lib/categories";
 import { localParse } from "../lib/parser";
 import { dbSaveMemory } from "../lib/db";
+import { getAuthHeaders } from "../lib/supabase";
 import { ConfirmModal } from "../modals/ConfirmModal";
 import { OcrButton } from "./OcrButton";
 
@@ -39,11 +40,16 @@ export function QuickAddBar({lang,onAdd,customCategories=[],userId=null,onShowAd
     const text=input.trim();
     setStatus("parsing");
 
-    // Start AI in background immediately — don't wait
-    const aiPromise=fetch("https://api.phajot.com/parse",{
-      method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({text,userId})
-    }).then(r=>r.json()).catch(()=>null);
+    // Start AI in background immediately — don't wait. Auth headers
+    // resolved inside the promise chain so localParse runs in parallel
+    // and an expired session can't block the local-first save path.
+    const aiPromise=getAuthHeaders(profile).then(authHeaders=>
+      fetch("https://api.phajot.com/parse",{
+        method:"POST",
+        headers:{"Content-Type":"application/json",...authHeaders},
+        body:JSON.stringify({text})
+      }).then(r=>r.json())
+    ).catch(()=>null);
 
     const local=localParse(text);
     const customCatIds=customCategories.map(c=>c.id);

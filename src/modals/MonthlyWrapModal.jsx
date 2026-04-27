@@ -13,7 +13,7 @@ import { useState, useEffect } from "react";
 import Sheet from "../components/Sheet";
 import { T, fmt, fmtCompact } from "../lib/theme";
 import { i18n, t } from "../lib/i18n";
-import { supabase } from "../lib/supabase";
+import { supabase, getAuthHeaders } from "../lib/supabase";
 import { fetchWithTimeout, FetchTimeoutError } from "../lib/fetchWithTimeout";
 
 const getMonthName = (month, lang) => {
@@ -84,11 +84,15 @@ export function MonthlyWrapModal({ open, onClose, profile, transactions }) {
 
       const prevExp = computePrevMonthExpense(transactions, month);
 
+      const authHeaders = await getAuthHeaders(profile);
       const res = await fetchWithTimeout("https://api.phajot.com/monthly-report", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeaders,
+        },
         body: JSON.stringify({
-          user_id: userId, month, lang,
+          month, lang,
           transactions: monthTxs,
           prev_month_expense: Object.keys(prevExp).length ? prevExp : undefined,
         }),

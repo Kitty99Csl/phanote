@@ -30,7 +30,7 @@ import {
   normalizeCategory,
 } from "../lib/categories";
 import { txDedupKey } from "../lib/constants";
-import { supabase } from "../lib/supabase";
+import { supabase, getAuthHeaders } from "../lib/supabase";
 import { showToast } from "../lib/toast";
 import { Flag } from "../components/Flag";
 import { ConfirmSheet } from "../components/ConfirmSheet";
@@ -157,10 +157,14 @@ export function StatementScanFlow({ profile, lang, onClose, onAdd, customCategor
         })
       ));
 
+      const authHeaders = await getAuthHeaders(profile);
       const res = await fetchWithTimeout("https://api.phajot.com/parse-statement", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ images: encoded, currency, userId: profile?.userId }),
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeaders,
+        },
+        body: JSON.stringify({ images: encoded, currency }),
       }, 60000);
 
       const data = await res.json();

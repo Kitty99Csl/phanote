@@ -21,6 +21,7 @@
 import * as Sentry from '@sentry/cloudflare';
 import { computeCostUsd, PRICING_VERSION } from './lib/ai-costs.js';
 import { handleSupportConsoleRoute } from './lib/support-console/index.js';
+import { requireAuth, AuthError } from './lib/support-console/helpers.js';
 
 // Worker version
 const WORKER_VERSION = '4.8.2';
@@ -785,6 +786,22 @@ const handler = {
       // Kill switch check
       if (!isFeatureEnabled(env, "parse")) return disabledResponse("parse");
 
+      let authedUserId = null;
+      let planTier = 'free';
+      try {
+        const auth = await requireAuth(request, env);
+        authedUserId = auth.userId;
+        planTier = request.headers.get("X-Plan-Tier") === "pro" ? "pro" : "free";
+      } catch (err) {
+        if (err?.isAuthError) {
+          return Response.json(
+            { error: err.message || "Authentication required" },
+            { status: err.status, headers: CORS }
+          );
+        }
+        throw err;
+      }
+
       try {
         const body = await request.json();
         const text = body.text || "";
@@ -796,10 +813,9 @@ const handler = {
           generationConfig: { response_mime_type: "application/json", temperature: 0.1, maxOutputTokens: 1024 },
         });
 
-        // TODO Sprint E-ext: thread user_id + plan_tier from frontend auth context
         logAICall(env, ctx, {
-          user_id: null,
-          plan_tier: 'free',
+          user_id: authedUserId,
+          plan_tier: planTier,
           endpoint: '/parse',
           provider: 'gemini',
           model: 'gemini-2.5-flash',
@@ -834,6 +850,22 @@ const handler = {
     if (url.pathname === "/advise") {
       // Kill switch check
       if (!isFeatureEnabled(env, "advise")) return disabledResponse("advise");
+
+      let authedUserId = null;
+      let planTier = 'free';
+      try {
+        const auth = await requireAuth(request, env);
+        authedUserId = auth.userId;
+        planTier = request.headers.get("X-Plan-Tier") === "pro" ? "pro" : "free";
+      } catch (err) {
+        if (err?.isAuthError) {
+          return Response.json(
+            { error: err.message || "Authentication required" },
+            { status: err.status, headers: CORS }
+          );
+        }
+        throw err;
+      }
 
       try {
         const body = await request.json();
@@ -876,10 +908,9 @@ INSTRUCTIONS:
           messages: [{ role: "user", content: question }],
         });
 
-        // TODO Sprint E-ext: thread user_id + plan_tier from frontend auth context
         logAICall(env, ctx, {
-          user_id: null,
-          plan_tier: 'free',
+          user_id: authedUserId,
+          plan_tier: planTier,
           endpoint: '/advise',
           provider: 'anthropic',
           model: 'claude-haiku-4-5',
@@ -906,6 +937,22 @@ INSTRUCTIONS:
     if (url.pathname === "/ocr") {
       // Kill switch check
       if (!isFeatureEnabled(env, "ocr")) return disabledResponse("ocr");
+
+      let authedUserId = null;
+      let planTier = 'free';
+      try {
+        const auth = await requireAuth(request, env);
+        authedUserId = auth.userId;
+        planTier = request.headers.get("X-Plan-Tier") === "pro" ? "pro" : "free";
+      } catch (err) {
+        if (err?.isAuthError) {
+          return Response.json(
+            { error: err.message || "Authentication required" },
+            { status: err.status, headers: CORS }
+          );
+        }
+        throw err;
+      }
 
       try {
         const body = await request.json();
@@ -952,10 +999,9 @@ Rules:
           generationConfig: { temperature: 0, maxOutputTokens: 4096 },
         });
 
-        // TODO Sprint E-ext: thread user_id + plan_tier from frontend auth context
         logAICall(env, ctx, {
-          user_id: null,
-          plan_tier: 'free',
+          user_id: authedUserId,
+          plan_tier: planTier,
           endpoint: '/ocr',
           provider: 'gemini',
           model: 'gemini-2.5-flash',
@@ -1025,6 +1071,22 @@ Rules:
     if (url.pathname === "/parse-statement") {
       if (!isFeatureEnabled(env, "parse_statement")) return disabledResponse("parse_statement");
 
+      let authedUserId = null;
+      let planTier = 'free';
+      try {
+        const auth = await requireAuth(request, env);
+        authedUserId = auth.userId;
+        planTier = request.headers.get("X-Plan-Tier") === "pro" ? "pro" : "free";
+      } catch (err) {
+        if (err?.isAuthError) {
+          return Response.json(
+            { error: err.message || "Authentication required" },
+            { status: err.status, headers: CORS }
+          );
+        }
+        throw err;
+      }
+
       try {
         const body = await request.json();
         const images = body.images || [];
@@ -1057,10 +1119,9 @@ Rules:
           },
         });
 
-        // TODO Sprint E-ext: thread user_id + plan_tier from frontend auth context
         logAICall(env, ctx, {
-          user_id: null,
-          plan_tier: 'free',
+          user_id: authedUserId,
+          plan_tier: planTier,
           endpoint: '/parse-statement',
           provider: 'gemini',
           model: 'gemini-2.5-flash',
@@ -1130,9 +1191,25 @@ Rules:
     if (url.pathname === "/monthly-report") {
       if (!isFeatureEnabled(env, "monthly_report")) return disabledResponse("monthly_report");
 
+      let authedUserId = null;
+      let planTier = 'free';
+      try {
+        const auth = await requireAuth(request, env);
+        authedUserId = auth.userId;
+        planTier = request.headers.get("X-Plan-Tier") === "pro" ? "pro" : "free";
+      } catch (err) {
+        if (err?.isAuthError) {
+          return Response.json(
+            { error: err.message || "Authentication required" },
+            { status: err.status, headers: CORS }
+          );
+        }
+        throw err;
+      }
+
       try {
         const body = await request.json();
-        const { user_id, month, lang = "en", transactions = [], prev_month_expense } = body;
+        const { month, lang = "en", transactions = [], prev_month_expense } = body;
 
         if (!month || !/^\d{4}-\d{2}$/.test(month))
           return Response.json({ error: "Invalid or missing month (expected YYYY-MM)" }, { status: 400, headers: CORS });
@@ -1204,11 +1281,9 @@ Return ONLY the narrative text. No JSON, no markdown, no headers.`;
           messages: [{ role: "user", content: `Generate the monthly wrap narrative for ${month}.` }],
         });
 
-        // TODO Sprint E-ext: thread plan_tier from frontend auth context
-        // (user_id IS available from request body for this endpoint)
         logAICall(env, ctx, {
-          user_id: user_id || null,
-          plan_tier: 'free',
+          user_id: authedUserId,
+          plan_tier: planTier,
           endpoint: '/monthly-report',
           provider: 'anthropic',
           model: 'claude-haiku-4-5',

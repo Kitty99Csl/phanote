@@ -24,6 +24,7 @@ import { ConfirmSheet } from "./ConfirmSheet";
 import { useClickGuard } from "../hooks/useClickGuard";
 import { fetchWithTimeout, FetchTimeoutError } from "../lib/fetchWithTimeout";
 import { t } from "../lib/i18n";
+import { getAuthHeaders } from "../lib/supabase";
 
 export function OcrButton({ profile, onAdd, lang, compact=false }) {
   const [status,     setStatus]     = useState("idle"); // idle | picker | scanning | confirm | error
@@ -55,13 +56,16 @@ export function OcrButton({ profile, onAdd, lang, compact=false }) {
         reader.readAsDataURL(file);
       });
 
+      const authHeaders = await getAuthHeaders(profile);
       const res = await fetchWithTimeout("https://api.phajot.com/ocr", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeaders,
+        },
         body: JSON.stringify({
           image: base64,
           mimeType: file.type || "image/jpeg",
-          userId: profile?.userId,
         }),
       }, 20000);
 

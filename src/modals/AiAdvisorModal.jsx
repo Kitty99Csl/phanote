@@ -11,7 +11,7 @@
 import { useState, useEffect, useRef } from "react";
 import { T } from "../lib/theme";
 import { t } from "../lib/i18n";
-import { supabase } from "../lib/supabase";
+import { supabase, getAuthHeaders } from "../lib/supabase";
 import Sheet from "../components/Sheet";
 import { fetchWithTimeout, FetchTimeoutError } from "../lib/fetchWithTimeout";
 
@@ -128,9 +128,13 @@ export function AiAdvisorModal({ profile, transactions, onClose }) {
     setMessages(prev => [...prev, { role:"user", text: q }]);
     setLoading(true);
     try {
+      const authHeaders = await getAuthHeaders(profile);
       const res = await fetchWithTimeout("https://api.phajot.com/advise", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeaders,
+        },
         body: JSON.stringify({ question: q, lang, summary: buildSummary(), recentTransactions: buildRecentTransactions() }),
       }, 30000);
       const data = await res.json();
